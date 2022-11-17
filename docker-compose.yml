@@ -9,7 +9,7 @@ services:
       - ~/state:/oracle-cl-middleware/src/data
     environment:
       AGORIC_NET: agoriclocal 
-      AGORIC_RPC: http://172.16.151.20:26657
+      AGORIC_RPC: http://$THIS_VM_IP:26657
     restart: always
   middleware:
     image: ag-oracle-middleware
@@ -21,8 +21,8 @@ services:
       - ~/.agoric:/root/.agoric
     environment: 
       AGORIC_NET: agoriclocal 
-      AGORIC_RPC: http://172.16.151.20:26657 
-      FROM: agoric17ed6yjgen8nkkefw4f2aa9awp9xva63uxfwwhd 
-      EI_CHAINLINKURL: http://172.16.151.20:6691
+      AGORIC_RPC: http://$THIS_VM_IP:26657 
+      FROM: $WALLET_ADDR 
+      EI_CHAINLINKURL: http://$THIS_VM_IP:6691
     restart: always
   
