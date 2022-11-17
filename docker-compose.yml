@@ -1,0 +1,28 @@
+version: "3.9"
+services:
+  monitor:
+    image: ag-oracle-monitor
+    ports:
+      - "3001:3001"
+    volumes:
+      - ~/config:/oracle-cl-middleware/src/config
+      - ~/state:/oracle-cl-middleware/src/data
+    environment:
+      AGORIC_NET: agoriclocal 
+      AGORIC_RPC: http://172.16.151.20:26657
+    restart: always
+  middleware:
+    image: ag-oracle-middleware
+    ports:
+      - "3000:3000"
+    volumes:
+      - ~/config:/oracle-cl-middleware/src/config
+      - ~/state:/oracle-cl-middleware/src/data
+      - ~/.agoric:/root/.agoric
+    environment: 
+      AGORIC_NET: agoriclocal 
+      AGORIC_RPC: http://172.16.151.20:26657 
+      FROM: agoric17ed6yjgen8nkkefw4f2aa9awp9xva63uxfwwhd 
+      EI_CHAINLINKURL: http://172.16.151.20:6691
+    restart: always
+  
