@@ -1,8 +1,3 @@
-/*export const networkConfig =
-  'AGORIC_NET' in process.env && process.env.AGORIC_NET !== 'local'
-    ? await fromAgoricNet(NonNullish(process.env.AGORIC_NET))
-    : { rpcAddrs: ['http://0.0.0.0:26657'], chainName: 'agoriclocal' };
-*/
 export const networkConfig = { rpcAddrs: [process.env.AGORIC_RPC], chainName: process.env.AGORIC_NET };
 // @ts-check
 /* eslint-disable @jessie.js/no-nested-await */

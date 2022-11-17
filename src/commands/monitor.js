@@ -35,28 +35,28 @@ register.setDefaultLabels({
 const oracleSubmission = new Gauge({
   name: 'oracle_latest_value',
   help: 'Latest value submitted by oracle',
-  labelNames: ['oracle', 'feed']
+  labelNames: ['oracleName', 'oracle', 'feed']
 })
 
 //Create gauge for timestamp
 const oracleObservation = new Gauge({
     name: 'oracle_last_observation',
     help: 'Last epoch in which oracle made an observation',
-    labelNames: ['oracle', 'feed']
+    labelNames: ['oracleName', 'oracle', 'feed']
   })
 
 //Create gauge for price deviation
 const oracleDeviation = new Gauge({
     name: 'oracle_price_deviation',
     help: 'Latest price deviation by oracle',
-    labelNames: ['oracle', 'feed']
+    labelNames: ['oracleName', 'oracle', 'feed']
   })
   
 //Create gauge for balance
 const oracleBalance = new Gauge({
     name: 'oracle_balance',
     help: 'Oracle balances',
-    labelNames: ['oracle', 'brand']
+    labelNames: ['oracleName', 'oracle', 'brand']
   })
 
 //Create gauge for last price
@@ -78,32 +78,32 @@ const { agoricNames, fromBoard, vstorage } = await makeRpcUtils({ fetch });
 var feeds = []
 
 const STATE_FILE = "data/monitoring_state.json"
-const ORACLE_FILE = "config/oracles.txt"
+const ORACLE_FILE = "config/oracles.json"
+
+const readOracles = () => {
+    return readJSONFile(ORACLE_FILE)
+}
 
 const readOracleAddresses = () => {
-    var fileInput = readFile(ORACLE_FILE)
-    var addresses = fileInput.split(",")
-    var oracles = {}
-    for (let addr of addresses) {
-      addr = addr.replaceAll("\n", "")
-      oracles[addr] = {}
-    }
+    var oracles = readJSONFile(ORACLE_FILE)
+    //return Object.values(oracles)
     return oracles
 }
 
+//var oracleLabels = readOracles();
 var oracles = readOracleAddresses();
 
-const updateMetrics = (oracle, feed, value, id, actual_price) => {
+const updateMetrics = (oracle_name, oracle, feed, value, id, actual_price) => {
    let price_deviation = Math.abs((value - actual_price)/actual_price)*100
 
-    oracleSubmission.labels(oracle, feed).set(value)
-    oracleObservation.labels(oracle, feed).set(id)
-    oracleDeviation.labels(oracle, feed).set(price_deviation)
+    oracleSubmission.labels(oracle_name, oracle, feed).set(value)
+    oracleObservation.labels(oracle_name, oracle, feed).set(id)
+    oracleDeviation.labels(oracle_name, oracle, feed).set(price_deviation)
     actualPrice.labels(feed).set(actual_price)
 }
 
-const updateBalanceMetrics = (oracle, brand, value) => {
-    oracleBalance.labels(oracle, brand).set(value)
+const updateBalanceMetrics = (oracle_name, oracle, brand, value) => {
+    oracleBalance.labels(oracle_name, oracle, brand).set(value)
 }
 
 const queryPrice = async (job_name) => {
@@ -121,8 +121,9 @@ const queryPrice = async (job_name) => {
     return latest_price
   }
 
-export const getLatestPrices = async (oracle, feeds, last_index) => {
+export const getLatestPrices = async (oracle, oracle_details, last_index) => {
 
+    let feeds = oracle_details["feeds"]
     console.log("Getting prices for", oracle, feeds)
 
     const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
@@ -161,7 +162,7 @@ export const getLatestPrices = async (oracle, feeds, last_index) => {
                 id: id
             }
             let feed_price = await queryPrice(feed)
-            updateMetrics(oracle, feed, price, id, feed_price)
+            updateMetrics(oracle_details["oracleName"], oracle, feed, price, id, feed_price)
         }
     }
 
@@ -171,7 +172,7 @@ export const getLatestPrices = async (oracle, feeds, last_index) => {
         var brand = current_balance.brand.iface.split(" ")[1]
         if (brand.includes("BLD") || brand.includes("IST")){
             var value = Number(current_balance.value)
-            updateBalanceMetrics(oracle, brand, value)
+            updateBalanceMetrics(oracle_details["oracleName"], oracle, brand, value)
         }
     }
 
@@ -204,7 +205,11 @@ export const getOraclesInvitations = async() => {
 
            let boardId = invitations[inv].value[0].instance.boardId
            let feed = feeds[boardId].split(" price feed")[0]
-           oracles[oracle][String(inv)] = feed
+
+           if (!("feeds" in oracles[oracle])) {
+		oracles[oracle]["feeds"] = {}
+	   }
+           oracles[oracle]["feeds"][String(inv)] = feed
         }
     }
 
