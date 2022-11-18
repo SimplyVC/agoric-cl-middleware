@@ -1,8 +1,8 @@
 # Agoric Oracle Middleware
 
-## Create oracle.json file
+## Create oracles.json file
 
-In order to monitor oracles, you need to create a file at <b>~/config/oracle.json</b>. 
+In order to monitor oracles, you need to create a file at <b>~/config/oracles.json</b>. 
 As can be seen below, it takes an array of oracles with their addresses and names.
 
 ```json
