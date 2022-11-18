@@ -20,7 +20,7 @@ import express from 'express';
 import { validUrl } from './helper.js';
 
 //get variables and perform validation
-const { PORT = '3000', EI_CHAINLINKURL, POLL_INTERVAL = '60', FROM, DECIMAL_PLACES = 6, PRICE_DEVIATION_PERC = 0.1, AGORIC_NET, AGORIC_RPC = "http://0.0.0.0:26657" } = process.env;
+const { PORT = '3000', EI_CHAINLINKURL, POLL_INTERVAL = '60', FROM, DECIMAL_PLACES = 6, PRICE_DEVIATION_PERC = 1, AGORIC_NET, AGORIC_RPC = "http://0.0.0.0:26657" } = process.env;
 assert(EI_CHAINLINKURL, '$EI_CHAINLINKURL is required');
 assert(Number(DECIMAL_PLACES), '$DECIMAL_PLACES is required');
 assert(Number(PRICE_DEVIATION_PERC), '$PRICE_DEVIATION_PERC is required');
@@ -76,12 +76,13 @@ const readCredentials = () => {
 const credentials = readCredentials();
 
 //function to send a job run to the CL node
-const sendJobRun = async (credentials, count, jobId, chainlinkUrl) => {
+const sendJobRun = async (credentials, count, jobId, chainlinkUrl, requestType) => {
   const options = {
       url: chainlinkUrl+"/v2/jobs/"+jobId+"/runs",
       body: {
           "payment": 0,
-          "request_id": count
+          "request_id": count,
+          "request_type": requestType
       },
       headers: {
           "Content-Type": "application/json",
@@ -136,12 +137,12 @@ const queryPrice = async (job_name) => {
   return latest_price
 }
 
-const submitNewJobIndex = (state, index) => {
+const submitNewJobIndex = (state, index, requestType) => {
   state.jobs[index].request_id++;
   let request_id = state.jobs[index].request_id;
   let job = state.jobs[index].job
   console.log("Sending job spec", job, "request", request_id)
-  sendJobRun(credentials, request_id, job, EI_CHAINLINKURL)
+  sendJobRun(credentials, request_id, job, EI_CHAINLINKURL, requestType)
 }
 
 const makeFakeController = (intervalSeconds, chainlinkUrl, credentials, { atExit }) => {
@@ -151,7 +152,7 @@ const makeFakeController = (intervalSeconds, chainlinkUrl, credentials, { atExit
     let state = readState();
 
     for (let index in state.jobs){
-      submitNewJobIndex(state, index)
+      submitNewJobIndex(state, index, 1)
     }
     saveState(state)
     
@@ -182,7 +183,7 @@ const makeFakeController = (intervalSeconds, chainlinkUrl, credentials, { atExit
         //if a request hadnt been made yet
         if (state.jobs[i].request_id == state.previous_results[job_name].request_id) {
           //submit job
-          submitNewJobIndex(state, i)
+          submitNewJobIndex(state, i, 2)
         }
       }
 
@@ -212,16 +213,17 @@ const startBridge = (PORT, { atExit, exit }) => {
     let result = Math.round(req.body.data.result)
     result = Number(result) / Math.pow(10, Number(DECIMAL_PLACES))
     let request_id = String(req.body.data.request_id)
+    let request_type = Number(req.body.data.request_type)
     let job_id = req.body.data.job
     let job_name = req.body.data.name
-    console.log("Bridge received "+String(result)+ " for "+job_name+" ("+request_id+")")
+    console.log("Bridge received "+String(result)+ " for "+job_name+" (Request: "+request_id+", Type: "+request_type+")")
 
     //get last price
     let last_price = (state.previous_results[job_name]) ? state.previous_results[job_name].result : -1
 
-    let to_update = last_price == -1
-    //if last price is found
-    if (last_price != -1){
+    let to_update = last_price == -1 || request_type == 1
+    //if last price is found or it is not a timing request
+    if (last_price != -1 && request_type == 2){
         //calculate percentage change
         let perc_change = Math.abs((result - last_price)/last_price)*100
         console.log("Price change is "+perc_change+"%. Last Price: "+String(result)+". Current Price: "+String(last_price))
