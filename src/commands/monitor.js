@@ -90,8 +90,35 @@ const readOracleAddresses = () => {
     return oracles
 }
 
+export const getOraclesInvitations = async() => {
+    feeds = agoricNames.reverse
+
+    for (let oracle in oracles){
+
+        const current = await getCurrent(oracle, fromBoard, {
+            vstorage,
+        });
+
+        const invitations = current.offerToUsedInvitation
+ 
+        for (let inv in invitations) {
+
+           let boardId = invitations[inv].value[0].instance.boardId
+           let feed = feeds[boardId].split(" price feed")[0]
+
+           if (!("feeds" in oracles[oracle])) {
+		oracles[oracle]["feeds"] = {}
+	   }
+           oracles[oracle]["feeds"][String(inv)] = feed
+        }
+    }
+
+    console.log(oracles)
+}
+
 //var oracleLabels = readOracles();
 var oracles = readOracleAddresses();
+await getOraclesInvitations();
 
 const updateMetrics = (oracle_name, oracle, feed, value, id, actual_price) => {
    let price_deviation = Math.abs((value - actual_price)/actual_price)*100
@@ -177,44 +204,6 @@ export const getLatestPrices = async (oracle, oracle_details, last_index) => {
     }
 
     return last_results
-}
-
-export const getOraclesInvitations = async() => {
-    for (let key in agoricNames.instance) {
-        if(key.includes("price feed")){
-            let feed = key.split(" price feed")[0]
-            let boardId = agoricNames.instance[key].boardId
-            feeds.push({
-                feed: feed,
-                boardId: boardId
-            })
-        }
-    }
-    feeds = agoricNames.reverse
-
-    for (let oracle in oracles){
-
-        const current = await getCurrent(oracle, fromBoard, {
-            vstorage,
-        });
-
-        const invitations = current.offerToUsedInvitation
- 
-
-        for (let inv in invitations) {
-
-           let boardId = invitations[inv].value[0].instance.boardId
-           let feed = feeds[boardId].split(" price feed")[0]
-
-           if (!("feeds" in oracles[oracle])) {
-		oracles[oracle]["feeds"] = {}
-	   }
-           oracles[oracle]["feeds"][String(inv)] = feed
-        }
-    }
-
-    
-    console.log(oracles)
 }
 
 const readMonitoringState = () => {
