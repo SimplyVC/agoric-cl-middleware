@@ -312,7 +312,8 @@ const startBridge = (PORT, { atExit, exit }) => {
         result: result,
         request_id: request_id
       }
-      saveState(state);
+
+      saveJSONDataToFile(state, STATE_FILE)
 
       //push price on chain
       await pushPrice(result, job_name, FROM)
@@ -341,7 +342,7 @@ const startBridge = (PORT, { atExit, exit }) => {
     });
 
     //save state
-    saveState(state)
+    saveJSONDataToFile(state, STATE_FILE)
     console.log("Got new job", new_job)
     console.log("new jobs", state.jobs)
     res.status(200).send({success:true})
@@ -368,8 +369,7 @@ const startBridge = (PORT, { atExit, exit }) => {
     }
 
     //save state
-    saveState(state)
-
+    saveJSONDataToFile(state, STATE_FILE)    
     res.status(200).send({success:true})
   });
 
