@@ -87,11 +87,11 @@
  
    //go through each job
    for (let index in state.jobs){
-     let current_job = state.jobs[index]
+     let currentJob = state.jobs[index]
      //if not initialised
-     if (!(current_job.name in state.previous_results)){
-       state.previous_results[current_job.name] = {
-         id: current_job.job,
+     if (!(currentJob.name in state.previous_results)){
+       state.previous_results[currentJob.name] = {
+         id: currentJob.job,
          result: 0,
          round: {}
        }
@@ -113,9 +113,9 @@
  
    //go through each job
    for (let index in state.jobs){
-     let current_job = state.jobs[index]
+     let currentJob = state.jobs[index]
      //if not initialised
-     if (current_job.name  == jobName){
+     if (currentJob.name  == jobName){
        return index
      }
    }
@@ -188,10 +188,10 @@
      capData = JSON.parse(capData.body.replaceAll("\\", ""))
  
      //get the latest price by dividing amountOut by amountIn
-     var latest_price = Number(capData.amountOut.value.digits) / Number(capData.amountIn.value.digits)
+     var latestPrice = Number(capData.amountOut.value.digits) / Number(capData.amountIn.value.digits)
  
-     console.log(jobName+ " Price Query: "+ String(latest_price))
-     return latest_price
+     console.log(jobName+ " Price Query: "+ String(latestPrice))
+     return latestPrice
    }
    catch{
      return 0
@@ -217,14 +217,14 @@
    capData = JSON.parse(capData.body.replaceAll("\\", ""))
  
    //get the latest round
-   var latest_round = {
+   var latestRound = {
      roundId: Number(capData.roundId.digits),
      startedBy: capData.startedBy,
      submissionsBy: capData.submissionsBy
    }
    
-   console.log(jobName+ " Latest Round: ",latest_round.roundId)
-   return latest_round
+   console.log(jobName+ " Latest Round: ",latestRound.roundId)
+   return latestRound
  }
   
  /**
@@ -241,16 +241,16 @@
    //increment the latest round of the job in the state
    state.jobs[index].latest_round++;
  
-   let request_id = state.jobs[index].request_id;
+   let requestId = state.jobs[index].request_id;
    let job = state.jobs[index].job
  
-   console.log("Sending job spec", job, "request", request_id)
+   console.log("Sending job spec", job, "request", requestId)
  
    //update state
    saveJSONDataToFile(state, STATE_FILE)
  
    //send job run
-   sendJobRun(credentials, request_id, job, EI_CHAINLINKURL, requestType)
+   sendJobRun(credentials, requestId, job, EI_CHAINLINKURL, requestType)
   }
   
  /**
@@ -300,22 +300,22 @@
        let sendRequest = 0;
  
        //query the price
-       let latest_price = await queryPrice(jobName)
-       let current_price = jobName in state.previous_results ? state.previous_results[jobName].result : 0
+       let latestPrice = await queryPrice(jobName)
+       let currentPrice = jobName in state.previous_results ? state.previous_results[jobName].result : 0
  
        //query latest round
-       let latest_round = await queryRound(jobName);
+       let latestRound = await queryRound(jobName);
  
        //update latest price
-       state.previous_results[jobName].result = latest_price
+       state.previous_results[jobName].result = latestPrice
        //update latest round
-       state.previous_results[jobName].round = latest_round
+       state.previous_results[jobName].round = latestRound
  
        //if latest round is bigger than last reported round
-       if (latest_round.roundId > state.jobs[getJobIndex(jobName)].last_reported_round){
+       if (latestRound.roundId > state.jobs[getJobIndex(jobName)].last_reported_round){
          //if submitted, update last_reported_round
-         if (latest_round.submissionsBy.includes(FROM)){
-           state.jobs[getJobIndex(jobName)].last_reported_round = latest_round.roundId
+         if (latestRound.submissionsBy.includes(FROM)){
+           state.jobs[getJobIndex(jobName)].last_reported_round = latestRound.roundId
          }
          //if not found send job request
          else {
@@ -327,7 +327,7 @@
        saveJSONDataToFile(state, STATE_FILE)
   
        //if there's a price deviation
-       let price_dev = Math.abs((latest_price - current_price)/current_price)*100
+       let price_dev = Math.abs((latestPrice - currentPrice)/currentPrice)*100
        if (price_dev > PRICE_DEVIATION_PERC) {
          sendRequest = 2
          console.log("Found a price deviation for", jobName, "of", price_dev, "%. Latest price:", latest_price," Current Price:", current_price)
@@ -390,18 +390,18 @@
      state.previous_results[jobName].request_id = requestId
  
      //get last price from state
-     let last_price = (state.previous_results[jobName]) ? state.previous_results[jobName].result : -1
+     let lastPrice = (state.previous_results[jobName]) ? state.previous_results[jobName].result : -1
  
-     let to_update = last_price == -1 || requestType == 1 || requestType == 3
+     let toUpdate = lastPrice == -1 || requestType == 1 || requestType == 3
      //if last price is found and it is a price deviation request
-     if (last_price != -1 && requestType == 2){
+     if (lastPrice != -1 && requestType == 2){
        //calculate percentage change
-       last_price = last_price * Math.pow(10, Number(DECIMAL_PLACES))
-       let perc_change = Math.abs((result - last_price)/last_price)*100
-       console.log("Price change is "+perc_change+"%. Last Price: "+String(result)+". Current Price: "+String(last_price))
+       lastPrice = lastPrice * Math.pow(10, Number(DECIMAL_PLACES))
+       let percChange = Math.abs((result - lastPrice)/lastPrice)*100
+       console.log("Price change is "+percChange+"%. Last Price: "+String(result)+". Current Price: "+String(lastPrice))
  
        //update price if result is greater than price deviation threshold
-       to_update = perc_change > PRICE_DEVIATION_PERC
+       toUpdate = percChange > PRICE_DEVIATION_PERC
      }
   
      /**
@@ -411,26 +411,26 @@
        *    - Job request was because time expired
        *    - Price deviation found
        */
-     if(to_update){
+     if(toUpdate){
        
        //get latest queried round
-       let latest_round = state.previous_results[jobName].round
+       let latestRound = state.previous_results[jobName].round
  
        //get the round for submission
-       let last_reported_round = state.jobs[getJobIndex(jobName)].last_reported_round
-       let last_round_id = isNaN(latest_round.roundId) ? last_reported_round : latest_round.roundId
-       let round_to_submit = last_reported_round < last_round_id ? last_round_id : last_round_id + 1
+       let lastReportedRound = state.jobs[getJobIndex(jobName)].last_reported_round
+       let lastRoundId = isNaN(latestRound.roundId) ? lastReportedRound : latestRound.roundId
+       let roundToSubmit = lastReportedRound < lastRoundId ? lastRoundId : lastRoundId + 1
  
        //check if new round
-       let newRound = round_to_submit != last_round_id
+       let newRound = roundToSubmit != lastRoundId
  
        //push price on chain if first round, haven't started previous round and havent submitted yet in the same round
-       if (round_to_submit == 1 || (newRound && latest_round.startedBy != FROM) || (!newRound && !latest_round.submissionsBy.includes(FROM))) {
-         console.log("Updating price for round", round_to_submit)
-        await pushPrice(result, jobName, round_to_submit, FROM)
+       if (roundToSubmit == 1 || (newRound && latestRound.startedBy != FROM) || (!newRound && !latest_round.submissionsBy.includes(FROM))) {
+         console.log("Updating price for round", roundToSubmit)
+        await pushPrice(result, jobName, roundToSubmit, FROM)
  
          //update last reported round
-         state.jobs[getJobIndex(jobName)].last_reported_round = round_to_submit
+         state.jobs[getJobIndex(jobName)].last_reported_round = roundToSubmit
        }  
        else {
          console.log("Already started last round or submitted to this round")
@@ -448,23 +448,23 @@
     * This is used to listen for new jobs added from UI and to update state
     */
    app.post('/jobs', (req, res) => {
-     let new_job = req.body.jobId;
-     let new_job_name = req.body.params.name;
+     let newJob = req.body.jobId;
+     let newJobName = req.body.params.name;
  
      //read state
      let state = readState()
  
      //add new job to state
      state.jobs.push({
-       job: new_job,
-       name: new_job_name,
+       job: newJob,
+       name: newJobName,
        request_id: 0,
        last_reported_round: 0
      });
  
      //add previous results
-     state.previous_results[new_job_name] = {
-       id: new_job,
+     state.previous_results[newJobName] = {
+       id: newJob,
        result: 0,
        request_id: 0,
        round: {}
@@ -472,7 +472,7 @@
  
      //save state
      saveJSONDataToFile(state, STATE_FILE)
-     console.log("Got new job", new_job)
+     console.log("Got new job", newJob)
      console.log("new jobs", state.jobs)
      res.status(200).send({success:true})
    });
@@ -482,25 +482,25 @@
     * This is used to listen for jobs deleted from UI and to update state
     */
     app.delete('/jobs/:id', (req, res) => {
-     let job_id = req.params.id;
-     console.log("Removing job", job_id)
+     let jobId = req.params.id;
+     console.log("Removing job", jobId)
  
      //read syaye
      let state = readState()
  
-     let job_name = ""
+     let jobName = ""
  
      //loop through jobs
      for(var index in state.jobs){
        //if job is found, remove it
-       if(state.jobs[index].job == job_id){
-         job_name = state.jobs[index].name
+       if(state.jobs[index].job == jobId){
+        jobName = state.jobs[index].name
          state.jobs.splice(index, 1);
          break;
        }
      }
  
-     delete state.previous_results[job_name]
+     delete state.previous_results[jobName]
  
      //save state
      saveJSONDataToFile(state, STATE_FILE)    
@@ -650,12 +650,12 @@
    startBridge(PORT, exiters);
  
    //calcualte how many seconds left for a new minute
-   let seconds_left = 60 - (new Date().getSeconds());
+   let secondsLeft = 60 - (new Date().getSeconds());
  
    //start the controller on the new minute
    setTimeout(() => {
      makeController(intervalSeconds, EI_CHAINLINKURL, credentials, exiters);
-   }, seconds_left*1000)
+   }, secondsLeft*1000)
  
    return atExit;
  };
