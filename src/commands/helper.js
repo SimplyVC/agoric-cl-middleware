@@ -38,10 +38,10 @@ export const saveJSONDataToFile = (newData, filename) => {
  */
 export const validUrl = (url) => {
     try {
-    	new URL(url);
-      	return true;
+        new URL(url);
+        return true;
     } catch (err) {
-      	return false;
+        return false;
     }
 };
 
