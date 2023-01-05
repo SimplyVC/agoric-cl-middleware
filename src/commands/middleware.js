@@ -327,10 +327,10 @@
        saveJSONDataToFile(state, STATE_FILE)
   
        //if there's a price deviation
-       let price_dev = Math.abs((latestPrice - currentPrice)/currentPrice)*100
-       if (price_dev > PRICE_DEVIATION_PERC) {
+       let priceDev = Math.abs((latestPrice - currentPrice)/currentPrice)*100
+       if (priceDev > PRICE_DEVIATION_PERC) {
          sendRequest = 2
-         console.log("Found a price deviation for", jobName, "of", price_dev, "%. Latest price:", latest_price," Current Price:", current_price)
+         console.log("Found a price deviation for", jobName, "of", priceDev, "%. Latest price:", latestPrice," Current Price:", currentPrice)
        }
          
       //if there is a request to be sent
@@ -425,7 +425,7 @@
        let newRound = roundToSubmit != lastRoundId
  
        //push price on chain if first round, haven't started previous round and havent submitted yet in the same round
-       if (roundToSubmit == 1 || (newRound && latestRound.startedBy != FROM) || (!newRound && !latest_round.submissionsBy.includes(FROM))) {
+       if (roundToSubmit == 1 || (newRound && latestRound.startedBy != FROM) || (!newRound && !latestRound.submissionsBy.includes(FROM))) {
          console.log("Updating price for round", roundToSubmit)
         await pushPrice(result, jobName, roundToSubmit, FROM)
  
