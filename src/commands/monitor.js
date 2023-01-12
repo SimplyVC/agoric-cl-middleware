@@ -16,6 +16,7 @@ import { getCurrent } from '../lib/wallet.js';
 import { Registry, Gauge } from 'prom-client';
 import { createServer } from 'http';
 import { parse } from 'url';
+import { iterateReverse } from '@agoric/casting';
 
 const { PORT = '3001', POLL_INTERVAL = '10', AGORIC_NET, AGORIC_RPC = "http://0.0.0.0:26657" } = process.env;
 assert(!isNaN(Number(PORT)), '$PORT is required');
@@ -67,7 +68,7 @@ const oracleBalance = new Gauge({
 })
 
 //Create gauge for last price
-const actualPrice = new Gauge({
+const actualPriceGauge = new Gauge({
     name: 'actual_price',
     help: 'Actual last price from feed',
     labelNames: ['feed']
@@ -79,7 +80,7 @@ register.registerMetric(oracleObservation)
 register.registerMetric(oracleLastRound)
 register.registerMetric(oracleBalance)
 register.registerMetric(oracleDeviation)
-register.registerMetric(actualPrice)
+register.registerMetric(actualPriceGauge)
 
 const { agoricNames, fromBoard, vstorage } = await makeRpcUtils({ fetch });
 
@@ -151,7 +152,7 @@ const updateMetrics = (oracleName, oracle, feed, value, id, actualPrice, lastRou
     oracleObservation.labels(oracleName, oracle, feed).set(id)
     oracleLastRound.labels(oracleName, oracle, feed).set(lastRound)
     oracleDeviation.labels(oracleName, oracle, feed).set(priceDeviation)
-    actualPrice.labels(feed).set(actualPrice)
+    actualPriceGauge.labels(feed).set(actualPrice)
 }
 
 /**
@@ -171,33 +172,66 @@ const updateBalanceMetrics = (oracleName, oracle, feed, value) => {
  * @returns the price of the feed
  */
 const queryPrice = async (jobName) => {
-    const capDataStr = await vstorage.readLatest(
-        `published.priceFeed.${jobName}_price_feed`,
-    );
+    try{
+        const capDataStr = await vstorage.readLatest(
+            `published.priceFeed.${jobName}_price_feed`,
+        );
+    
+        //parse the value
+        var capData = JSON.parse(JSON.parse(capDataStr).value)
+        capData = JSON.parse(capData.values[0])
+        //replace any extra characters
+        capData = JSON.parse(capData.body.replaceAll("\\", ""))
+    
+        //get the latest price by dividing amountOut by amountIn
+        var latestPrice = Number(capData.amountOut.value.digits) / Number(capData.amountIn.value.digits)
+        amountsIn[jobName] = Number(capData.amountIn.value.digits)
+    
+        console.log(jobName + " Price Query: " + String(latestPrice))
+        actualPrice.labels(jobName).set(latestPrice)
+        return latestPrice
 
-    //parse the value
-    var capData = JSON.parse(JSON.parse(capDataStr).value)
-    capData = JSON.parse(capData.values[0])
-    //replace any extra characters
-    capData = JSON.parse(capData.body.replaceAll("\\", ""))
-
-    //get the latest price by dividing amountOut by amountIn
-    var latestPrice = Number(capData.amountOut.value.digits) / Number(capData.amountIn.value.digits)
-    amountsIn[jobName] = Number(capData.amountIn.value.digits)
-
-    console.log(jobName + " Price Query: " + String(latestPrice))
-    actualPrice.labels(jobName).set(latestPrice)
-    return latestPrice
+    }
+    catch (err){
+        console.log("Price could not be obtained")
+        return 0
+    }
+    
 }
+
+/**
+  * Function to get offers and balances
+  * @param {*} follower offers and balances
+  * @returns an object containing the offers and balances
+  */
+ const getOffersAndBalances = async (follower) => {
+
+    let toReturn = {
+        offers: [],
+        balances: []
+    };
+    for await (const followerElement of iterateReverse(follower)) {
+  
+      //if it is an offer status
+      if (followerElement.value.updated == "offerStatus") {
+        toReturn["offers"].push(followerElement.value);
+      }
+      //if a balance
+      else if (followerElement.value.updated == "balance") {
+        toReturn["balances"].push(followerElement.value.currentAmount);
+      }
+    }
+    return toReturn
+  }
 
 /**
  * Function to get latest prices for oracle
  * @param {*} oracle oracle address
  * @param {*} oracleDetails oracle details
- * @param {*} lastIndex last offer index from offers
+ * @param {*} lastOfferId last offer id from offers
  * @returns last results including the oracle submitted price
  */
-export const getLatestPrices = async (oracle, oracleDetails, lastIndex) => {
+export const getLatestPrices = async (oracle, oracleDetails, lastOfferId) => {
 
     //get feeds for oracle
     let feeds = oracleDetails["feeds"]
@@ -214,34 +248,39 @@ export const getLatestPrices = async (oracle, oracleDetails, lastIndex) => {
             unserializer,
         },
     );
-    const coalesced = await coalesceWalletState(follower);
 
-    //get offers
-    let offers = Array.from(coalesced.offerStatuses.values());
-    //get balance
-    let balances = Array.from(coalesced.balances.values());
+    let offersBalances = await getOffersAndBalances(follower)
 
     //initialise variable to hold results
     let lastResults = {
-        "last_index": lastIndex,
+        "last_offer_id": lastOfferId,
         "values": {}
     }
 
-    //get last offer index
-    lastIndex = (lastIndex > offers.length) ? 0 : lastIndex;
+    // //get last offer id
+    // lastIndex = (lastIndex > offers.length) ? 0 : lastIndex;
+
+    //flag to see whether to continue looping
+    let continueLoop = true;
 
     //loop through offers starting from last visited index
-    for (var i = lastIndex; i < offers.length; i++) {
+    for (var i = 0; i < offersBalances.offers.length && continueLoop ; i++) {
         //get current offer
-        var currentOffer = offers[i];
-        lastResults["last_index"] = i;
+        var currentOffer = offersBalances.offers[i];
+        let id = Number(currentOffer["status"]["id"])
 
-        //if a price invitatio
-        if (currentOffer["invitationSpec"]["invitationMakerName"] == "PushPrice") {
-            let feed = feeds[currentOffer["invitationSpec"]["previousOffer"]]
-            let price = Number(currentOffer["invitationSpec"]["invitationArgs"][0]["unitPrice"]) / amountsIn[feed]
-            let lastRound = Number(currentOffer["invitationSpec"]["invitationArgs"][0]["roundId"])
-            let id = Number(currentOffer["id"])
+        //if id is bigger than last offer id in state, set it
+        if (id > lastResults["last_offer_id"]){
+            lastResults["last_offer_id"] = id
+        }
+
+        //if a price invitation
+        if (currentOffer["status"]["invitationSpec"]["invitationMakerName"] == "PushPrice") {
+            let feed = feeds[currentOffer["status"]["invitationSpec"]["previousOffer"]]
+            let price = Number(currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["unitPrice"]) / amountsIn[feed]
+            console.log(price, amountsIn[feed], feed)
+
+            let lastRound = Number(currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"])
 
             //fill results variable
             lastResults["values"][feed] = {
@@ -254,12 +293,18 @@ export const getLatestPrices = async (oracle, oracleDetails, lastIndex) => {
             let feedPrice = await queryPrice(feed)
             //update metrics
             updateMetrics(oracleDetails["oracleName"], oracle, feed, price, id, feedPrice, lastRound)
+
+            //if we found the last visited offer id in previous check, stop looping
+            if (id <= lastOfferId){
+                continueLoop = false;
+            }
         }
     }
 
     //loop through balances
-    for (var i = 0; i < balances.length; i++) {
-        let currentBalance = balances[i]
+    for (var i = 0; i < offersBalances.balances.length; i++) {
+        let currentBalance = offersBalances.balances[i]
+
         var brand = currentBalance.brand.iface.split(" ")[1]
         if (brand.includes("BLD") || brand.includes("IST")) {
             var value = Number(currentBalance.value)
@@ -267,6 +312,7 @@ export const getLatestPrices = async (oracle, oracleDetails, lastIndex) => {
         }
     }
 
+    console.log(lastResults)
     return lastResults
 }
 
@@ -312,14 +358,14 @@ export const monitor = async () => {
             //check if there is state for oracle
             if (!(oracle in state)) {
                 state[oracle] = {
-                    "last_index": 0,
+                    "last_offer_id": 0,
                     "values": {}
                 }
             }
             console.log("ORACLE STATE", state[oracle])
 
             //get latest prices for oracle
-            let latestOracleState = await getLatestPrices(oracle, oracles[oracle], state[oracle]["last_index"])
+            let latestOracleState = await getLatestPrices(oracle, oracles[oracle], state[oracle]["last_offer_id"])
             state[oracle] = latestOracleState
         }
 
