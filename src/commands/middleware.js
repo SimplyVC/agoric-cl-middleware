@@ -246,17 +246,16 @@ const queryRound = async (jobName) => {
 
 /**
   * Function to submit a new job run to the Chainlink node
-  * @param {*} state current state
   * @param {*} index the index of the job in the state data
   * @param {*} requestType the request type to send as a parameter with the job request. 1 if a timer request, 2 if triggered by a price deviation.
   */
-const submitNewJobIndex = (state, index, requestType) => {
+const submitNewJobIndex = async (index, requestType) => {
 
+  let state = readState()
   //increment the request id of the job in the state
   state.jobs[index].request_id++;
-
-  //increment the latest round of the job in the state
-  state.jobs[index].latest_round++;
+  //set the time sent
+  state.jobs[index].last_request_sent = Date.now() / 1000;
 
   let requestId = state.jobs[index].request_id;
   let job = state.jobs[index].job
@@ -267,7 +266,7 @@ const submitNewJobIndex = (state, index, requestType) => {
   saveJSONDataToFile(state, STATE_FILE)
 
   //send job run
-  sendJobRun(credentials, requestId, job, EI_CHAINLINKURL, requestType)
+  await sendJobRun(credentials, requestId, job, EI_CHAINLINKURL, requestType)
 }
 
 /**
@@ -281,18 +280,16 @@ const makeController = (intervalSeconds, chainlinkUrl, credentials, { atExit }) 
   const jobRequestInterval = intervalSeconds * 1_000;
 
   //create an interval which creates a job request every X seconds
-  const it = setInterval(() => {
+  const it = setInterval(async () => {
 
-    //read the satte
+    //read the state
     let state = readState();
 
     //for each job in state, send a job run
     for (let index in state.jobs) {
       //send a job run with type 1, indicating a job run triggered from the polling interval
-      submitNewJobIndex(state, index, 1)
+      await submitNewJobIndex(index, 1)
     }
-    //save state again
-    saveJSONDataToFile(state, STATE_FILE)
   }, jobRequestInterval);
 
 
@@ -323,6 +320,9 @@ const makeController = (intervalSeconds, chainlinkUrl, credentials, { atExit }) 
       //query latest round
       let latestRound = await queryRound(jobName);
 
+      //reread state in case of updates
+      state = readState();
+
       //update latest price
       state.previous_results[jobName].result = latestPrice
       //update latest round
@@ -352,11 +352,23 @@ const makeController = (intervalSeconds, chainlinkUrl, credentials, { atExit }) 
 
       //if there is a request to be sent
       if (sendRequest != 0) {
+
+        //get seconds now
+        let secondsNow = Date.now() / 1000
+        //check seconds passed from last request
+        let secondsPassed = secondsNow - state.jobs[i].last_request_sent
+
+        //check if allowed to send - 5 seconds passed or a request hasnt been made
+        let allowedSend = state.jobs[i].request_id == state.previous_results[jobName].request_id || secondsPassed > 5
+
         //if a request hadnt been made yet
-        if (state.jobs[i].request_id == state.previous_results[jobName].request_id) {
+        if (allowedSend) {
           //submit job
           console.log("Initialising new CL job request")
-          submitNewJobIndex(state, i, sendRequest)
+          submitNewJobIndex(i, sendRequest)
+        }
+        else{
+          console.log("Will not be initialising new job request - Still waiting for request", state.jobs[i].request_id, "to finish. Last finished request is", state.previous_results[jobName].request_id)
         }
       }
     }
@@ -381,9 +393,6 @@ const startBridge = (PORT, { atExit, exit }) => {
   const app = express();
   app.use(bodyParser.json());
 
-  //read state
-  let state = readState()
-
   /**
   * POST /adapter endpoint
   * This is used to listen for job run results
@@ -404,7 +413,8 @@ const startBridge = (PORT, { atExit, exit }) => {
     console.log("Bridge received " + String(result) + " for " + jobName + " (Request: " + requestId + ", Type: " + requestType + ")")
 
     //update state
-    state.previous_results[jobName].request_id = requestId
+    state.previous_results[jobName].request_id = Number(requestId)
+    saveJSONDataToFile(state, STATE_FILE)
 
     //get last price from state
     let lastPrice = (state.previous_results[jobName]) ? state.previous_results[jobName].result : -1
@@ -618,13 +628,13 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
       //if it is an offer for the round we are checking for
       if (offerRound == roundId) {
         //if there is no error
-        if (currentOffer["status"]["numWantsSatisfied"] == 1) {
+        if (!currentOffer["status"].hasOwnProperty("error")) {
           return true
         }
       }
       //else if offer round id is less than the round we want to check and its satisfied
       //return false because there cannot be a submission for a newer round before this offer 
-      else if (offerRound < roundId && currentOffer["status"]["numWantsSatisfied"] == 1) {
+      else if (offerRound < roundId && !currentOffer["status"].hasOwnProperty("error")) {
         return false
       }
     }
