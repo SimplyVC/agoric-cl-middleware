@@ -188,7 +188,7 @@ const queryPrice = async (jobName) => {
         amountsIn[jobName] = Number(capData.amountIn.value.digits)
     
         console.log(jobName + " Price Query: " + String(latestPrice))
-        actualPrice.labels(jobName).set(latestPrice)
+        actualPriceGauge.labels(jobName).set(latestPrice)
         return latestPrice
 
     }
@@ -202,9 +202,10 @@ const queryPrice = async (jobName) => {
 /**
   * Function to get offers and balances
   * @param {*} follower offers and balances
+  * @param {*} oracle oracle address
   * @returns an object containing the offers and balances
   */
- const getOffersAndBalances = async (follower) => {
+ const getOffersAndBalances = async (follower, oracle) => {
 
     let toReturn = {
         offers: [],
@@ -216,22 +217,26 @@ const queryPrice = async (jobName) => {
       if (followerElement.value.updated == "offerStatus") {
         toReturn["offers"].push(followerElement.value);
       }
-      //if a balance
-      else if (followerElement.value.updated == "balance") {
-        toReturn["balances"].push(followerElement.value.currentAmount);
-      }
     }
+
+    //get current purses
+    let current = await getCurrent(oracle, fromBoard, { vstorage })
+    for (let i =0; i < current.purses.length; i++){
+        let currentPurse = current.purses[i]
+        toReturn["balances"].push(currentPurse.balance);
+    }
+
     return toReturn
-  }
+}
 
 /**
  * Function to get latest prices for oracle
  * @param {*} oracle oracle address
  * @param {*} oracleDetails oracle details
- * @param {*} lastOfferId last offer id from offers
+ * @param {*} state oracl's latest state
  * @returns last results including the oracle submitted price
  */
-export const getLatestPrices = async (oracle, oracleDetails, lastOfferId) => {
+export const getLatestPrices = async (oracle, oracleDetails, state) => {
 
     //get feeds for oracle
     let feeds = oracleDetails["feeds"]
@@ -249,16 +254,16 @@ export const getLatestPrices = async (oracle, oracleDetails, lastOfferId) => {
         },
     );
 
-    let offersBalances = await getOffersAndBalances(follower)
+    let offersBalances = await getOffersAndBalances(follower, oracle)
+
+    //get last offer id from offers from state
+    let lastOfferId = isNaN(state["last_offer_id"]) ? 0 : state["last_offer_id"]
 
     //initialise variable to hold results
     let lastResults = {
         "last_offer_id": lastOfferId,
         "values": {}
     }
-
-    // //get last offer id
-    // lastIndex = (lastIndex > offers.length) ? 0 : lastIndex;
 
     //flag to see whether to continue looping
     let continueLoop = true;
@@ -276,27 +281,36 @@ export const getLatestPrices = async (oracle, oracleDetails, lastOfferId) => {
 
         //if a price invitation
         if (currentOffer["status"]["invitationSpec"]["invitationMakerName"] == "PushPrice") {
-            let feed = feeds[currentOffer["status"]["invitationSpec"]["previousOffer"]]
-            let price = Number(currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["unitPrice"]) / amountsIn[feed]
-            console.log(price, amountsIn[feed], feed)
 
+            let feed = feeds[currentOffer["status"]["invitationSpec"]["previousOffer"]]
             let lastRound = Number(currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"])
 
-            //fill results variable
-            lastResults["values"][feed] = {
-                price: price,
-                id: id,
-                round: lastRound
-            }
+            //get feeds last observed round from state
+            let lastObservedRound = state["values"].hasOwnProperty(feed) ? state["values"][feed]["round"] : 0
 
-            //get latest feed price
-            let feedPrice = await queryPrice(feed)
-            //update metrics
-            updateMetrics(oracleDetails["oracleName"], oracle, feed, price, id, feedPrice, lastRound)
+            //if round is bigger than last observed and the offer didn't fail
+            if (lastRound > lastObservedRound && !currentOffer["status"].hasOwnProperty("error")) {
+                
+                let price = Number(currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["unitPrice"]) / amountsIn[feed]
+    
+                //fill results variable
+                lastResults["values"][feed] = {
+                    price: price,
+                    id: id,
+                    round: lastRound
+                }
+                state = lastResults
+    
+                //get latest feed price
+                let feedPrice = await queryPrice(feed)
+                //update metrics
+                updateMetrics(oracleDetails["oracleName"], oracle, feed, price, id, feedPrice, lastRound)
+    
+                //if we found the last visited offer id in previous check, stop looping
+                if (id <= lastOfferId){
+                    continueLoop = false;
+                }
 
-            //if we found the last visited offer id in previous check, stop looping
-            if (id <= lastOfferId){
-                continueLoop = false;
             }
         }
     }
@@ -313,7 +327,7 @@ export const getLatestPrices = async (oracle, oracleDetails, lastOfferId) => {
     }
 
     console.log(lastResults)
-    return lastResults
+    return lastResults["last_offer_id"] != lastOfferId ? lastResults : state
 }
 
 /**
@@ -346,11 +360,11 @@ const readMonitoringState = () => {
  */
 export const monitor = async () => {
 
-    //read monitoring state or initialise
-    let state = readMonitoringState()
-
     //create interval
     setInterval(async () => {
+
+        //read monitoring state
+        let state = readMonitoringState()
 
         //for each oracle
         for (let oracle in oracles) {
@@ -365,7 +379,7 @@ export const monitor = async () => {
             console.log("ORACLE STATE", state[oracle])
 
             //get latest prices for oracle
-            let latestOracleState = await getLatestPrices(oracle, oracles[oracle], state[oracle]["last_offer_id"])
+            let latestOracleState = await getLatestPrices(oracle, oracles[oracle], state[oracle])
             state[oracle] = latestOracleState
         }
 

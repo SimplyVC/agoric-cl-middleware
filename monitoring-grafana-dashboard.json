@@ -22,7 +22,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 279,
-  "iteration": 1668726482759,
+  "iteration": 1673536334307,
   "links": [],
   "panels": [
     {
@@ -82,7 +82,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "actual_price{feed=\"$feed\", group=\"Agoric CL Oracle\"}",
+          "expr": "actual_price{feed=\"$feed\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "Actual Value",
@@ -90,10 +90,10 @@
         },
         {
           "exemplar": true,
-          "expr": "oracle_latest_value{feed=\"$feed\", group=\"Agoric CL Oracle\"}",
+          "expr": "oracle_latest_value{feed=\"$feed\"}",
           "hide": false,
           "interval": "",
-          "legendFormat": "{{oracle}}",
+          "legendFormat": "{{oracleName}} - {{oracle}}",
           "refId": "A"
         }
       ],
@@ -183,9 +183,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "oracle_price_deviation{feed=\"$feed\", group=\"Agoric CL Oracle\"}",
+          "expr": "oracle_price_deviation{feed=\"$feed\"}",
           "interval": "",
-          "legendFormat": "{{oracle}}",
+          "legendFormat": "{{oracleName}} - {{oracle}}",
           "refId": "A"
         }
       ],
@@ -275,7 +275,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "delta(actual_price{feed=\"$feed\", group=\"Agoric CL Oracle\"}[15m])",
+          "expr": "delta(actual_price{feed=\"$feed\"}[15m])",
           "interval": "",
           "legendFormat": "Actual Value",
           "refId": "A"
@@ -367,9 +367,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "delta(oracle_latest_value{feed=\"$feed\", group=\"Agoric CL Oracle\"}[15m])",
+          "expr": "delta(oracle_latest_value{feed=\"$feed\"}[15m])",
           "interval": "",
-          "legendFormat": "{{oracle}}",
+          "legendFormat": "{{oracleName}} - {{oracle}}",
           "refId": "A"
         }
       ],
@@ -459,9 +459,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "oracle_balance{group=\"Agoric CL Oracle\"}",
+          "expr": "oracle_balance{brand=\"IST\"}",
           "interval": "",
-          "legendFormat": "{{oracle}} - {{brand}}",
+          "legendFormat": "{{oracleName}} - {{oracle}} - {{brand}}",
           "refId": "A"
         }
       ],
@@ -523,6 +523,200 @@
         "y": 18
       },
       "hiddenSeries": false,
+      "id": 22,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "8.1.3",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "oracle_last_round{feed=\"$feed\"}",
+          "interval": "",
+          "legendFormat": "{{oracleName}} - {{oracle}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Oracle Last Submission round",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:63",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:64",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "-- Mixed --",
+      "fill": 0,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "hiddenSeries": false,
+      "id": 19,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "8.1.3",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "datasource": "Prometheus Secondary MT",
+          "exemplar": true,
+          "expr": "actual_price{feed=\"$feed\"}",
+          "interval": "",
+          "legendFormat": "Actual Value",
+          "refId": "A"
+        },
+        {
+          "datasource": "Cosmos",
+          "exemplar": true,
+          "expr": "local_prices{feed=\"$feed\", group=\"Agoric Chainlink\"}",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "{{source}}",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Actual Price vs Local Sources",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:87",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:88",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prometheus Secondary MT",
+      "fill": 0,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 26
+      },
+      "hiddenSeries": false,
       "id": 20,
       "legend": {
         "avg": false,
@@ -551,9 +745,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "oracle_last_observation{feed=\"$feed\", group=\"Agoric CL Oracle\"}",
+          "expr": "oracle_last_observation{feed=\"$feed\"}",
           "interval": "",
-          "legendFormat": "{{oracle}}",
+          "legendFormat": "{{oracleName}} - {{oracle}}",
           "refId": "A"
         }
       ],
@@ -637,12 +831,12 @@
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Agoric Oracles v2",
+  "title": "Agoric Oracles",
   "uid": "umHwLVd4z",
-  "version": 3
+  "version": 8
 }
