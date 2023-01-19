@@ -50,4 +50,6 @@ export const validUrl = (url) => {
  * @param {*} ms milliseconds to delay
  * @returns a Promise to delay
  */
-export const delay = (ms) => new Promise(res => setTimeout(res, ms));
+export const delay = async (ms) => {
+    return new Promise(async(res) => await setTimeout(res, ms))
+};

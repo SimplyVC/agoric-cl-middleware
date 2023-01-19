@@ -37,7 +37,7 @@ const {
   DECIMAL_PLACES = 6,
   PRICE_DEVIATION_PERC = 1,
   SUBMIT_RETRIES = 3,
-  PRICE_QUERY_INTERVAL = '6',
+  PRICE_QUERY_INTERVAL = '12',
   AGORIC_NET,
   AGORIC_RPC = "http://0.0.0.0:26657",
   STATE_FILE = "data/middleware_state.json",
@@ -407,8 +407,9 @@ const makeController = (intervalSeconds, chainlinkUrl, credentials, { atExit }) 
         //check seconds passed from last request
         let secondsPassed = secondsNow - state.jobs[i].last_request_sent
 
-        //check if allowed to send - 5 seconds passed or a request hasnt been made
-        let allowedSend = state.jobs[i].request_id == state.previous_results[jobName].request_id || secondsPassed > 5
+        //check if allowed to send - 12 seconds passed or a request hasnt been made.
+        //12 seconds chosen to wait at least 2 blocks
+        let allowedSend = state.jobs[i].request_id == state.previous_results[jobName].request_id || secondsPassed > Number(PRICE_QUERY_INTERVAL)
 
         //if a request hadnt been made yet
         if (allowedSend) {
@@ -450,7 +451,6 @@ const startBridge = (PORT, { atExit, exit }) => {
     //read state
     let state = readState()
 
-    console.log("Request from CL node");
     //get result
     let result = Math.round(req.body.data.result)
 
@@ -461,9 +461,6 @@ const startBridge = (PORT, { atExit, exit }) => {
     let jobName = req.body.data.name
     console.log("Bridge received " + String(result) + " for " + jobName + " (Request: " + requestId + ", Type: " + requestType + ")")
 
-    //update state
-    state.previous_results[jobName].request_id = Number(requestId)
-    saveJSONDataToFile(state, STATE_FILE)
 
     //get last price from state
     let lastPrice = (state.previous_results[jobName]) ? state.previous_results[jobName].result : -1
@@ -513,6 +510,8 @@ const startBridge = (PORT, { atExit, exit }) => {
       }
     }
 
+    //update state
+    state.previous_results[jobName].request_id = Number(requestId)
     saveJSONDataToFile(state, STATE_FILE)
 
     //return a 200 code to the Chainlink node if a successful price is found
@@ -692,13 +691,14 @@ const pushPrice = async (price, feed, round, from) => {
     "backend": "test"
   }
 
-  let submitted = false
+  //check if submitted for round
+  let submitted = await checkSubmissionForRound(from, previousOffer, round)
 
   //loop retries
   for (let i = 0; i < SUBMIT_RETRIES && !submitted; i++) {
     console.log("Submitting price for round", round, "try", (i + 1))
     //execute
-    execSwingsetTransaction(
+    await execSwingsetTransaction(
       "wallet-action --allow-spend '" + JSON.stringify(data) + "'",
       networkConfig,
       from,
@@ -706,8 +706,8 @@ const pushPrice = async (price, feed, round, from) => {
       keyring,
     );
 
-    //sleep for 10000
-    await delay(Number(PRICE_QUERY_INTERVAL) * 1000);
+    //sleep 13 seconds to wait 2 blocks and a bit
+    await delay((Number(PRICE_QUERY_INTERVAL)+1) * 1000);
 
     //check submission for round
     submitted = await checkSubmissionForRound(from, previousOffer, round)
