@@ -211,12 +211,19 @@ const queryPrice = async (jobName) => {
         offers: [],
         balances: []
     };
+    let counter = 0;
+
     for await (const followerElement of iterateReverse(follower)) {
   
-      //if it is an offer status
-      if (followerElement.value.updated == "offerStatus") {
+        if (counter == 10){
+            break;
+        }
+        
+        //if it is an offer status and not failed
+        if (followerElement.value.updated == "offerStatus" && !followerElement.value.status.hasOwnProperty("error")) {
         toReturn["offers"].push(followerElement.value);
       }
+      counter++;
     }
 
     //get current purses
@@ -265,18 +272,17 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
         "values": {}
     }
 
-    //flag to see whether to continue looping
-    let continueLoop = true;
-
     //loop through offers starting from last visited index
-    for (var i = 0; i < offersBalances.offers.length && continueLoop ; i++) {
+    for (var i = 0; i < offersBalances.offers.length; i++) {
+
         //get current offer
         var currentOffer = offersBalances.offers[i];
         let id = Number(currentOffer["status"]["id"])
 
-        //if id is bigger than last offer id in state, set it
-        if (id > lastResults["last_offer_id"]){
-            lastResults["last_offer_id"] = id
+        //if we found the last visited offer id in previous check, stop looping
+        console.log("lastOfferId", lastOfferId, "currentId", id)
+        if (id <= lastOfferId){
+            break
         }
 
         //if a price invitation
@@ -290,6 +296,9 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
 
             //if round is bigger than last observed and the offer didn't fail
             if (lastRound > lastObservedRound && !currentOffer["status"].hasOwnProperty("error")) {
+
+                //if id is bigger than last offer id in state, set it
+                lastResults["last_offer_id"] = id
                 
                 let price = Number(currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["unitPrice"]) / amountsIn[feed]
     
@@ -305,11 +314,9 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
                 let feedPrice = await queryPrice(feed)
                 //update metrics
                 updateMetrics(oracleDetails["oracleName"], oracle, feed, price, id, feedPrice, lastRound)
-    
-                //if we found the last visited offer id in previous check, stop looping
-                if (id <= lastOfferId){
-                    continueLoop = false;
-                }
+
+                //break because we only need last one
+                break;
 
             }
         }
@@ -326,7 +333,6 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
         }
     }
 
-    console.log(lastResults)
     return lastResults["last_offer_id"] != lastOfferId ? lastResults : state
 }
 
@@ -376,7 +382,7 @@ export const monitor = async () => {
                     "values": {}
                 }
             }
-            console.log("ORACLE STATE", state[oracle])
+            console.log("ORACLE STATE", oracle, state[oracle])
 
             //get latest prices for oracle
             let latestOracleState = await getLatestPrices(oracle, oracles[oracle], state[oracle])

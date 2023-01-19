@@ -177,6 +177,55 @@ const sendJobRun = async (credentials, count, jobId, chainlinkUrl, requestType) 
 }
 
 /**
+ * Function to check if submission was satisfied for a specific round
+ * @param {*} oracle oracle address
+ * @param {*} feedOfferId the offer id of the feed to check for
+ * @param {*} roundId the round Id which is checked
+ * @returns whether a submission was successful for a specific round
+ */
+export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
+  const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
+  const leader = makeLeader(networkConfig.rpcAddrs[0]);
+
+  const follower = await makeFollower(
+    `:published.wallet.${oracle}`,
+    leader,
+    {
+      // @ts-expect-error xxx
+      unserializer,
+    },
+  );
+
+  //get offers
+  let offers = await getOffers(follower)
+
+  //loop through offers starting from last offer
+  for (var i = 0; i < offers.length; i++) {
+    //get current offer
+    var currentOffer = offers[i];
+
+    //if a price invitation and for the correct feed
+    if (currentOffer["status"]["invitationSpec"]["invitationMakerName"] == "PushPrice" && currentOffer["status"]["invitationSpec"]["previousOffer"] == feedOfferId) {
+      let offerRound = Number(currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"])
+
+      //if it is an offer for the round we are checking for
+      if (offerRound == roundId) {
+        //if there is no error
+        if (!currentOffer["status"].hasOwnProperty("error")) {
+          return true
+        }
+      }
+      //else if offer round id is less than the round we want to check and its satisfied
+      //return false because there cannot be a submission for a newer round before this offer 
+      else if (offerRound < roundId && !currentOffer["status"].hasOwnProperty("error")) {
+        return false
+      }
+    }
+  }
+  return false
+}
+
+/**
   * Function to query price from chain
   * @param {*} jobName job name of the price to query in the form of ATOM-USD
   * @returns the latest price
@@ -575,71 +624,26 @@ const outputAction = bridgeAction => {
 };
 
 /**
-  * Function to get offers
+  * Function to get last 10 offers
   * @param {*} follower offers and balances
   * @returns a list of offers
   */
 const getOffers = async (follower) => {
 
   let history = [];
+  let counter = 0;
   for await (const followerElement of iterateReverse(follower)) {
 
-    //if it is an offer status
-    if (followerElement.value.updated == "offerStatus") {
+    if (counter == 10){
+      break;
+    }
+    //if it is an offer status and not failed
+    if (followerElement.value.updated == "offerStatus" && !followerElement.value.status.hasOwnProperty("error")) {
       history.push(followerElement.value);
     }
+    counter++
   }
   return history
-}
-
-/**
- * Function to check if submission was satisfied for a specific round
- * @param {*} oracle oracle address
- * @param {*} feedOfferId the offer id of the feed to check for
- * @param {*} roundId the round Id which is checked
- * @returns whether a submission was successful for a specific round
- */
-export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
-
-  const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
-  const leader = makeLeader(networkConfig.rpcAddrs[0]);
-
-  const follower = await makeFollower(
-    `:published.wallet.${oracle}`,
-    leader,
-    {
-      // @ts-expect-error xxx
-      unserializer,
-    },
-  );
-
-  //get offers
-  let offers = await getOffers(follower)
-
-  //loop through offers starting from last offer
-  for (var i = 0; i < offers.length; i++) {
-    //get current offer
-    var currentOffer = offers[i];
-
-    //if a price invitation and for the correct feed
-    if (currentOffer["status"]["invitationSpec"]["invitationMakerName"] == "PushPrice" && currentOffer["status"]["invitationSpec"]["previousOffer"] == feedOfferId) {
-      let offerRound = Number(currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"])
-
-      //if it is an offer for the round we are checking for
-      if (offerRound == roundId) {
-        //if there is no error
-        if (!currentOffer["status"].hasOwnProperty("error")) {
-          return true
-        }
-      }
-      //else if offer round id is less than the round we want to check and its satisfied
-      //return false because there cannot be a submission for a newer round before this offer 
-      else if (offerRound < roundId && !currentOffer["status"].hasOwnProperty("error")) {
-        return false
-      }
-    }
-  }
-  return false
 }
 
 /**
