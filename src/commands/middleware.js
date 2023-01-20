@@ -464,6 +464,12 @@ const startBridge = (PORT, { atExit, exit }) => {
     let jobName = req.body.data.name
     console.log("Bridge received " + String(result) + " for " + jobName + " (Request: " + requestId + ", Type: " + requestType + ")")
 
+    //return a 200 code to the Chainlink node if a successful price is found
+    if (!isNaN(result)){
+      res.status(200).send({ success: true })
+    } else {
+      res.status(500).send({ success: false })
+    } 
 
     //get last price from state
     let lastPrice = (state.previous_results[jobName]) ? state.previous_results[jobName].result : -1
@@ -519,8 +525,6 @@ const startBridge = (PORT, { atExit, exit }) => {
     state.previous_results[jobName].request_id = Number(requestId)
     saveJSONDataToFile(state, STATE_FILE)
 
-    //return a 200 code to the Chainlink node if a successful price is found
-    return !isNaN(result) ? res.status(200).send({ success: true }) : res.status(500).send({ success: false })
   });
 
   /**
