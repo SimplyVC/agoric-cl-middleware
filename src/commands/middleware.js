@@ -38,7 +38,6 @@ const {
   PRICE_DEVIATION_PERC = 1,
   SUBMIT_RETRIES = 3,
   PRICE_QUERY_INTERVAL = '12',
-  AGORIC_NET,
   AGORIC_RPC = "http://0.0.0.0:26657",
   STATE_FILE = "data/middleware_state.json",
   CREDENTIALS_FILE = "config/ei_credentials.json",
@@ -394,9 +393,13 @@ const makeController = (intervalSeconds, chainlinkUrl, credentials, { atExit }) 
 
       //if there's a price deviation
       let priceDev = Math.abs((latestPrice - currentPrice) / currentPrice) * 100
+
+      if (priceDev > 0){
+        console.log("Found a price deviation for", jobName, "of", priceDev, "%. Latest price:", latestPrice, " Current Price:", currentPrice)
+      }
+
       if (priceDev > PRICE_DEVIATION_PERC) {
         sendRequest = 2
-        console.log("Found a price deviation for", jobName, "of", priceDev, "%. Latest price:", latestPrice, " Current Price:", currentPrice)
       }
 
       //if there is a request to be sent
@@ -500,10 +503,12 @@ const startBridge = (PORT, { atExit, exit }) => {
       //push price on chain if first round, haven't started previous round and havent submitted yet in the same round
       if (roundToSubmit == 1 || (newRound && latestRound.startedBy != FROM) || (!newRound && !latestRound.submissionMade)) {
         console.log("Updating price for round", roundToSubmit)
-        await pushPrice(result, jobName, roundToSubmit, FROM)
+        let submitted = await pushPrice(result, jobName, roundToSubmit, FROM)
 
         //update last reported round
-        state.jobs[getJobIndex(jobName)].last_reported_round = roundToSubmit
+        if (submitted){
+          state.jobs[getJobIndex(jobName)].last_reported_round = roundToSubmit
+        }
       }
       else {
         console.log("Already started last round or submitted to this round")
@@ -696,6 +701,16 @@ const pushPrice = async (price, feed, round, from) => {
 
   //loop retries
   for (let i = 0; i < SUBMIT_RETRIES && !submitted; i++) {
+
+    //query round
+    let latestRound = await queryRound(feed)
+    
+    //if latestRound is greater than round being pushed, abort
+    if (latestRound.roundId > round){
+      console.log("Price failed to be submitted for old round", round)
+      return false
+    }
+
     console.log("Submitting price for round", round, "try", (i + 1))
     //execute
     await execSwingsetTransaction(
