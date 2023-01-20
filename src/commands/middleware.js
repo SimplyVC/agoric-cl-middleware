@@ -709,8 +709,8 @@ const pushPrice = async (price, feed, round, from) => {
     //query round
     let latestRound = await queryRound(feed)
     
-    //if latestRound is greater than round being pushed, abort
-    if (latestRound.roundId > round){
+    //if latestRound is greater than round being pushed or submission to the round is already made, abort
+    if (latestRound.roundId > round || (latestRound.roundId == round && latestRound.submissionMade)){
       console.log("Price failed to be submitted for old round", round)
       return false
     }
