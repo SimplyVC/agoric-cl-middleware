@@ -285,7 +285,7 @@ const queryRound = async (jobName) => {
   //get the latest round
   var latestRound = {
     roundId: round,
-    startedAt: capData.startedAt,
+    startedAt: Number(capData.startedAt.digits),
     startedBy: capData.startedBy,
     submissionMade: submissionForRound
   }
@@ -477,7 +477,7 @@ const startBridge = (PORT, { atExit, exit }) => {
     let lastPrice = (state.previous_results[jobName]) ? state.previous_results[jobName].result : -1
 
     //check if time for update
-    let timeForUpdate = Date.now() >= state.previous_results[jobName].round + Number(PUSH_INTERVAL)
+    let timeForUpdate = Date.now() >= state.previous_results[jobName].round.startedAt + Number(PUSH_INTERVAL)
 
     //if there is no last price, if it is time for a price update or if there is a new round, update price
     let toUpdate = lastPrice == -1 || requestType == 1 && timeForUpdate || requestType == 3
