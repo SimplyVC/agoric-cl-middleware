@@ -33,6 +33,7 @@ const {
   PORT = '3000',
   EI_CHAINLINKURL,
   POLL_INTERVAL = '60',
+  PUSH_INTERVAL = '600',
   FROM,
   DECIMAL_PLACES = 6,
   PRICE_DEVIATION_PERC = 1,
@@ -136,7 +137,7 @@ const credentials = readJSONFile(CREDENTIALS_FILE)
   * @param {*} count the request id
   * @param {*} jobId the Chainlink external job id
   * @param {*} chainlinkUrl the Chainlink node url where to send the job request
-  * @param {*} requestType 
+  * @param {*} requestType the request type, 1 = time, 2 = deviation, 3 = new round
   * @returns 
   */
 const sendJobRun = async (credentials, count, jobId, chainlinkUrl, requestType) => {
@@ -284,6 +285,7 @@ const queryRound = async (jobName) => {
   //get the latest round
   var latestRound = {
     roundId: round,
+    startedAt: capData.startedAt,
     startedBy: capData.startedBy,
     submissionMade: submissionForRound
   }
@@ -474,7 +476,11 @@ const startBridge = (PORT, { atExit, exit }) => {
     //get last price from state
     let lastPrice = (state.previous_results[jobName]) ? state.previous_results[jobName].result : -1
 
-    let toUpdate = lastPrice == -1 || requestType == 1 || requestType == 3
+    //check if time for update
+    let timeForUpdate = Date.now() >= state.previous_results[jobName].round + Number(PUSH_INTERVAL)
+
+    //if there is no last price, if it is time for a price update or if there is a new round, update price
+    let toUpdate = lastPrice == -1 || requestType == 1 && timeForUpdate || requestType == 3
     //if last price is found and it is a price deviation request
     if (lastPrice != -1 && requestType == 2) {
       //calculate percentage change
