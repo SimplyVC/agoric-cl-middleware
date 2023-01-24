@@ -147,12 +147,14 @@ This is a Grafana template to monitor an oracle node or the whole oracle network
 In this section, I will go over the <b>oracle</b> directory and explain in detail each function in the files inside it.
 
 <div id='helperjs'></div>
-#### <u>helper.js</u>
+
+### <u>helper.js</u>
 
 This file contains helper functions which are used both by the middleware and the monitoring script.
 
 The file contains the following functions:
 
+<br>
 <div id='readJSONFile'></div>
 
 <b>readJSONFile(filename)</b>
@@ -169,6 +171,7 @@ What it does:
   2. Parses the contents to a JSON variable
   3. Returns the variable containing the JSON object or array
 
+<br>
 <div id='saveJSONDataToFile'></div>
 
 <b>saveJSONDataToFile(newData, filename)</b>
@@ -183,6 +186,7 @@ What it does:
   1. Stringifies the data
   2. Writes the data to the file
 
+<br>
 <div id='validUrl'></div>
 
 <b>validUrl(url)</b>
@@ -198,6 +202,7 @@ What it does:
   1. Tryies to create a URL object
   2. Returns whether it is a valid URL by seeing whether the URL was successfully created or not
 
+<br>
 <div id='delay'></div>
 
 <b>delay(ms)</b>
@@ -208,6 +213,7 @@ Inputs:
 Use: This function is used to create a delay
 
 Returns: A Promise with a delay of a specified number of milliseconds
+
 <br>
 <div id='middleware'></div>
 
@@ -217,7 +223,7 @@ This file contains all the functions which are used both by the middleware.
 
 <div id='envvarsmiddleware'></div>
 
-<b>Ennvironment Variables</b>
+<b>Environment Variables</b>
 
 This script makes use of the following environment variables and it requires them in order to function. In fact, it contains validation upon entry to make sure they are well defined.
 
