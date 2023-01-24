@@ -13,15 +13,6 @@ export const readJSONFile = (filename) => {
 }
 
 /**
- * Function to read contents of a file
- * @param {*} filename file name or path to read
- * @returns the contents of the passed filename
- */
-export const readFile = (filename) => {
-    return fs.readFileSync(filename).toString();
-}
-
-/**
  * Function to save JSON data to a file
  * @param {*} newData new JSON data to save
  * @param {*} filename filename to save data to
