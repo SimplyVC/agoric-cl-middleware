@@ -10,8 +10,7 @@ import {
     makeFollower,
     makeLeader,
 } from '@agoric/casting';
-import { coalesceWalletState } from '@agoric/smart-wallet/src/utils.js';
-import { validUrl, readJSONFile, readFile, saveJSONDataToFile } from './helper.js'
+import { validUrl, readJSONFile, saveJSONDataToFile } from './helper.js'
 import { getCurrent } from '../lib/wallet.js';
 import { Registry, Gauge } from 'prom-client';
 import { createServer } from 'http';
