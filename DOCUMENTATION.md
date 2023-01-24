@@ -217,10 +217,11 @@ Returns: A Promise with a delay of a specified number of milliseconds
 <br>
 <div id='middleware'></div>
 
-#### <u>middleware.js</u>
+### <u>middleware.js</u>
 
 This file contains all the functions which are used both by the middleware. 
 
+<br>
 <div id='envvarsmiddleware'></div>
 
 <b>Environment Variables</b>
