@@ -5,7 +5,7 @@ import '@agoric/casting/node-fetch-shim.js';
 import '@endo/init';
 import '@endo/init/pre.js';
 
-import { getOraclesInvitations, monitor } from './commands/monitor.js';
+import { getOraclesInvitations, monitor } from './oracle/monitor.js.js';
 
 await getOraclesInvitations();
 await monitor();

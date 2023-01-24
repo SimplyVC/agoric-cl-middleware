@@ -478,6 +478,8 @@ const startBridge = (PORT, { atExit, exit }) => {
 
     //check if time for update
     let timeForUpdate = (Date.now()/1000) >= state.previous_results[jobName].round.startedAt + Number(PUSH_INTERVAL)
+    console.log("time for update", timeForUpdate)
+    console.log(Date.now()/1000, state.previous_results[jobName].round.startedAt + Number(PUSH_INTERVAL))
 
     //if there is no last price, if it is time for a price update or if there is a new round, update price
     let toUpdate = lastPrice == -1 || requestType == 1 && timeForUpdate || requestType == 3

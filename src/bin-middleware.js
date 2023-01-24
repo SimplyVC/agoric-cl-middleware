@@ -5,6 +5,6 @@ import '@agoric/casting/node-fetch-shim.js';
 import '@endo/init';
 import '@endo/init/pre.js';
 
-import { middleware } from './commands/middleware.js';
+import { middleware } from './oracle/middleware.js';
 
 await middleware();
