@@ -38,7 +38,8 @@ const {
   DECIMAL_PLACES = 6,
   PRICE_DEVIATION_PERC = 1,
   SUBMIT_RETRIES = 3,
-  PRICE_QUERY_INTERVAL = '12',
+  BLOCK_INTERVAL = '6',
+  SEND_CHECK_INTERVAL = '12',
   AGORIC_RPC = "http://0.0.0.0:26657",
   STATE_FILE = "data/middleware_state.json",
   CREDENTIALS_FILE = "config/ei_credentials.json",
@@ -60,6 +61,9 @@ assert(OFFERS_FILE != "", '$OFFERS_FILE is required');
 
 const { agoricNames, fromBoard, vstorage } = await makeRpcUtils({ fetch });
 const marshaller = boardSlottingMarshaller();
+
+//read initiator credentials
+const credentials = readJSONFile(CREDENTIALS_FILE)
 
 /**
   * Function to load from file or initialise it
@@ -128,8 +132,6 @@ const getJobIndex = (jobName) => {
   return -1
 }
 
-//read initiator credentials
-const credentials = readJSONFile(CREDENTIALS_FILE)
 
 /**
   * Function to send a job run to the CL node
@@ -138,7 +140,6 @@ const credentials = readJSONFile(CREDENTIALS_FILE)
   * @param {*} jobId the Chainlink external job id
   * @param {*} chainlinkUrl the Chainlink node url where to send the job request
   * @param {*} requestType the request type, 1 = time, 2 = deviation, 3 = new round
-  * @returns 
   */
 const sendJobRun = async (credentials, count, jobId, chainlinkUrl, requestType) => {
   const options = {
@@ -166,15 +167,38 @@ const sendJobRun = async (credentials, count, jobId, chainlinkUrl, requestType) 
         headers: options.headers,
         httpAgent: new http.Agent({ keepAlive: true })
       });
-      return res
+      return
     }
     catch (err) {
       console.error("JOB Request for " + jobId + " failed", err)
       error = err
     }
   }
-  return error
 }
+
+/**
+  * Function to get last 10 offers
+  * @param {*} follower offers and balances
+  * @returns a list of offers
+  */
+const getOffers = async (follower) => {
+
+  let history = [];
+  let counter = 0;
+  for await (const followerElement of iterateReverse(follower)) {
+
+    if (counter == 10){
+      break;
+    }
+    //if it is an offer status and not failed
+    if (followerElement.value.updated == "offerStatus" && !followerElement.value.status.hasOwnProperty("error")) {
+      history.push(followerElement.value);
+    }
+    counter++
+  }
+  return history
+}
+
 
 /**
  * Function to check if submission was satisfied for a specific round
@@ -227,14 +251,14 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
 
 /**
   * Function to query price from chain
-  * @param {*} jobName job name of the price to query in the form of ATOM-USD
+  * @param {*} feed feed name of the price to query in the form of ATOM-USD
   * @returns the latest price
   */
-const queryPrice = async (jobName) => {
+const queryPrice = async (feed) => {
 
   try {
     //read value from vstorage
-    const capDataStr = await vstorage.readLatest(`published.priceFeed.${jobName}_price_feed`);
+    const capDataStr = await vstorage.readLatest(`published.priceFeed.${feed}_price_feed`);
 
     //parse the value
     var capData = JSON.parse(JSON.parse(capDataStr).value)
@@ -245,7 +269,7 @@ const queryPrice = async (jobName) => {
     //get the latest price by dividing amountOut by amountIn
     var latestPrice = Number(capData.amountOut.value.digits) / Number(capData.amountIn.value.digits)
 
-    console.log(jobName + " Price Query: " + String(latestPrice))
+    console.log(feed + " Price Query: " + String(latestPrice))
     return latestPrice
   }
   catch {
@@ -255,14 +279,14 @@ const queryPrice = async (jobName) => {
 
 /**
   * Function to query round from chain
-  * @param {*} jobName job name of the price to query in the form of ATOM-USD
+  * @param {*} feed feed name of the price to query in the form of ATOM-USD
   * @returns the latest round
   */
-const queryRound = async (jobName) => {
+const queryRound = async (feed) => {
 
   //read value from vstorage
   const capDataStr = await vstorage.readLatest(
-    `published.priceFeed.${jobName}_price_feed.latestRound`,
+    `published.priceFeed.${feed}_price_feed.latestRound`,
   );
 
   //parse the value
@@ -277,7 +301,7 @@ const queryRound = async (jobName) => {
   //get offers
   let offers = readJSONFile(OFFERS_FILE)
   //get feed offer id
-  let feedOfferId = offers[jobName]
+  let feedOfferId = offers[feed]
 
   //check if there is a submission for round
   let submissionForRound = await checkSubmissionForRound(FROM, feedOfferId, round)
@@ -290,14 +314,14 @@ const queryRound = async (jobName) => {
     submissionMade: submissionForRound
   }
 
-  console.log(jobName + " Latest Round: ", latestRound.roundId)
+  console.log(feed + " Latest Round: ", latestRound.roundId)
   return latestRound
 }
 
 /**
   * Function to submit a new job run to the Chainlink node
   * @param {*} index the index of the job in the state data
-  * @param {*} requestType the request type to send as a parameter with the job request. 1 if a timer request, 2 if triggered by a price deviation.
+  * @param {*} requestType the request type to send as a parameter with the job request. 1 if a timer request, 2 if triggered by a price deviation, 3 new round.
   */
 const submitNewJobIndex = async (index, requestType) => {
 
@@ -322,11 +346,9 @@ const submitNewJobIndex = async (index, requestType) => {
 /**
   * Controller for the middleware
   * @param {*} intervalSeconds the poll interval at which Chainlink job runs are triggered
-  * @param {*} chainlinkUrl the Chainlink node endpoint where to send requests
-  * @param {*} credentials the Chainlink external initiator's credentials
   * @param {*} exiter the exiter
   */
-const makeController = (intervalSeconds, chainlinkUrl, credentials, { atExit }) => {
+const makeController = (intervalSeconds, { atExit }) => {
   const jobRequestInterval = intervalSeconds * 1_000;
 
   //create an interval which creates a job request every X seconds
@@ -343,9 +365,9 @@ const makeController = (intervalSeconds, chainlinkUrl, credentials, { atExit }) 
   }, jobRequestInterval);
 
 
-  const priceQueryInterval = parseInt(PRICE_QUERY_INTERVAL, 10);
+  const priceQueryInterval = parseInt(BLOCK_INTERVAL, 10);
   //validate polling interval
-  assert(!isNaN(priceQueryInterval), `$PRICE_QUERY_INTERVAL ${PRICE_QUERY_INTERVAL} must be a number`);
+  assert(!isNaN(priceQueryInterval), `$BLOCK_INTERVAL ${BLOCK_INTERVAL} must be a number`);
 
   /**
     * create an interval which query the price and creates a chainlink job request 
@@ -414,7 +436,7 @@ const makeController = (intervalSeconds, chainlinkUrl, credentials, { atExit }) 
 
         //check if allowed to send - 12 seconds passed or a request hasnt been made.
         //12 seconds chosen to wait at least 2 blocks
-        let allowedSend = state.jobs[i].request_id == state.previous_results[jobName].request_id || secondsPassed > Number(PRICE_QUERY_INTERVAL)
+        let allowedSend = state.jobs[i].request_id == state.previous_results[jobName].request_id || secondsPassed > Number(SEND_CHECK_INTERVAL)
 
         //if a request hadnt been made yet
         if (allowedSend) {
@@ -462,7 +484,6 @@ const startBridge = (PORT, { atExit, exit }) => {
     //get run id and type
     let requestId = String(req.body.data.request_id)
     let requestType = Number(req.body.data.request_type)
-    let jobId = req.body.data.job
     let jobName = req.body.data.name
     console.log("Bridge received " + String(result) + " for " + jobName + " (Request: " + requestId + ", Type: " + requestType + ")")
 
@@ -478,7 +499,6 @@ const startBridge = (PORT, { atExit, exit }) => {
 
     //check if time for update
     let timeForUpdate = (Date.now()/1000) >= state.previous_results[jobName].round.startedAt + Number(PUSH_INTERVAL)
-    console.log("time for update", timeForUpdate)
     console.log(Date.now()/1000, state.previous_results[jobName].round.startedAt + Number(PUSH_INTERVAL))
 
     //if there is no last price, if it is time for a price update or if there is a new round, update price
@@ -640,29 +660,6 @@ const outputAction = bridgeAction => {
 };
 
 /**
-  * Function to get last 10 offers
-  * @param {*} follower offers and balances
-  * @returns a list of offers
-  */
-const getOffers = async (follower) => {
-
-  let history = [];
-  let counter = 0;
-  for await (const followerElement of iterateReverse(follower)) {
-
-    if (counter == 10){
-      break;
-    }
-    //if it is an offer status and not failed
-    if (followerElement.value.updated == "offerStatus" && !followerElement.value.status.hasOwnProperty("error")) {
-      history.push(followerElement.value);
-    }
-    counter++
-  }
-  return history
-}
-
-/**
   * Function to push price on chain to the smart wallet
   * @param {*} price price to push
   * @param {*} feed feed to push price to
@@ -734,7 +731,7 @@ const pushPrice = async (price, feed, round, from) => {
     );
 
     //sleep 13 seconds to wait 2 blocks and a bit
-    await delay((Number(PRICE_QUERY_INTERVAL)+1) * 1000);
+    await delay((Number(SEND_CHECK_INTERVAL)+1) * 1000);
 
     //check submission for round
     submitted = await checkSubmissionForRound(from, previousOffer, round)
@@ -753,7 +750,6 @@ const pushPrice = async (price, feed, round, from) => {
 
 /**
   * This is the function which runs the middleware
-  * @returns exiter's promise
   */
 export const middleware = async () => {
   console.log('Starting oracle bridge');
@@ -777,8 +773,6 @@ export const middleware = async () => {
 
   //start the controller on the new minute
   setTimeout(() => {
-    makeController(intervalSeconds, EI_CHAINLINKURL, credentials, exiters);
+    makeController(intervalSeconds, exiters);
   }, secondsLeft * 1000)
-
-  return atExit;
 };

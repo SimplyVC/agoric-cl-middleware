@@ -17,7 +17,15 @@ import { createServer } from 'http';
 import { parse } from 'url';
 import { iterateReverse } from '@agoric/casting';
 
-const { PORT = '3001', POLL_INTERVAL = '10', AGORIC_NET, AGORIC_RPC = "http://0.0.0.0:26657" } = process.env;
+const { 
+    PORT = '3001', 
+    POLL_INTERVAL = '10', 
+    AGORIC_NET, 
+    AGORIC_RPC = "http://0.0.0.0:26657" ,
+    STATE_FILE = "data/monitoring_state.json",
+    ORACLE_FILE = "config/oracles.json",
+} = process.env;
+
 assert(!isNaN(Number(PORT)), '$PORT is required');
 assert(!isNaN(Number(POLL_INTERVAL)), '$POLL_INTERVAL is required');
 assert(validUrl(AGORIC_RPC), '$AGORIC_RPC is required');
@@ -88,11 +96,6 @@ var feeds = []
 //this holds the amounts in
 var amountsIn = {}
 
-const {
-    STATE_FILE = "data/monitoring_state.json",
-    ORACLE_FILE = "config/oracles.json",
-} = process.env;
-
 /**
  * Function to read oracles
  * @returns oracles, their names and their addresses
@@ -158,22 +161,22 @@ const updateMetrics = (oracleName, oracle, feed, value, id, actualPrice, lastRou
  * Function to update balance metrics
  * @param {*} oracleName oracle name
  * @param {*} oracle oracle address
- * @param {*} feed feed
+ * @param {*} brand brand
  * @param {*} value balance value to set
  */
-const updateBalanceMetrics = (oracleName, oracle, feed, value) => {
-    oracleBalance.labels(oracleName, oracle, feed).set(value)
+const updateBalanceMetrics = (oracleName, oracle, brand, value) => {
+    oracleBalance.labels(oracleName, oracle, brand).set(value)
 }
 
 /**
  * Function to query price for feed
- * @param {*} jobName feed like 'BRAND_IN-BRAND_OUT'
+ * @param {*} feed feed like 'BRAND_IN-BRAND_OUT'
  * @returns the price of the feed
  */
-const queryPrice = async (jobName) => {
+const queryPrice = async (feed) => {
     try {
         const capDataStr = await vstorage.readLatest(
-            `published.priceFeed.${jobName}_price_feed`,
+            `published.priceFeed.${feed}_price_feed`,
         );
 
         //parse the value
@@ -184,10 +187,10 @@ const queryPrice = async (jobName) => {
 
         //get the latest price by dividing amountOut by amountIn
         var latestPrice = Number(capData.amountOut.value.digits) / Number(capData.amountIn.value.digits)
-        amountsIn[jobName] = Number(capData.amountIn.value.digits)
+        amountsIn[feed] = Number(capData.amountIn.value.digits)
 
-        console.log(jobName + " Price Query: " + String(latestPrice))
-        actualPriceGauge.labels(jobName).set(latestPrice)
+        console.log(feed + " Price Query: " + String(latestPrice))
+        actualPriceGauge.labels(feed).set(latestPrice)
         return latestPrice
 
     }
@@ -239,7 +242,7 @@ const getOffersAndBalances = async (follower, oracle) => {
  * Function to get latest prices for oracle
  * @param {*} oracle oracle address
  * @param {*} oracleDetails oracle details
- * @param {*} state oracl's latest state
+ * @param {*} state oracle's latest state
  * @returns last results including the oracle submitted price
  */
 export const getLatestPrices = async (oracle, oracleDetails, state) => {
