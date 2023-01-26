@@ -39,7 +39,7 @@ const {
   STATE_FILE = "data/middleware_state.json",
   CREDENTIALS_FILE = "config/ei_credentials.json",
   OFFERS_FILE = "config/offers.json",
-  FEEDS_FILE = "./feeds.json"
+  FEEDS_FILE = "oracle/feeds.json"
 } = process.env;
 
 /** 
