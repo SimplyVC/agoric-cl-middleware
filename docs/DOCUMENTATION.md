@@ -23,7 +23,7 @@
     - [queryPrice(feed)](#queryPrice)
     - [queryRound(feed)](#queryRound)
     - [submitNewJobIndex(index, requestType)](#submitNewJobIndex)
-    - [makeController(intervalSeconds)](#makeController)
+    - [makeController()](#makeController)
     - [pushPrice(price, feed, round, from)](#pushPrice)
     - [startBridge(port)](#startBridge)
       - [POST /adapter](#postadapter)
@@ -159,9 +159,31 @@ Furthermore, it contains the following two files which serve as an entry point t
 
 This directory contains the following files
 
-1. <b>helper.js</b> - This file contains helper functions used in middleware.js and monitor.js
-2. <b>middleware.js</b> - This file contains all the necessary code and functions for the middleware
-3. <b>monitor.js</b> - This file contains all the necessary code and functions for monitoring the oracle network
+1. <b>feeds.json</b> - This file contains the configuration for each feed in the oracle network. Each feed will have the following fields:
+  - <u>pollInterval</u> - The interval in seconds which needs to pass between each CL job
+  - <u>pushInterval</u> - The interval in seconds which needs to pass between each round creation on-chain
+  - <u>decimalPlaces</u> - The number of decimal places allowed for the price
+  - <u>priceDeviationPerc</u> - The price deviation percentage threshold on when to create a new round on-chain 
+The file should have the following structure
+```json
+{
+    "ATOM-USD" : {
+        "decimalPlaces": 6,
+        "pollInterval": 60,
+        "pushInterval": 600,
+        "priceDeviationPerc": 1 
+    },
+    "OSMO-USD" : {
+        "decimalPlaces": 6,
+        "pollInterval": 60,
+        "pushInterval": 600,
+        "priceDeviationPerc": 1 
+    }
+}
+```
+2. <b>helper.js</b> - This file contains helper functions used in middleware.js and monitor.js
+3. <b>middleware.js</b> - This file contains all the necessary code and functions for the middleware
+4. <b>monitor.js</b> - This file contains all the necessary code and functions for monitoring the oracle network
 
 ##### lib
 
@@ -273,11 +295,7 @@ This script makes use of the following environment variables and it requires the
 |----------------------	|----------------------------------------------------------------------------------------------------------------------------------------------------------------------	|----------------------------	|
 | PORT                 	| The port on which the middleware will listen <br>for job updates or results from the CL node                                                                         	| 3000                       	|
 | EI_CHAINLINKURL      	| The CL node URL in order to connect to its API<br>to listen for jobs and send job requests.<br><b>Note that this has no default value and needs<br>to be defined</b> 	| N/A                        	|
-| POLL_INTERVAL        	| The interval in seconds which needs to pass between<br>each CL job request                                                                                           	| 60                         	|
-| PUSH_INTERVAL        	| The interval in seconds which needs to pass between<br>each round creation on-chain                                                                                  	| 600                        	|
 | FROM                 	| The address of the oracle from which to push prices.<br><b>Note that this has no default value and needs<br>to be defined</b>                                        	| N/A                        	|
-| DECIMAL_PLACES       	| The number of decimal places allowed for the price                                                                                                                   	| 6                          	|
-| PRICE_DEVIATION_PERC 	| The price deviation percentage threshold on when <br>to create a new round on-chain                                                                                  	| 1                          	|
 | SUBMIT_RETRIES       	| The number of retries to try when submitting a price<br>on-chain and it fails                                                                                        	| 3                          	|
 | BLOCK_INTERVAL       	| The block time of the chain in seconds. This is used<br>to query the price and round at every interval.                                                              	| 6                          	|
 | SEND_CHECK_INTERVAL  	| The interval in seconds which is waited between each send.                                                                                                           	| 12                         	|
@@ -356,8 +374,8 @@ Inputs:
 * jobId - The job id to send the request to
 * chainlinkUrl - The URL of the CL node where to send the request
 * requestType - The type of request. The request can have the following 3 values:
-  - 1 - Time interval expired. This serves a cron and depends on POLL_INTERVAL
-  - 2 - Price deviation trigger. There was a price deviation greateer than PRICE_DEVIATION_PERC between the new and previous on-chain prices
+  - 1 - Time interval expired. This serves a cron and depends on <b>pollInterval</b>(for that feed)
+  - 2 - Price deviation trigger. There was a price deviation greater than <b>priceDeviationPerc</b>(for that feed) between the new and previous on-chain prices
   - 3 - A new round was found on-chain
 
 Use: This function is used to send a job request to the job on CL node. If it fails, it retries for a maximum of SUBMIT_RETRIES (defined in environment variables).
@@ -471,15 +489,12 @@ What it does:
 <br>
 <div id='makeController'></div>
 
-<b>makeController(intervalSeconds)</b>
+<b>makeController()</b>
 
-Inputs:
-* intervalSeconds - The poll interval at which Chainlink job runs are triggered
-
-Use: This function serves as the controller for the middleware and it basically consists of two intervals running separately. One is triggerred every POLL_INTERVAL and it is used to create a CL job node once this timer triggers. The other is triggered every BLOCK_INTERVAL and it is used to query the latest price and round stored on-chain. The latter will check if there is a price deviation or a new round and if so, a new CL job request is sent to the CL node
+Use: This function serves as the controller for the middleware and it basically consists of two intervals running separately. One is triggerred every second and it is used to create a CL job node once this timer triggers. The other is triggered every BLOCK_INTERVAL and it is used to query the latest price and round stored on-chain. The latter will check if there is a price deviation or a new round and if so, a new CL job request is sent to the CL node
 
 What it does:
-  1. Creates an interval using setInterval to trigger every POLL_INTERVAL. This will go through every job in the state and creates a CL job for each job
+  1. Creates an interval using setInterval to trigger every second. This will go through every job in the state and creates a CL job for each job depending whether the <b>pollInterval</b> for that feed expired.
   2. Creates a second interval using setInterval to trigger every BLOCK_INTERVAL. This will do the following:
     a. Reads the state
     b. Loops through all the jobs in the state
@@ -488,7 +503,7 @@ What it does:
       - Queries the round on-chain
       - Update the latest price and round in the state for that job
       - If there is a new round and a submission is already made for that round, the 'last_reported_round' is updated in the state file. Otherwise, if a submission is not made, a new CL job request of type 3 is prepared
-      - It will check for a price deviation from the previous on-chain price and if there is a price deviation greater than PRICE_DEVIATION_PERC, a new CL job request of type 2 is prepared
+      - It will check for a price deviation from the previous on-chain price and if there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed), a new CL job request of type 2 is prepared
       - If one of the above conditions is met and a CL job request is prepared, a final check is made. <b>This is done to avoid creating duplicate CL job requests resulting in extra subscription costs for oracles</b>. The CL job request is ONLY sent if one of the following conditions is met:
         - 1. There is no pending CL job request for which we are still waiting for. This is done by checking the comapring the request ID of the last request sent and received from the state.
         - 2. An interval of SEND_CHECK_INTERVAL passed fron the last CL job request which was sent.
@@ -547,8 +562,8 @@ a. <u>/adapter</u>: This is the endpoint which is used to accept job results fro
   - Push the price on chain if it satisfies all the following criteria:
     - If it is a new round and we the oracle has not started the current on-chain round or if it is not a new round but the oracle has not submitted to the current round on-chain
     - One of the following:
-      - If its time for a price update by comparing the timestamp of the last round and now by making use of PUSH_INTERVAL (Request type 1)
-      - If there is a price deviation greater than PRICE_DEVIATION_PERC between the received price and the latets price on chain (Request type 2)
+      - If its time for a price update by comparing the timestamp of the last round and now by making use of <b>pushInterval</b>(for that feed) (Request type 1)
+      - If there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed) between the received price and the latets price on chain (Request type 2)
       - If there was a new a new round (Request type 3)
   - Update the 'last_reported_round' and the request ID of latest job result received from CL node in the state file
 <div id='postjobs'></div>
@@ -567,7 +582,6 @@ c. <u>/jobs/:id</u>:  This is the endpoint which is used to handle a job removal
 Use: This function is used as entry to the middleware functions
 
 What it does:
-  1. Validates POLL_INTERVAL to be a correct number
   2. Initialises state
   3. Starts the bridge to listen for new jobs and job results
   4. Starts the controller on the first second of the next minute. This is done to try and have all middleware pushing jobs on approximetely the first second of each new minute
@@ -826,7 +840,7 @@ As time goes by, oracles will have sent multiple offers and it is inefficient to
 
 In this subsection, we will be describing the various intervals in the middleware and why the reasons behind their default values.
 
-- POLL_INTERVAL - This is the interval at which new CL job requests are created. This is set to 1 minute in order to query the off-chain price every minute. This is useful so that the price is checked every minute and if the results deviates more than the PRICE_DEVIATION_PERC value, a submission is made on chain, instructing all other oracles to check the price and submit to the new round.
-- PUSH_INTERVAL - This is the interval at which prices need to be pushed on chain. This is set to 1 hour as the on-chain price does not need to be updated more frequently than every hour. Since the POLL_INTERVAL is set to 1 minute, the off-chain price will be checked every 1 minute and if a deviation occurs, a new price update will still be pushed on-chain before the 1 hour threshold. This will save transaction fees for useless updates if the price remains stable for an hour.
+- pollInterval (for each feed) - This is the interval at which new CL job requests are created. This is set to 1 minute in order to query the off-chain price every minute. This is useful so that the price is checked every minute and if the results deviates more than the <b>priceDeviationPerc</b>(for that feed) value, a submission is made on chain, instructing all other oracles to check the price and submit to the new round.
+- pushInterval (for each feed) - This is the interval at which prices need to be pushed on chain. This is set to 1 hour as the on-chain price does not need to be updated more frequently than every hour. Since the POLL_INTERVAL is set to 1 minute, the off-chain price will be checked every 1 minute and if a deviation occurs, a new price update will still be pushed on-chain before the 1 hour threshold. This will save transaction fees for useless updates if the price remains stable for an hour.
 - BLOCK_INTERVAL - This is the interval at which new blocks are created on chain. This is set to 6 seconds to match the block time on the Agoric chain. This is used to query the aggregated price and the round details on chain. It is useless to set this value lower than 6 seconds as the price and rounds will only be updated maximum every block.
 - SEND_CHECK_INTERVAL - This is the interval which needs to pass before retrying a price submission. We wait this interval before checking whether a price push was successful or not. We set this to 12 seconds to be equal to approximately 2 blocks on the Agoric chain.
