@@ -25,7 +25,6 @@ import {
   makeFollower,
   makeLeader,
 } from '@agoric/casting';
-import { coalesceWalletState } from '@agoric/smart-wallet/src/utils.js';
 import { iterateReverse } from '@agoric/casting';
 
 // get environment variables
@@ -346,9 +345,8 @@ const submitNewJobIndex = async (index, requestType) => {
 /**
   * Controller for the middleware
   * @param {*} intervalSeconds the poll interval at which Chainlink job runs are triggered
-  * @param {*} exiter the exiter
   */
-const makeController = (intervalSeconds, { atExit }) => {
+const makeController = (intervalSeconds) => {
   const jobRequestInterval = intervalSeconds * 1_000;
 
   //create an interval which creates a job request every X seconds
@@ -451,20 +449,14 @@ const makeController = (intervalSeconds, { atExit }) => {
     }
   }, priceQueryInterval * 1_000);
 
-  //on exit, clear intervals
-  atExit.finally(() => {
-    clearInterval(it);
-    clearInterval(it2);
-  });
 }
 
 /**
   * Function to create a bridge which listens from the Chainlink node for
   * new jobs, job removals and job run results
   * @param {*} PORT the port to listen on
-  * @param {*} exiters, bridge's exiters 
   */
-const startBridge = (PORT, { atExit, exit }) => {
+const startBridge = (PORT) => {
 
   console.log("Bridge started")
   const app = express();
@@ -623,33 +615,7 @@ const startBridge = (PORT, { atExit, exit }) => {
     console.log(`External adapter listening on port`, PORT);
   });
 
-  listener.on('error', err => { exit(err) })
-  atExit.finally(() => { listener.close(); });
-}
-
-/**
-  * Function to create an exiter
-  * @returns exiters
-  */
-function makeExiter() {
-
-  //TODO: This was suggested by Michael Fig, remove it?
-  const exitP = makePromiseKit();
-  const exit = (status = 0) => {
-    if (typeof status !== 'number') {
-      console.log(`Rejecting exit promise with`, status);
-      exitP.reject(status);
-      throw status;
-    }
-    console.log(`Resolving exit promise with`, status);
-    exitP.resolve(status);
-    return status;
-  }
-
-  return {
-    exit,
-    atExit: exitP.promise,
-  };
+  listener.on('error', err => { console.log("Bridge found error:", err) })
 }
 
 /** @param {import('../lib/psm.js').BridgeAction} bridgeAction */
@@ -758,21 +724,17 @@ export const middleware = async () => {
   //validate polling interval
   assert(!isNaN(intervalSeconds), `$POLL_INTERVAL ${POLL_INTERVAL} must be a number`);
 
-  //create exiters
-  const { exit, atExit } = makeExiter();
-  const exiters = { exit, atExit };
-
   //init
   initialiseState()
 
   //start the bridge
-  startBridge(PORT, exiters);
+  startBridge(PORT);
 
   //calcualte how many seconds left for a new minute
   let secondsLeft = 60 - (new Date().getSeconds());
 
   //start the controller on the new minute
   setTimeout(() => {
-    makeController(intervalSeconds, exiters);
+    makeController(intervalSeconds);
   }, secondsLeft * 1000)
 };
