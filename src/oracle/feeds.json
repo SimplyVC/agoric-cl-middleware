@@ -1,0 +1,14 @@
+{
+    "ATOM-USD" : {
+        "decimalPlaces": 6,
+        "pollInterval": 60,
+        "pushInterval": 600,
+        "priceDeviationPerc": 1 
+    },
+    "OSMO-USD" : {
+        "decimalPlaces": 6,
+        "pollInterval": 60,
+        "pushInterval": 600,
+        "priceDeviationPerc": 1 
+    }
+}

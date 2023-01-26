@@ -31,38 +31,37 @@ import { iterateReverse } from '@agoric/casting';
 const {
   PORT = '3000',
   EI_CHAINLINKURL,
-  POLL_INTERVAL = '60',
-  PUSH_INTERVAL = '600',
   FROM,
-  DECIMAL_PLACES = 6,
-  PRICE_DEVIATION_PERC = 1,
   SUBMIT_RETRIES = 3,
   BLOCK_INTERVAL = '6',
   SEND_CHECK_INTERVAL = '12',
   AGORIC_RPC = "http://0.0.0.0:26657",
   STATE_FILE = "data/middleware_state.json",
   CREDENTIALS_FILE = "config/ei_credentials.json",
-  OFFERS_FILE = "config/offers.json"
+  OFFERS_FILE = "config/offers.json",
+  FEEDS_FILE = "./feeds.json"
 } = process.env;
 
 /** 
   * Environment variables validation
   */
 assert(EI_CHAINLINKURL, '$EI_CHAINLINKURL is required');
-assert(Number(DECIMAL_PLACES), '$DECIMAL_PLACES is required');
-assert(Number(PRICE_DEVIATION_PERC), '$PRICE_DEVIATION_PERC is required');
 assert(Number(SUBMIT_RETRIES), '$SUBMIT_RETRIES is required');
 assert(FROM, '$FROM is required');
 assert(validUrl(AGORIC_RPC), '$AGORIC_RPC is required');
 assert(STATE_FILE != "", '$STATE_FILE is required');
 assert(CREDENTIALS_FILE != "", '$CREDENTIALS_FILE is required');
 assert(OFFERS_FILE != "", '$OFFERS_FILE is required');
+assert(FEEDS_FILE != "", '$FEEDS_FILE is required');
 
 const { agoricNames, fromBoard, vstorage } = await makeRpcUtils({ fetch });
 const marshaller = boardSlottingMarshaller();
 
 //read initiator credentials
 const credentials = readJSONFile(CREDENTIALS_FILE)
+
+//read feeds config
+const feeds = readJSONFile(FEEDS_FILE)
 
 /**
   * Function to load from file or initialise it
@@ -344,12 +343,11 @@ const submitNewJobIndex = async (index, requestType) => {
 
 /**
   * Controller for the middleware
-  * @param {*} intervalSeconds the poll interval at which Chainlink job runs are triggered
   */
-const makeController = (intervalSeconds) => {
-  const jobRequestInterval = intervalSeconds * 1_000;
+const makeController = () => {
+  const oneSecInterval = 1 * 1_000;
 
-  //create an interval which creates a job request every X seconds
+  //create an interval which creates a job request every second
   const it = setInterval(async () => {
 
     //read the state
@@ -357,10 +355,22 @@ const makeController = (intervalSeconds) => {
 
     //for each job in state, send a job run
     for (let index in state.jobs) {
-      //send a job run with type 1, indicating a job run triggered from the polling interval
-      await submitNewJobIndex(index, 1)
+
+      //get interval for feed
+      let feedName = state.jobs[index].name;
+      let pollInterval = feeds[feedName].pollInterval
+
+      //check whether poll interval expired
+      let now = Date.now() / 1000
+      let timeForPoll = state.jobs[index].last_request_sent + pollInterval <= now
+
+      //if interval expired
+      if (timeForPoll){
+        //send a job run with type 1, indicating a job run triggered from the polling interval
+        await submitNewJobIndex(index, 1)
+      }
     }
-  }, jobRequestInterval);
+  }, oneSecInterval);
 
 
   const priceQueryInterval = parseInt(BLOCK_INTERVAL, 10);
@@ -420,7 +430,9 @@ const makeController = (intervalSeconds) => {
         console.log("Found a price deviation for", jobName, "of", priceDev, "%. Latest price:", latestPrice, " Current Price:", currentPrice)
       }
 
-      if (priceDev > PRICE_DEVIATION_PERC) {
+      //get feed deviation percentage threshold
+      let priceDeviationPercentage = feeds[jobName].priceDeviationPerc
+      if (priceDev > priceDeviationPercentage) {
         sendRequest = 2
       }
 
@@ -489,21 +501,30 @@ const startBridge = (PORT) => {
     //get last price from state
     let lastPrice = (state.previous_results[jobName]) ? state.previous_results[jobName].result : -1
 
+    //get push interval for feed
+    let pushInterval = feeds[jobName].pushInterval
+
     //check if time for update
-    let timeForUpdate = (Date.now()/1000) >= state.previous_results[jobName].round.startedAt + Number(PUSH_INTERVAL)
-    console.log(Date.now()/1000, state.previous_results[jobName].round.startedAt + Number(PUSH_INTERVAL))
+    let timeForUpdate = (Date.now()/1000) >= state.previous_results[jobName].round.startedAt + Number(pushInterval)
+    console.log(Date.now()/1000, state.previous_results[jobName].round.startedAt + Number(pushInterval))
 
     //if there is no last price, if it is time for a price update or if there is a new round, update price
     let toUpdate = lastPrice == -1 || requestType == 1 && timeForUpdate || requestType == 3
     //if last price is found and it is a price deviation request
     if (lastPrice != -1 && requestType == 2) {
+      
+      //get decimal places for feed
+      let decimalPlaces = feeds[jobName].decimalPlaces
       //calculate percentage change
-      lastPrice = lastPrice * Math.pow(10, Number(DECIMAL_PLACES))
+      lastPrice = lastPrice * Math.pow(10, Number(decimalPlaces))
+
       let percChange = Math.abs((result - lastPrice) / lastPrice) * 100
       console.log("Price change is " + percChange + "%. Last Price: " + String(result) + ". Current Price: " + String(lastPrice))
 
+      //get price deviation threshold for feed
+      let priceDeviationPercentage = feeds[jobName].priceDeviationPerc
       //update price if result is greater than price deviation threshold
-      toUpdate = percChange > PRICE_DEVIATION_PERC
+      toUpdate = percChange > priceDeviationPercentage
     }
 
     /**
@@ -720,10 +741,6 @@ const pushPrice = async (price, feed, round, from) => {
 export const middleware = async () => {
   console.log('Starting oracle bridge');
 
-  const intervalSeconds = parseInt(POLL_INTERVAL, 10);
-  //validate polling interval
-  assert(!isNaN(intervalSeconds), `$POLL_INTERVAL ${POLL_INTERVAL} must be a number`);
-
   //init
   initialiseState()
 
@@ -735,6 +752,6 @@ export const middleware = async () => {
 
   //start the controller on the new minute
   setTimeout(() => {
-    makeController(intervalSeconds);
+    makeController();
   }, secondsLeft * 1000)
 };
