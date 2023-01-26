@@ -23,9 +23,9 @@
     - [queryPrice(feed)](#queryPrice)
     - [queryRound(feed)](#queryRound)
     - [submitNewJobIndex(index, requestType)](#submitNewJobIndex)
-    - [makeController(intervalSeconds, exiter)](#makeController)
+    - [makeController(intervalSeconds)](#makeController)
     - [pushPrice(price, feed, round, from)](#pushPrice)
-    - [startBridge(port, exiters)](#startBridge)
+    - [startBridge(port)](#startBridge)
       - [POST /adapter](#postadapter)
       - [POST /jobs](#postjobs)
       - [DELETE /jobs/:id](#deljobs)
@@ -471,11 +471,10 @@ What it does:
 <br>
 <div id='makeController'></div>
 
-<b>makeController(intervalSeconds, exiter)</b>
+<b>makeController(intervalSeconds)</b>
 
 Inputs:
 * intervalSeconds - The poll interval at which Chainlink job runs are triggered
-* exiter - The exiter to be triggered
 
 Use: This function serves as the controller for the middleware and it basically consists of two intervals running separately. One is triggerred every POLL_INTERVAL and it is used to create a CL job node once this timer triggers. The other is triggered every BLOCK_INTERVAL and it is used to query the latest price and round stored on-chain. The latter will check if there is a price deviation or a new round and if so, a new CL job request is sent to the CL node
 
@@ -526,11 +525,10 @@ What it does:
 <br>
 <div id='startBridge'></div>
 
-<b>startBridge(port, exiters)</b>
+<b>startBridge(port)</b>
 
 Inputs:
 * port - The port to listen on
-* exiters - Set of exiters
 
 User: This function is used to start a server which listens to requests for a job addition, a job removal and a new job result. This server should serve the following endpoints:
 1. <b>POST /adapter</b> - to get a job result from a CL node
