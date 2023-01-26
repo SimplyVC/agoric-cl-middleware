@@ -822,7 +822,7 @@ As time goes by, oracles will have sent multiple offers and it is inefficient to
 - Store the latest observed ID (IDs are timestamps of when the offer was created so they are incremental) in the state
 - When obtaining offers, we reverse the offers to start from the latest and only loop till the last observed ID.
 
-<div id='consid3'></div>
+<div id='consid4'></div>
 
 ### Intervals
 
