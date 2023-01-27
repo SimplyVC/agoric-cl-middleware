@@ -278,6 +278,7 @@ const queryPrice = async (feed) => {
 
 /**
  * Function to get oracles feed invitations
+ * @returns an object containing feed invitation IDs
  */
 export const getOraclesInvitations = async () => {
 

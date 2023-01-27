@@ -302,7 +302,6 @@ This script makes use of the following environment variables and it requires the
 | AGORIC_RPC           	| The Agoric's node RPC endpoint                                                                                                                                       	| http://0.0.0.0:26657       	|
 | STATE_FILE           	| The path to the middleware state's file                                                                                                                              	| data/middleware_state.json 	|
 | CREDENTIALS_FILE     	| The path to the file containing the credentials to the <br>CL node                                                                                                   	| config/ei_credentials.json 	|
-| OFFERS_FILE          	| The path to the file containing the offers for feeds                                                                                                                 	| config/offers.json         	|
 
 
 The CREDENTIALS_FILE should contain a JSON object containing the credentials to communciate wioth the CL node as can be seen below
@@ -313,13 +312,6 @@ The CREDENTIALS_FILE should contain a JSON object containing the credentials to 
 }
 ```
 
-The OFFERS_FILE should contain a JSON object linking feed names to oracle invitation IDs as can be seen below
-```json
-{ 
-  "ATOM-USD": 1673872972699,
-  "OSMO-USD": 1673872972600 
-}
-```
 
 <br>
 <div id='readState'></div>
@@ -508,6 +500,24 @@ What it does:
         - 1. There is no pending CL job request for which we are still waiting for. This is done by checking the comapring the request ID of the last request sent and received from the state.
         - 2. An interval of SEND_CHECK_INTERVAL passed fron the last CL job request which was sent.
 
+<br>
+<div id='getOraclesInvitations'></div>
+
+<b>getOraclesInvitations()</b>
+
+Use: This function is used to get the oracle invitation IDs for price feeds 
+
+Returns: An JSON object with invitation IDs as below
+```json
+{
+  "ATOM-USD": "123456789",
+  "OSMO-USD": "987654321"
+}
+```
+
+What it does:
+  1. Loops through each oracle to monitor and obtain their invitation IDs for feeds
+  2. The invitations IDs are returned in a JSON objects with the keys being the feed names and the values being the invitation IDs
 
 <br>
 <div id='pushPrice'></div>
@@ -526,7 +536,7 @@ Returns: A boolean indicating whether the push submission was successful or not
 
 What it does:
   1. Creates an ID for the offer. The ID is a timestamp
-  2. Obtains the feed offer id from the OFFERS_FILE
+  2. Obtains the feed offer id from the wallet using <b>getOraclesInvitations()</b>
   3. Creates an offer object with the feed offer id, the created id, the price and the round
   4. It checks whether a submission for this round was already made to avoid double submissions to save transaction fees.
   5. If a submission is not yet made, it will loop for a maximum of SUBMIT_RETRIES and it will do the following:
