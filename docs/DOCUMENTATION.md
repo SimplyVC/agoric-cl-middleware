@@ -24,6 +24,7 @@
     - [queryRound(feed)](#queryRound)
     - [submitNewJobIndex(index, requestType)](#submitNewJobIndex)
     - [makeController()](#makeController)
+    - [getOraclesInvitations()](#getOraclesInvitationsMiddleware)
     - [pushPrice(price, feed, round, from)](#pushPrice)
     - [startBridge(port)](#startBridge)
       - [POST /adapter](#postadapter)
@@ -501,7 +502,7 @@ What it does:
         - 2. An interval of SEND_CHECK_INTERVAL passed fron the last CL job request which was sent.
 
 <br>
-<div id='getOraclesInvitations'></div>
+<div id='getOraclesInvitationsMiddleware'></div>
 
 <b>getOraclesInvitations()</b>
 
