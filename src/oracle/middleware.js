@@ -16,6 +16,7 @@ import {
 import axios from 'axios';
 import http from 'http';
 import fs from 'fs';
+import { getCurrent } from '../lib/wallet.js';
 import bodyParser from 'body-parser';
 import { Far } from '@endo/far';
 import { makePromiseKit } from '@endo/promise-kit';
@@ -276,6 +277,29 @@ const queryPrice = async (feed) => {
 }
 
 /**
+ * Function to get oracles feed invitations
+ */
+export const getOraclesInvitations = async () => {
+
+  let feedBoards = agoricNames.reverse
+
+  let feedInvs = {}
+
+  const current = await getCurrent(String(FROM), fromBoard, { vstorage });
+  const invitations = current.offerToUsedInvitation
+
+  //for each invitation
+  for (let inv in invitations) {
+    let boardId = invitations[inv].value[0].instance.boardId
+    let feed = feedBoards[boardId].split(" price feed")[0]
+
+    feedInvs[feed] = Number(inv)
+  }
+
+  return feedInvs
+}
+
+/**
   * Function to query round from chain
   * @param {*} feed feed name of the price to query in the form of ATOM-USD
   * @returns the latest round
@@ -297,7 +321,7 @@ const queryRound = async (feed) => {
   let round = Number(capData.roundId.digits)
 
   //get offers
-  let offers = readJSONFile(OFFERS_FILE)
+  let offers = await getOraclesInvitations()
   //get feed offer id
   let feedOfferId = offers[feed]
 
@@ -660,7 +684,7 @@ const pushPrice = async (price, feed, round, from) => {
   var offerId = Date.now()
 
   //get offers
-  let offers = readJSONFile(OFFERS_FILE)
+  let offers = await getOraclesInvitations()
   //get previous offer for feed
   let previousOffer = offers[feed]
 
@@ -675,6 +699,8 @@ const pushPrice = async (price, feed, round, from) => {
     },
     proposal: {},
   };
+
+  console.log("Submitting offer", offer)
 
   //output action
   var data = outputAction({
@@ -733,7 +759,6 @@ const pushPrice = async (price, feed, round, from) => {
 
   return submitted
 }
-
 
 /**
   * This is the function which runs the middleware

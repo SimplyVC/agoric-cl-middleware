@@ -271,7 +271,7 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
     //initialise variable to hold results
     let lastResults = {
         "last_offer_id": lastOfferId,
-        "values": {}
+        "values": state["values"] ? state["values"] : {}
     }
 
     //loop through offers starting from last visited index
@@ -316,9 +316,6 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
                 let feedPrice = await queryPrice(feed)
                 //update metrics
                 updateMetrics(oracleDetails["oracleName"], oracle, feed, price, id, feedPrice, lastRound)
-
-                //break because we only need last one
-                break;
 
             }
         }
