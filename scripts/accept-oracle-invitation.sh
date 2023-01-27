@@ -25,7 +25,7 @@ if [ ! -d $CONFIG_DIR ]; then
 	mkdir -p $CONFIG_DIR
 fi
 
-if [ ! -f "$STATE_FILE" ]; then
+if [ ! -f "$OFFERS_FILE" ]; then
 	echo "{}" > $OFFERS_FILE
 fi
 echo $(jq ". += {\"$BRAND_IN-$BRAND_OUT\": $ORACLE_OFFER_ID}" $OFFERS_FILE) > $OFFERS_FILE
