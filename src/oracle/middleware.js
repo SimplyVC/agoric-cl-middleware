@@ -184,16 +184,28 @@ const getOffers = async (follower) => {
 
   let history = [];
   let counter = 0;
+  let lastVisited = 0;
+
   for await (const followerElement of iterateReverse(follower)) {
 
     if (counter == 10){
       break;
     }
-    //if it is an offer status and not failed
-    if (followerElement.value.updated == "offerStatus" && !followerElement.value.status.hasOwnProperty("error")) {
-      history.push(followerElement.value);
+
+    //if it is an offer status 
+    if (followerElement.value.updated == "offerStatus"){
+      //get id
+      let id = followerElement.value.status.id
+
+      //if a new and final state
+      if (id != lastVisited) {
+        //if it is not failed
+        if (!followerElement.value.status.hasOwnProperty("error")) {
+          history.push(followerElement.value);
+        }
+        counter++
+      } 
     }
-    counter++
   }
   return history
 }
