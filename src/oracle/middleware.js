@@ -609,7 +609,8 @@ const startBridge = (PORT) => {
       job: newJob,
       name: newJobName,
       request_id: 0,
-      last_reported_round: 0
+      last_reported_round: 0,
+      last_request_sent: 0
     });
 
     //add previous results
