@@ -214,6 +214,7 @@ const getOffersAndBalances = async (follower, oracle) => {
         balances: []
     };
     let counter = 0;
+    let lastVisited = 0;
 
     for await (const followerElement of iterateReverse(follower)) {
 
