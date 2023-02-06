@@ -231,7 +231,7 @@ const getOffersAndBalances = async (follower, oracle) => {
           if (id != lastVisited) {
             //if it is not failed
             if (!followerElement.value.status.hasOwnProperty("error")) {
-              history.push(followerElement.value);
+                toReturn["offers"].push(followerElement.value);
             }
             counter++
           } 
