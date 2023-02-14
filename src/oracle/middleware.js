@@ -648,7 +648,7 @@ const startBridge = (PORT) => {
     let jobId = req.params.id;
     console.log("Removing job", jobId)
 
-    //read syaye
+    //read state
     let state = readState()
 
     let jobName = ""
@@ -786,7 +786,7 @@ export const middleware = async () => {
   //start the bridge
   startBridge(PORT);
 
-  //calcualte how many seconds left for a new minute
+  //calculate how many seconds left for a new minute
   let secondsLeft = 60 - (new Date().getSeconds());
 
   //start the controller on the new minute
