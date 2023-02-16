@@ -12,6 +12,7 @@
     - [saveJSONDataToFile(newData, filename)](#saveJSONDataToFile)
     - [validUrl(url)](#validUrl)
     - [delay(ms)](#delay)
+    - [readVStorage(vstorage, feed, roundData)](#readvstorage)
   - [middleware.js](#middlewarejs)
     - [Environment Variables](#envvarsmiddleware)
     - [readState()](#readState)
@@ -277,6 +278,20 @@ Inputs:
 Use: This function is used to create a delay
 
 Returns: A Promise with a delay of a specified number of milliseconds
+
+<br>
+<div id='readvstorage'></div>
+
+<b>readVStorage(vstorage, feed, roundData)</b>
+
+Inputs:
+* vstorage - vstorage object obtained on startup
+* feed - The feed name
+* roundData - A boolean indicating whether we are reading round data. A false means we are reading price data
+
+Use: This function is used read price or round data from vstorage
+
+Returns: CapDataString by calling vstorage.readLatest().
 
 <br>
 <div id='middleware'></div>

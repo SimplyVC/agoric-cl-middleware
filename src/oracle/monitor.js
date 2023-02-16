@@ -232,8 +232,9 @@ const getOffersAndBalances = async (follower, oracle) => {
             //if it is not failed
             if (!followerElement.value.status.hasOwnProperty("error")) {
                 toReturn["offers"].push(followerElement.value);
+                counter++
             }
-            counter++
+            lastVisited = id;
           } 
         }
     }
