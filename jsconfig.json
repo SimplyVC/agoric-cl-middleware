@@ -21,6 +21,6 @@
     "scripts/**/*.js",
     "src/**/*.js",
     "test/**/*.js",
-    "tools/**/*.js",
+    "tools/**/*.js", "jest.setup.js", "jest.config.mjs", "babel.config.cjs",
   ],
 }

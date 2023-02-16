@@ -44,3 +44,15 @@ export const validUrl = (url) => {
 export const delay = async (ms) => {
     return new Promise(async(res) => await setTimeout(res, ms))
 };
+
+/**
+ * Function to read from vstorage
+ * @param {*} vstorage vstorage
+ * @param {*} feed the feed to read
+ * @param {*} roundData whether to read round data or price data
+ * @returns a Promise with CapData of result
+ */
+export const readVStorage = async (vstorage, feed, roundData) => {
+    let key = roundData ? "published.priceFeed."+feed+"_price_feed.latestRound" : "published.priceFeed."+feed+"_price_feed"
+    return await vstorage.readLatest(key);
+}

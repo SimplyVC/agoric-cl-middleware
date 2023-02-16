@@ -1,0 +1,301 @@
+{
+    "brands": [
+        {
+            "brand": {
+                "boardId": "board0223",
+                "iface": "Alleged: BLD brand"
+            },
+            "displayInfo": {
+                "assetKind": "nat",
+                "decimalPlaces": 6
+            },
+            "issuer": {
+                "boardId": "board0425",
+                "iface": "Alleged: BLD issuer"
+            },
+            "petname": "BLD"
+        },
+        {
+            "brand": {
+                "boardId": "board0566",
+                "iface": "Alleged: IST brand"
+            },
+            "displayInfo": {
+                "assetKind": "nat",
+                "decimalPlaces": 6
+            },
+            "issuer": {
+                "boardId": "board0371",
+                "iface": "Alleged: IST issuer"
+            },
+            "petname": "IST"
+        },
+        {
+            "brand": {
+                "boardId": "board05815",
+                "iface": "Alleged: USDC_axl brand"
+            },
+            "displayInfo": {
+                "assetKind": "nat",
+                "decimalPlaces": 6
+            },
+            "issuer": {
+                "boardId": "board02314",
+                "iface": "Alleged: USDC_axl issuer"
+            },
+            "petname": "USDC_axl"
+        },
+        {
+            "brand": {
+                "boardId": "board00218",
+                "iface": "Alleged: USDC_grv brand"
+            },
+            "displayInfo": {
+                "assetKind": "nat",
+                "decimalPlaces": 6
+            },
+            "issuer": {
+                "boardId": "board00917",
+                "iface": "Alleged: USDC_grv issuer"
+            },
+            "petname": "USDC_grv"
+        },
+        {
+            "brand": {
+                "boardId": "board01422",
+                "iface": "Alleged: USDT_axl brand"
+            },
+            "displayInfo": {
+                "assetKind": "nat",
+                "decimalPlaces": 6
+            },
+            "issuer": {
+                "boardId": "board02021",
+                "iface": "Alleged: USDT_axl issuer"
+            },
+            "petname": "USDT_axl"
+        },
+        {
+            "brand": {
+                "boardId": "board00126",
+                "iface": "Alleged: USDT_grv brand"
+            },
+            "displayInfo": {
+                "assetKind": "nat",
+                "decimalPlaces": 6
+            },
+            "issuer": {
+                "boardId": "board03125",
+                "iface": "Alleged: USDT_grv issuer"
+            },
+            "petname": "USDT_grv"
+        },
+        {
+            "brand": {
+                "boardId": "board00530",
+                "iface": "Alleged: AUSD brand"
+            },
+            "displayInfo": {
+                "assetKind": "nat",
+                "decimalPlaces": 6
+            },
+            "issuer": {
+                "boardId": "board01029",
+                "iface": "Alleged: AUSD issuer"
+            },
+            "petname": "AUSD"
+        },
+        {
+            "brand": {
+                "boardId": "board02568",
+                "iface": "Alleged: IbcATOM brand"
+            },
+            "displayInfo": {
+                "assetKind": "nat",
+                "decimalPlaces": 4
+            },
+            "issuer": {
+                "boardId": "board01679",
+                "iface": "Alleged: IbcATOM issuer"
+            },
+            "petname": "IbcATOM"
+        }
+    ],
+    "lastOfferId": -1,
+    "offerToPublicSubscriberPaths": {},
+    "offerToUsedInvitation": {
+        "1675687989744": {
+            "brand": {
+                "boardId": "board0074",
+                "iface": "Alleged: Zoe Invitation brand"
+            },
+            "value": [
+                {
+                    "description": "oracle invitation",
+                    "handle": {
+                        "boardId": null,
+                        "iface": "Alleged: InvitationHandle"
+                    },
+                    "installation": {
+                        "boardId": "board00282",
+                        "iface": "Alleged: BundleInstallation"
+                    },
+                    "instance": {
+                        "boardId": "board03928",
+                        "iface": "Alleged: InstanceHandle"
+                    }
+                }
+            ]
+        }
+    },
+    "purses": [
+        {
+            "balance": {
+                "brand": {
+                    "boardId": "board0074",
+                    "iface": "Alleged: Zoe Invitation brand"
+                },
+                "value": [
+                    {
+                        "description": "charter member invitation",
+                        "handle": {
+                            "boardId": null,
+                            "iface": "Alleged: InvitationHandle"
+                        },
+                        "installation": {
+                            "boardId": "board01759",
+                            "iface": "Alleged: BundleInstallation"
+                        },
+                        "instance": {
+                            "boardId": "board00613",
+                            "iface": "Alleged: InstanceHandle"
+                        }
+                    },
+                    {
+                        "description": "Voter0",
+                        "handle": {
+                            "boardId": null,
+                            "iface": "Alleged: InvitationHandle"
+                        },
+                        "installation": {
+                            "boardId": "board03523",
+                            "iface": "Alleged: BundleInstallation"
+                        },
+                        "instance": {
+                            "boardId": "board05024",
+                            "iface": "Alleged: InstanceHandle"
+                        }
+                    }
+                ]
+            },
+            "brand": {
+                "boardId": "board0074",
+                "iface": "Alleged: Zoe Invitation brand"
+            }
+        },
+        {
+            "balance": {
+                "brand": {
+                    "boardId": "board0566",
+                    "iface": "Alleged: IST brand"
+                },
+                "value": "42050000"
+            },
+            "brand": {
+                "boardId": "board0566",
+                "iface": "Alleged: IST brand"
+            }
+        },
+        {
+            "balance": {
+                "brand": {
+                    "boardId": "board0223",
+                    "iface": "Alleged: BLD brand"
+                },
+                "value": "30000000"
+            },
+            "brand": {
+                "boardId": "board0223",
+                "iface": "Alleged: BLD brand"
+            }
+        },
+        {
+            "balance": {
+                "brand": {
+                    "boardId": "board05815",
+                    "iface": "Alleged: USDC_axl brand"
+                },
+                "value": "40000000"
+            },
+            "brand": {
+                "boardId": "board05815",
+                "iface": "Alleged: USDC_axl brand"
+            }
+        },
+        {
+            "balance": {
+                "brand": {
+                    "boardId": "board00218",
+                    "iface": "Alleged: USDC_grv brand"
+                },
+                "value": "0"
+            },
+            "brand": {
+                "boardId": "board00218",
+                "iface": "Alleged: USDC_grv brand"
+            }
+        },
+        {
+            "balance": {
+                "brand": {
+                    "boardId": "board01422",
+                    "iface": "Alleged: USDT_axl brand"
+                },
+                "value": "0"
+            },
+            "brand": {
+                "boardId": "board01422",
+                "iface": "Alleged: USDT_axl brand"
+            }
+        },
+        {
+            "balance": {
+                "brand": {
+                    "boardId": "board00126",
+                    "iface": "Alleged: USDT_grv brand"
+                },
+                "value": "0"
+            },
+            "brand": {
+                "boardId": "board00126",
+                "iface": "Alleged: USDT_grv brand"
+            }
+        },
+        {
+            "balance": {
+                "brand": {
+                    "boardId": "board00530",
+                    "iface": "Alleged: AUSD brand"
+                },
+                "value": "0"
+            },
+            "brand": {
+                "boardId": "board00530",
+                "iface": "Alleged: AUSD brand"
+            }
+        },
+        {
+            "balance": {
+                "brand": {
+                    "boardId": "board02568",
+                    "iface": "Alleged: IbcATOM brand"
+                },
+                "value": "0"
+            },
+            "brand": {
+                "boardId": "board02568",
+                "iface": "Alleged: IbcATOM brand"
+            }
+        }
+    ]
+}

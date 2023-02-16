@@ -1,0 +1,162 @@
+{
+    "brand": {
+        "BLD": {
+            "boardId": "board0223",
+            "iface": "Alleged: BLD brand"
+        },
+        "IST": {
+            "boardId": "board0566",
+            "iface": "Alleged: IST brand"
+        },
+        "Attestation": {
+            "boardId": "board04149",
+            "iface": "Alleged: Attestation brand"
+        },
+        "AUSD": {
+            "boardId": "board00530",
+            "iface": "Alleged: AUSD brand"
+        },
+        "Invitation": {
+            "boardId": "board0074",
+            "iface": "Alleged: Zoe Invitation brand"
+        },
+        "IbcATOM": {
+            "boardId": "board02568",
+            "iface": "Alleged: IbcATOM brand"
+        },
+        "USDC_axl": {
+            "boardId": "board05815",
+            "iface": "Alleged: USDC_axl brand"
+        },
+        "USDC_grv": {
+            "boardId": "board00218",
+            "iface": "Alleged: USDC_grv brand"
+        },
+        "USDT_axl": {
+            "boardId": "board01422",
+            "iface": "Alleged: USDT_axl brand"
+        },
+        "USDT_grv": {
+            "boardId": "board00126",
+            "iface": "Alleged: USDT_grv brand"
+        }
+    },
+    "instance": {
+        "economicCommittee": {
+            "boardId": "board05024",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "amm": {
+            "boardId": "board00360",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "ammGovernor": {
+            "boardId": "board03446",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "VaultFactory": {
+            "boardId": "board05674",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "feeDistributor": {
+            "boardId": "board06120",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "Treasury": {
+            "boardId": "board05674",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "VaultFactoryGovernor": {
+            "boardId": "board04277",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "stakeFactory": {
+            "boardId": "board00855",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "Pegasus": {
+            "boardId": "board04016",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "reserve": {
+            "boardId": "board05557",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "reserveGovernor": {
+            "boardId": "board06458",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "econCommitteeCharter": {
+            "boardId": "board00613",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "interchainPool": {
+            "boardId": "board04661",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "provisionPool": {
+            "boardId": "board01547",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "walletFactory": {
+            "boardId": "board05432",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "ATOM-USD price feed": {
+            "boardId": "board03928",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "psm-IST-USDC_axl": {
+            "boardId": "board00848",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "psm-IST-USDC_grv": {
+            "boardId": "board01151",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "psm-IST-USDT_axl": {
+            "boardId": "board02152",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "psm-IST-USDT_grv": {
+            "boardId": "board06053",
+            "iface": "Alleged: InstanceHandle"
+        },
+        "psm-IST-AUSD": {
+            "boardId": "board04154",
+            "iface": "Alleged: InstanceHandle"
+        }
+    },
+    "reverse": {
+        "board0223": "BLD",
+        "board0566": "IST",
+        "board04149": "Attestation",
+        "board00530": "AUSD",
+        "board0074": "Invitation",
+        "board02568": "IbcATOM",
+        "board05815": "USDC_axl",
+        "board00218": "USDC_grv",
+        "board01422": "USDT_axl",
+        "board00126": "USDT_grv",
+        "board05024": "economicCommittee",
+        "board00360": "amm",
+        "board03446": "ammGovernor",
+        "board05674": "Treasury",
+        "board06120": "feeDistributor",
+        "board04277": "VaultFactoryGovernor",
+        "board00855": "stakeFactory",
+        "board04016": "Pegasus",
+        "board05557": "reserve",
+        "board06458": "reserveGovernor",
+        "board00613": "econCommitteeCharter",
+        "board04661": "interchainPool",
+        "board01547": "provisionPool",
+        "board05432": "walletFactory",
+        "board03928": "ATOM-USD price feed",
+        "board00848": "psm-IST-USDC_axl",
+        "board01151": "psm-IST-USDC_grv",
+        "board02152": "psm-IST-USDT_axl",
+        "board06053": "psm-IST-USDT_grv",
+        "board04154": "psm-IST-AUSD"
+    }
+}

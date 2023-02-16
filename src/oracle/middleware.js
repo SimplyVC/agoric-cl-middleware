@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable @jessie.js/no-nested-await */
-// @ts-check
+// @ts-nocheck
 /* eslint-disable func-names */
 /* global fetch, process */
 
@@ -11,17 +11,16 @@ import { execSwingsetTransaction } from '../lib/chain.js';
 import {
   makeRpcUtils,
   boardSlottingMarshaller,
-  networkConfig
+  networkConfig,
+  makeAgoricNames
 } from '../lib/rpc.js'
 import axios from 'axios';
 import http from 'http';
 import fs from 'fs';
 import { getCurrent } from '../lib/wallet.js';
 import bodyParser from 'body-parser';
-import { Far } from '@endo/far';
-import { makePromiseKit } from '@endo/promise-kit';
 import express from 'express';
-import { validUrl, delay, saveJSONDataToFile, readJSONFile } from './helper.js';
+import { validUrl, delay, saveJSONDataToFile, readJSONFile, readVStorage } from './helper.js';
 import {
   makeFollower,
   makeLeader,
@@ -46,23 +45,24 @@ const {
 /** 
   * Environment variables validation
   */
-assert(EI_CHAINLINKURL, '$EI_CHAINLINKURL is required');
-assert(Number(SUBMIT_RETRIES), '$SUBMIT_RETRIES is required');
-assert(FROM, '$FROM is required');
-assert(validUrl(AGORIC_RPC), '$AGORIC_RPC is required');
-assert(STATE_FILE != "", '$STATE_FILE is required');
-assert(CREDENTIALS_FILE != "", '$CREDENTIALS_FILE is required');
-assert(OFFERS_FILE != "", '$OFFERS_FILE is required');
-assert(FEEDS_FILE != "", '$FEEDS_FILE is required');
+if (process.env.NODE_ENV != "test"){
+  assert(EI_CHAINLINKURL, '$EI_CHAINLINKURL is required');
+  assert(Number(SUBMIT_RETRIES), '$SUBMIT_RETRIES is required');
+  assert(FROM, '$FROM is required');
+  assert(validUrl(AGORIC_RPC), '$AGORIC_RPC is required');
+  assert(STATE_FILE != "", '$STATE_FILE is required');
+  assert(CREDENTIALS_FILE != "", '$CREDENTIALS_FILE is required');
+  assert(OFFERS_FILE != "", '$OFFERS_FILE is required');
+  assert(FEEDS_FILE != "", '$FEEDS_FILE is required');
+}
 
-const { agoricNames, fromBoard, vstorage } = await makeRpcUtils({ fetch });
+var agoricNames = {};
+var fromBoard = {};
+var vstorage = {};
 const marshaller = boardSlottingMarshaller();
 
-//read initiator credentials
-const credentials = readJSONFile(CREDENTIALS_FILE)
-
-//read feeds config
-const feeds = readJSONFile(FEEDS_FILE)
+var credentials;
+var feeds;
 
 /**
   * Function to load from file or initialise it
@@ -180,7 +180,7 @@ const sendJobRun = async (credentials, count, jobId, chainlinkUrl, requestType) 
   * @param {*} follower offers and balances
   * @returns a list of offers
   */
-const getOffers = async (follower) => {
+export const getOffers = async (follower) => {
 
   let history = [];
   let counter = 0;
@@ -202,8 +202,9 @@ const getOffers = async (follower) => {
         //if it is not failed
         if (!followerElement.value.status.hasOwnProperty("error")) {
           history.push(followerElement.value);
+          counter++
         }
-        counter++
+        lastVisited = id;
       } 
     }
   }
@@ -265,11 +266,11 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
   * @param {*} feed feed name of the price to query in the form of ATOM-USD
   * @returns the latest price
   */
-const queryPrice = async (feed) => {
+export const queryPrice = async (feed) => {
 
   try {
     //read value from vstorage
-    const capDataStr = await vstorage.readLatest(`published.priceFeed.${feed}_price_feed`);
+    const capDataStr = await readVStorage(vstorage, feed, false);
 
     //parse the value
     var capData = JSON.parse(JSON.parse(capDataStr).value)
@@ -294,6 +295,11 @@ const queryPrice = async (feed) => {
  */
 export const getOraclesInvitations = async () => {
 
+  //if agoric names do not exist, create them
+  if (Object.keys(agoricNames).length == 0){
+    agoricNames = await makeAgoricNames(fromBoard, vstorage);
+  }
+
   let feedBoards = agoricNames.reverse
 
   let feedInvs = {}
@@ -317,12 +323,10 @@ export const getOraclesInvitations = async () => {
   * @param {*} feed feed name of the price to query in the form of ATOM-USD
   * @returns the latest round
   */
-const queryRound = async (feed) => {
+export const queryRound = async (feed) => {
 
   //read value from vstorage
-  const capDataStr = await vstorage.readLatest(
-    `published.priceFeed.${feed}_price_feed.latestRound`,
-  );
+  const capDataStr = await readVStorage(vstorage, feed, true);
 
   //parse the value
   var capData = JSON.parse(JSON.parse(capDataStr).value)
@@ -543,7 +547,6 @@ const startBridge = (PORT) => {
 
     //check if time for update
     let timeForUpdate = (Date.now()/1000) >= state.previous_results[jobName].round.startedAt + Number(pushInterval)
-    console.log(Date.now()/1000, state.previous_results[jobName].round.startedAt + Number(pushInterval))
 
     //if there is no last price, if it is time for a price update or if there is a new round, update price
     let toUpdate = lastPrice == -1 || lastPrice == 0 || requestType == 1 && timeForUpdate || requestType == 3
@@ -714,8 +717,6 @@ const pushPrice = async (price, feed, round, from) => {
     proposal: {},
   };
 
-  console.log("Submitting offer", offer)
-
   //output action
   var data = outputAction({
     method: 'executeOffer',
@@ -779,6 +780,14 @@ const pushPrice = async (price, feed, round, from) => {
   */
 export const middleware = async () => {
   console.log('Starting oracle bridge');
+
+  ({ agoricNames, fromBoard, vstorage } = await makeRpcUtils({ fetch }));
+  
+  //read initiator credentials
+  credentials = readJSONFile(CREDENTIALS_FILE)
+
+  //read feeds config
+  feeds = readJSONFile(FEEDS_FILE)
 
   //init
   initialiseState()
