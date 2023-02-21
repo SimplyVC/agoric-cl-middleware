@@ -1,7 +1,9 @@
 version: "3.9"
 services:
   monitor:
-    image: ag-oracle-monitor
+    build:
+      context: .
+      dockerfile: Dockerfile.monitor
     ports:
       - "3001:3001"
     volumes:
@@ -12,7 +14,9 @@ services:
       AGORIC_RPC: http://$THIS_VM_IP:26657
     restart: always
   middleware:
-    image: ag-oracle-middleware
+    build:
+      context: .
+      dockerfile: Dockerfile.middleware
     ports:
       - "3000:3000"
     volumes:
