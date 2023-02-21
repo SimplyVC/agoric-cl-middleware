@@ -7,32 +7,39 @@
   - [Monitoring](#monitoring)
 - [File structure](#file-structure)
 - [Technical Documentation](#technical-documentation)
-  - [helper.js](#helperjs)
+  - [helpers/db.js](#dbjs)
+    - [createDBs()](#createDBs)
+    - [getAllJobs()](#getAllJobs)
+    - [createJob(id, name)](#createJob)
+    - [deleteJob(id)](#deleteJob)
+    - [queryTable(table, fields, name)](#queryTable)
+    - [updateTable(table, values, name)](#updateTable)
+  - [helpers/utils.js](#helperjs)
     - [readJSONFile(filename)](#readJSONFile)
     - [saveJSONDataToFile(newData, filename)](#saveJSONDataToFile)
     - [validUrl(url)](#validUrl)
     - [delay(ms)](#delay)
     - [readVStorage(vstorage, feed, roundData)](#readvstorage)
-  - [middleware.js](#middlewarejs)
+  - [oracle/middleware.js](#middlewarejs)
     - [Environment Variables](#envvarsmiddleware)
-    - [readState()](#readState)
     - [initialiseState()](#initialiseState)
-    - [getJobIndex(jobName)](#getJobIndex)
     - [sendJobRun(credentials, count, jobId, chainlinkUrl, requestType)](#sendJobRun)
     - [getOffers(follower)](#getOffers)
+    - [getLatestSubmittedRound()](#getLatestSubmittedRound)
     - [checkSubmissionForRound(oracle, feedOfferId, roundId)](#checkSubmissionForRound)
     - [queryPrice(feed)](#queryPrice)
     - [queryRound(feed)](#queryRound)
-    - [submitNewJobIndex(index, requestType)](#submitNewJobIndex)
+    - [submitNewJob(feed, requestType)](#submitNewJob)
     - [makeController()](#makeController)
     - [getOraclesInvitations()](#getOraclesInvitationsMiddleware)
     - [pushPrice(price, feed, round, from)](#pushPrice)
+    - [checkIfInSubmission(feed)](#checkIfInSubmission)
     - [startBridge(port)](#startBridge)
       - [POST /adapter](#postadapter)
       - [POST /jobs](#postjobs)
       - [DELETE /jobs/:id](#deljobs)
     - [middleware()](#middlewarefunc)
-  - [monitor.js](#monitorjs)
+  - [oracle/monitor.js](#monitorjs)
     - [Environment Variables](#envvarsmonitor)
     - [Metrics](#metrics)
     - [readOracleAddresses()](#readOracleAddresses)
@@ -85,7 +92,7 @@ The middleware is needed to:
 
 The middleware should contain the following functionalities:
 
-1. A state file which is updated so that whenever the middleware is restarted it is able to continue from where it was stopped.
+1. An SQLLite database to keep the middleware's state so that whenever the middleware is restarted it is able to continue from where it was stopped.
 2. An endpoint to listen for new and removed jobs from the CL node. This is needed in order to keep a list of jobs for which the middleware has to send requests.
 3. Keep a list of these jobs in its state
 4. Query the price on chain and the latest round every X seconds so that a new job request is created if a new round is found
@@ -97,15 +104,16 @@ The middleware should contain the following functionalities:
   a. It is a new round and the oracle has not yet submitted to this round
   b. An interval of Z minutes/hours expired since the last price pushed on chain. This is only done if the oracle has not started the previous round himself. This is done because an oracle is not allowed to start consecutive rounds.
   c. There is a deviation of more than W% from the current price on-chain. Once again, only done if the oracle has not started the previous round himself.
-7. Keep the following information in the state file for each feed:
+7. Keep the following information in the DB for each feed:
   a. The CL job's external id for that feed
   b. The name of the feed
   c. The last request id
   d. The last reported round on chain
-  e. The timestamp of the last request made to the CL node
-  f. The last aggregated price on chain
-  g. The request id of the last result received from the CL node
-  h. The details of the latest on-chain round including the round id, the timestamp when it was started, by whom it was started and whether the oracle made a submission for that round
+  e. The timestamp of the last price submission made on chain
+  f. The timestamp of the last request made to the CL node
+  g. The last aggregated price on chain
+  h. The request id of the last result received from the CL node
+  i. The details of the latest on-chain round including the round id, the timestamp when it was started, by whom it was started and whether the oracle made a submission for that round
 
 #### Monitoring
 
@@ -149,13 +157,19 @@ The following are the different scripts which can be found in this directory
 
 #### src
 
-This directory includes all the source code. It is split into two other directories, <b>oracle</b> and <b>lib</b>.
+This directory includes all the source code. It is split into three other directories, <b>helpers</b>, <b>oracle</b> and <b>lib</b>.
 
 Furthermore, it contains the following two files which serve as an entry point to the middleware and monitoring script
 
 * <b>bin-middleware.js</b> - This serves as an entry point to the middleware by calling the middleware() function
 * <b>bin-monitor.js</b> - This serves as an entry point to the monitoring script by calling the getOraclesInvitations() and monitor() functions to first get the oracle invitation IDs and then starting the monitoring. 
 
+##### helpers
+
+This directory contains the following files:
+
+1. <b>db.js</b> - This file contains helper functions related to the database
+2. <b>utils.js</b> - This file contains basic utility and helper functions 
 
 ##### oracle
 
@@ -183,9 +197,8 @@ The file should have the following structure
     }
 }
 ```
-2. <b>helper.js</b> - This file contains helper functions used in middleware.js and monitor.js
-3. <b>middleware.js</b> - This file contains all the necessary code and functions for the middleware
-4. <b>monitor.js</b> - This file contains all the necessary code and functions for monitoring the oracle network
+2. <b>middleware.js</b> - This file contains all the necessary code and functions for the middleware
+3. <b>monitor.js</b> - This file contains all the necessary code and functions for monitoring the oracle network
 
 ##### lib
 
@@ -211,9 +224,101 @@ This is a Grafana template to monitor an oracle node or the whole oracle network
 
 In this section, I will go over the <b>oracle</b> directory and explain in detail each function in the files inside it.
 
+<div id='dbjs'></div>
+
+### <u>helpers/db.js</u>
+
+This file contains helper functions which are used to update state in the DB.
+
+The file contains the following functions:
+
+<br>
+<div id='createDBs'></div>
+
+<b>createDBs()</b>
+
+Use: This function is used to initialise the required tables in tha DB
+
+What it does:
+  1. Creates the required tables if they do not exist using db.exec()
+
+<br>
+<div id='getAllJobs'></div>
+
+<b>getAllJobs()</b>
+
+Use: This function is used to get all the jobs in the DB
+
+Returns: An array of jobs
+
+What it does:
+  1. Uses db.all() to return all the jobs in the jobs table
+
+<br>
+<div id='createJob'></div>
+
+<b>createJob(id, name)</b>
+
+Inputs:
+* id - This external job ID of the new CL job
+* name - This name of the feed
+
+Use: This function is used to add a new job to the DB and initialise its state.
+
+What it does:
+  1. Creates a record in the jobs table using db.exec()
+  2. Creates a record in the rounds table using db.exec()
+
+<br>
+<div id='deleteJob'></div>
+
+<b>deleteJob(od)</b>
+
+Inputs:
+* id - This external job ID of the new CL job
+
+Use: This function is used to delete a job from the DB
+
+What it does:
+  1. Removes the job from the jobs and rounds table using db.exec()
+
+<br>
+<div id='queryTable'></div>
+
+<b>queryTable(table, fields, name)</b>
+
+Inputs:
+* table - The table name to query
+* fields - The fields to obtain
+* name - The name of the field to query the appropriate feed
+
+Use: This function is used to query either the jobs or rounds table
+
+Returns: An object containing the record in the DB for the given field
+
+What it does:
+  1. Builds the SQL query and queries the DB using db.get(). This function is used because we always will need only 1 record. Hence, no need for db.all().
+
+<br>
+<div id='updateTable'></div>
+
+<b>updateTable(table, values, name)</b>
+
+Inputs:
+* table - The table name to update
+* values - A JSON object where the properties would be the column names and the values would be the values to set
+* name - The name of the field to update the appropriate feed
+
+Use: This function is used to query either the jobs or rounds table
+
+Returns: An object containing the record in the DB for the given field
+
+What it does:
+  1. Builds the SQL command and updates the DB using db.exec().
+
 <div id='helperjs'></div>
 
-### <u>helper.js</u>
+### <u>helpers/utils.js</u>
 
 This file contains helper functions which are used both by the middleware and the monitoring script.
 
@@ -296,7 +401,7 @@ Returns: CapDataString by calling vstorage.readLatest().
 <br>
 <div id='middleware'></div>
 
-### <u>middleware.js</u>
+### <u>oracle/middleware.js</u>
 
 This file contains all the functions which are used both by the middleware. 
 
@@ -314,7 +419,7 @@ This script makes use of the following environment variables and it requires the
 | FROM                 	| The address of the oracle from which to push prices.<br><b>Note that this has no default value and needs<br>to be defined</b>                                        	| N/A                        	|
 | SUBMIT_RETRIES       	| The number of retries to try when submitting a price<br>on-chain and it fails                                                                                        	| 3                          	|
 | BLOCK_INTERVAL       	| The block time of the chain in seconds. This is used<br>to query the price and round at every interval.                                                              	| 6                          	|
-| SEND_CHECK_INTERVAL  	| The interval in seconds which is waited between each send.                                                                                                           	| 12                         	|
+| SEND_CHECK_INTERVAL  	| The interval in seconds which is waited between each send.                                                                                                           	| 45                         	|
 | AGORIC_RPC           	| The Agoric's node RPC endpoint                                                                                                                                       	| http://0.0.0.0:26657       	|
 | STATE_FILE           	| The path to the middleware state's file                                                                                                                              	| data/middleware_state.json 	|
 | CREDENTIALS_FILE     	| The path to the file containing the credentials to the <br>CL node                                                                                                   	| config/ei_credentials.json 	|
@@ -328,48 +433,15 @@ The CREDENTIALS_FILE should contain a JSON object containing the credentials to 
 }
 ```
 
-
-<br>
-<div id='readState'></div>
-
-<b>readState()</b>
-
-Use: This function is used to read the middleware state from the file
-
-Returns: The middleware's state as JSON from the file or an empty initialised state
-
-What it does:
-  1. Tries to read the file using <b>readJSONFile</b>
-  2. If it succeeds, it returs the state
-  3. If it fails, it initialises the state and saves it to file
-  4. Returns either the state from the file or the initialised abd empty state
-
 <br>
 <div id='initialiseState'></div>
 
 <b>initialiseState()</b>
 
-Use: This function is used to intialise the state for each feed
+Use: This function is used to initialise the state by creating the necessary tables in the DB
 
 What it does:
-  1. Reads the state using <b>readState()</b>
-  2. Goes through the jobs in the state and checks if there is a state for each job. If not, it initialises one.
-  3. Saves the state to file
-
-<br>
-<div id='getJobIndex'></div>
-
-<b>getJobIndex(jobName)</b>
-
-Inputs:
-* jobName - The job name of the job whose index is needed
-
-Use: This function is used to get the index of the job in the array inside the state which contains all the jobs
-
-What it does:
-  1. Reads the state using <b>readState()</b>
-  2. Goes through the jobs in the state and returns the index if the job name matches the one passed as input
-  3. Returns -1 if the job is not found
+  1. Creates the tables in the DB using the function createDBs()
 
 <br>
 <div id='sendJobRun'></div>
@@ -402,12 +474,26 @@ Inputs:
 
 Use: This function is used to get the latest offers from an address
 
-Returns: The latest offer statuses from the last 10 entries in form of an array
+Returns: The latest offer statuses from the last 5 entries in form of an array
 
 What it does:
   1. Reverses all the offers and loops through the reversed array
   2. If it is an offer status and it does not have an 'error' property, it is added to the array to be returned
   3. Returns the array consisting of succeeded offers.
+
+<br>
+<div id='getLatestSubmittedRound'></div>
+
+<b>getLatestSubmittedRound()</b>
+
+Use: This function is used to get the latest round for which a submission was made
+
+Returns: The latest round ID for which a submission was made
+
+What it does:
+  1. Obtains a follower of offers and balances for the oracle address
+  2. Gets the latest offers by calling <b>getOffers()</b> 
+  3. Returns the round ID of the latest offer
 
 <br>
 <div id='checkSubmissionForRound'></div>
@@ -462,10 +548,10 @@ Use: This function is used to query the latest on-chain round for a feed
 Returns: The latest round in an object containing the round ID, the timestamp when it was started, who started it and whether a submission was made by the oracle running this middleware using the FROM environment variable. The result object has the following structure
 ```json
 {
-  "roundId": 1,
-  "startedAt": 1612345678,
-  "startedBy": "agoric123456789",
-  "submissionMade": false
+  "round_id": 1,
+  "started_at": 1612345678,
+  "started_by": "agoric123456789",
+  "submission_made": false
 }
 ```
 
@@ -476,21 +562,20 @@ What it does:
   4. Appends all the details to an object and returns it
 
 <br>
-<div id='submitNewJobIndex'></div>
+<div id='submitNewJob'></div>
 
-<b>submitNewJobIndex(index, requestType)</b>
+<b>submitNewJob(feed, requestType)</b>
 
 Inputs:
-* index - The index of the job in the state data
+* feed - The feed to submit a new job request for
 * requestType - The request type to send as a parameter with the job request. 1 if a timer request, 2 if triggered by a price deviation, 3 for a new round.
 
-Use: This function is used to send a job request to the CL node using the index of the job in the state file
+Use: This function is used to send a job request to the CL node
 
 What it does:
-  1. Reads the state
-  2. Increments the request ID in the state file for the job using the index
-  3. Sets the 'last_request_sent' timestamp to the current timestamp in the job's state
-  4. Saves the updated state to the state file
+  1. Gets the latest request ID from the DB
+  2. Increments the request ID
+  3. Updates the 'last_request_sent' timestamp to the current timestamp in the DB
   5. Calls <b>sendJobRun</b> to send a job request to the CL node
 
 
@@ -504,17 +589,17 @@ Use: This function serves as the controller for the middleware and it basically 
 What it does:
   1. Creates an interval using setInterval to trigger every second. This will go through every job in the state and creates a CL job for each job depending whether the <b>pollInterval</b> for that feed expired.
   2. Creates a second interval using setInterval to trigger every BLOCK_INTERVAL. This will do the following:
-    a. Reads the state
-    b. Loops through all the jobs in the state
+    a. Reads the jobs from the DB
+    b. Loops through all the jobs
     c. For every job it does the following:
       - Queries the price on-chain
       - Queries the round on-chain
-      - Update the latest price and round in the state for that job
-      - If there is a new round and a submission is already made for that round, the 'last_reported_round' is updated in the state file. Otherwise, if a submission is not made, a new CL job request of type 3 is prepared
+      - Update the latest price and round in the DB for that job
+      - If there is a new round and a submission is already made for that round, the 'last_reported_round' is updated in the DB. Otherwise, if a submission is not made, a new CL job request of type 3 is prepared
       - It will check for a price deviation from the previous on-chain price and if there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed), a new CL job request of type 2 is prepared
       - If one of the above conditions is met and a CL job request is prepared, a final check is made. <b>This is done to avoid creating duplicate CL job requests resulting in extra subscription costs for oracles</b>. The CL job request is ONLY sent if one of the following conditions is met:
-        - 1. There is no pending CL job request for which we are still waiting for. This is done by checking the comapring the request ID of the last request sent and received from the state.
-        - 2. An interval of SEND_CHECK_INTERVAL passed fron the last CL job request which was sent.
+        - 1. There is no pending CL job request for which we are still waiting for. This is done by checking the comparing the request ID of the last request sent and received from the DB.
+        - 2. An interval of SEND_CHECK_INTERVAL passed from the last CL job request which was sent.
 
 <br>
 <div id='getOraclesInvitationsMiddleware'></div>
@@ -555,13 +640,31 @@ What it does:
   2. Obtains the feed offer id from the wallet using <b>getOraclesInvitations()</b>
   3. Creates an offer object with the feed offer id, the created id, the price and the round
   4. It checks whether a submission for this round was already made to avoid double submissions to save transaction fees.
-  5. If a submission is not yet made, it will loop for a maximum of SUBMIT_RETRIES and it will do the following:
+  5. Check if the middleware is waiting for a price submission confirmation using checkIfInSubmission()
+  5. If a submission is not yet made and it is not waiting for a submission confirmation, it will loop for a maximum of SUBMIT_RETRIES and it will do the following:
     a. Queries the latest round
     b. Confirms whether the round we are submitting to is actuallyt he latest round and that we have not sent a submission for this round yet
     c. If the above condition is satisfied, the offer is pushed on chain
     d. It will delay for SEND_CHECK_INTERVAL. This is done to ensure that the price is not still in the mempool and that two blocks (13 seconds in this case) have passed just in case.
     e. Check whether the submission was successful. If the submission was not successful after 2 blocks, the loop continues for next try.
     f. Once the loop finishes and all the tries were done, true or false will be returned indicating whether the price was successfully pushed or not
+
+<br>
+<div id='checkIfInSubmission'></div>
+
+<b>checkIfInSubmission(feed)</b>
+
+Inputs:
+* feed - The feed to check if a submission was made
+
+Use: This function is used to check if the middleware is still waiting for a price submission confirmation
+
+Returns: A boolean indicating whether last submission was made in less than SEND_CHECK_INTERVAL seconds
+
+What it does:
+  1. Gets the time of the last price submission from the DB
+  2. Calculates the number of seconds passed from the submission
+  3. Returns whether the number of seconds passed exceed SEND_CHECK_INTERVAL
 
 <br>
 <div id='startBridge'></div>
@@ -583,22 +686,23 @@ What it does:
 a. <u>/adapter</u>: This is the endpoint which is used to accept job results from CL job requests. This endpoint does the following:
   - Read the result, request ID, request Type and job name from the received body
   - Check if an actual result was received and if not return a status 500 response. If a result is received, a 200 is sent as response.
-  - Obtain the last price on-chain from the state
+  - Obtain the last price on-chain from the DB
   - Obtain the round to push the price for by checking whether the latest round on-chain is greater than the oracle's last reported round. If so, the round ID would be the latest round on chain. Otherwise, the latest round on chain is incremented by 1 as a new round would need to be created.
   - Push the price on chain if it satisfies all the following criteria:
+    - SEND_CHECK_INTERVAL seconds passed from the last price push update to ensure that multiple price updates are not pushed simultaneously
     - If it is a new round and we the oracle has not started the current on-chain round or if it is not a new round but the oracle has not submitted to the current round on-chain
     - One of the following:
       - If its time for a price update by comparing the timestamp of the last round and now by making use of <b>pushInterval</b>(for that feed) (Request type 1)
       - If there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed) between the received price and the latets price on chain (Request type 2)
       - If there was a new a new round (Request type 3)
-  - Update the 'last_reported_round' and the request ID of latest job result received from CL node in the state file
+  - Update the 'last_reported_round' and the request ID of latest job result received from CL node in the DB
 <div id='postjobs'></div>
 
-b. <u>/jobs</u>: This is the endpoint which is used to handle a new job created on the CL node. This endpoint adds the job to the list of jobs in the state and intialises all the required states.
+b. <u>/jobs</u>: This is the endpoint which is used to handle a new job created on the CL node. This endpoint adds the job to the jobs table in the DB.
 
 <div id='deljobs'></div>
 
-c. <u>/jobs/:id</u>:  This is the endpoint which is used to handle a job removal on the CL node. This endpoint removes the job from the list of jobs in the state and removes any related states.
+c. <u>/jobs/:id</u>:  This is the endpoint which is used to handle a job removal on the CL node. This endpoint removes the job from the DB.
 
 <br>
 <div id='middlewarefunc'></div>
@@ -615,7 +719,7 @@ What it does:
 <br>
 <div id='monitorjs'></div>
 
-### <u>monitor.js</u>
+### <u>oracle/monitor.js</u>
 
 This file contains all the functions which are used both by the monitoring script. 
 
@@ -869,4 +973,4 @@ In this subsection, we will be describing the various intervals in the middlewar
 - pollInterval (for each feed) - This is the interval at which new CL job requests are created. This is set to 1 minute in order to query the off-chain price every minute. This is useful so that the price is checked every minute and if the results deviates more than the <b>priceDeviationPerc</b>(for that feed) value, a submission is made on chain, instructing all other oracles to check the price and submit to the new round.
 - pushInterval (for each feed) - This is the interval at which prices need to be pushed on chain. This is set to 1 hour as the on-chain price does not need to be updated more frequently than every hour. Since the POLL_INTERVAL is set to 1 minute, the off-chain price will be checked every 1 minute and if a deviation occurs, a new price update will still be pushed on-chain before the 1 hour threshold. This will save transaction fees for useless updates if the price remains stable for an hour.
 - BLOCK_INTERVAL - This is the interval at which new blocks are created on chain. This is set to 6 seconds to match the block time on the Agoric chain. This is used to query the aggregated price and the round details on chain. It is useless to set this value lower than 6 seconds as the price and rounds will only be updated maximum every block.
-- SEND_CHECK_INTERVAL - This is the interval which needs to pass before retrying a price submission. We wait this interval before checking whether a price push was successful or not. We set this to 12 seconds to be equal to approximately 2 blocks on the Agoric chain.
+- SEND_CHECK_INTERVAL - This is the interval which needs to pass before retrying a price submission. We wait this interval before checking whether a price push was successful or not. We set this to 45 seconds to give enough time for the submission to be inserted in a block.

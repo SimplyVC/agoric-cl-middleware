@@ -1,5 +1,3 @@
-/* eslint-disable no-await-in-loop */
-/* eslint-disable @jessie.js/no-nested-await */
 // @ts-nocheck
 /* eslint-disable func-names */
 /* global fetch, process */
@@ -20,12 +18,13 @@ import fs from 'fs';
 import { getCurrent } from '../lib/wallet.js';
 import bodyParser from 'body-parser';
 import express from 'express';
-import { validUrl, delay, saveJSONDataToFile, readJSONFile, readVStorage } from './helper.js';
+import { validUrl, delay, readJSONFile, readVStorage } from '../helpers/utils.js';
 import {
   makeFollower,
   makeLeader,
 } from '@agoric/casting';
 import { iterateReverse } from '@agoric/casting';
+import { getAllJobs, createDBs, createJob, deleteJob, queryTable, updateTable} from '../helpers/db.js'
 
 // get environment variables
 const {
@@ -34,7 +33,7 @@ const {
   FROM,
   SUBMIT_RETRIES = 3,
   BLOCK_INTERVAL = '6',
-  SEND_CHECK_INTERVAL = '12',
+  SEND_CHECK_INTERVAL = '45',
   AGORIC_RPC = "http://0.0.0.0:26657",
   STATE_FILE = "data/middleware_state.json",
   CREDENTIALS_FILE = "config/ei_credentials.json",
@@ -65,72 +64,12 @@ var credentials;
 var feeds;
 
 /**
-  * Function to load from file or initialise it
-  * @returns empty state or state from file
-  */
-const readState = () => {
-  // try to read JSON file and if it doesnt exist, create one
-  try {
-    //read JSON file
-    return readJSONFile(STATE_FILE)
-  } catch (err) {
-
-    //create an initial state
-    let initial_state = {
-      "jobs": [],
-      "previous_results": {}
-    }
-
-    //save state
-    saveJSONDataToFile(initial_state, STATE_FILE)
-    return initial_state
-  }
-}
-
-/**
   * Function to initialise state
   */
-const initialiseState = () => {
-  //read state
-  let state = readState()
-
-  //go through each job
-  for (let index in state.jobs) {
-    let currentJob = state.jobs[index]
-    //if not initialised
-    if (!(currentJob.name in state.previous_results)) {
-      state.previous_results[currentJob.name] = {
-        id: currentJob.job,
-        result: 0,
-        round: {}
-      }
-    }
-  }
-
-  //save state
-  saveJSONDataToFile(state, STATE_FILE);
+const initialiseState = async () => {
+  //create tables if they do not exist
+  await createDBs();
 }
-
-/**
-  * Function to get the job's index
-  * @param {*} jobName the job name 
-  * @returns the index of the job
-  */
-const getJobIndex = (jobName) => {
-  //read state
-  let state = readState()
-
-  //go through each job
-  for (let index in state.jobs) {
-    let currentJob = state.jobs[index]
-    //if not initialised
-    if (currentJob.name == jobName) {
-      return index
-    }
-  }
-  return -1
-}
-
 
 /**
   * Function to send a job run to the CL node
@@ -157,20 +96,18 @@ const sendJobRun = async (credentials, count, jobId, chainlinkUrl, requestType) 
   };
 
   //try request with loop retries
-  let error = ""
   for (let i = 0; i < SUBMIT_RETRIES; i++) {
     try {
-      let res = await axios.post(options.url, options.body, {
+      await axios.post(options.url, options.body, {
         timeout: 60000,
         proxy: false,
         headers: options.headers,
-        httpAgent: new http.Agent({ keepAlive: true })
+        httpAgent: new http.Agent({ keepAlive: false })
       });
       return
     }
     catch (err) {
       console.error("JOB Request for " + jobId + " failed", err)
-      error = err
     }
   }
 }
@@ -188,7 +125,7 @@ export const getOffers = async (follower) => {
 
   for await (const followerElement of iterateReverse(follower)) {
 
-    if (counter == 10){
+    if (counter == 5){
       break;
     }
 
@@ -211,6 +148,28 @@ export const getOffers = async (follower) => {
   return history
 }
 
+/**
+ * Function to get the latest submitted round
+ * @returns the latest round submitted
+ */
+export const getLatestSubmittedRound = async () => {
+  const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
+  const leader = makeLeader(networkConfig.rpcAddrs[0]);
+
+  const follower = await makeFollower(
+    `:published.wallet.${FROM}`,
+    leader,
+    {
+      // @ts-expect-error xxx
+      unserializer,
+    },
+  );
+
+  //get offers
+  let offers = await getOffers(follower)
+
+  return Number(offers[0]["status"]["invitationSpec"]["invitationArgs"][0]["roundId"])
+}
 
 /**
  * Function to check if submission was satisfied for a specific round
@@ -234,7 +193,7 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
 
   //get offers
   let offers = await getOffers(follower)
-
+  
   //loop through offers starting from last offer
   for (var i = 0; i < offers.length; i++) {
     //get current offer
@@ -347,39 +306,33 @@ export const queryRound = async (feed) => {
 
   //get the latest round
   var latestRound = {
-    roundId: round,
-    startedAt: Number(capData.startedAt.digits),
-    startedBy: capData.startedBy,
-    submissionMade: submissionForRound
+    round_id: round,
+    started_at: Number(capData.startedAt.digits),
+    started_by: capData.startedBy,
+    submission_made: submissionForRound
   }
 
-  console.log(feed + " Latest Round: ", latestRound.roundId)
+  console.log(feed + " Latest Round: ", latestRound.round_id)
   return latestRound
 }
 
 /**
   * Function to submit a new job run to the Chainlink node
-  * @param {*} index the index of the job in the state data
+  * @param {*} feed the feed to submit a job for
   * @param {*} requestType the request type to send as a parameter with the job request. 1 if a timer request, 2 if triggered by a price deviation, 3 new round.
   */
-const submitNewJobIndex = async (index, requestType) => {
+const submitNewJob = async (feed, requestType) => {
 
-  let state = readState()
-  //increment the request id of the job in the state
-  state.jobs[index].request_id++;
-  //set the time sent
-  state.jobs[index].last_request_sent = Date.now() / 1000;
-
-  let requestId = state.jobs[index].request_id;
-  let job = state.jobs[index].job
-
-  console.log("Sending job spec", job, "request", requestId)
-
-  //update state
-  saveJSONDataToFile(state, STATE_FILE)
+  //get latest request id
+  let query = await queryTable("jobs", ["request_id", "id"], feed)
+  let newRequestId = query.request_id+1
+  //update table
+  await updateTable("jobs", {"request_id": newRequestId, "last_request_sent" : Date.now() / 1000}, feed)
+  
+  console.log("Sending job spec", feed, "request", newRequestId)
 
   //send job run
-  await sendJobRun(credentials, requestId, job, EI_CHAINLINKURL, requestType)
+  await sendJobRun(credentials, newRequestId, query.id, EI_CHAINLINKURL, requestType)
 }
 
 /**
@@ -391,26 +344,27 @@ const makeController = () => {
   //create an interval which creates a job request every second
   const it = setInterval(async () => {
 
-    //read the state
-    let state = readState();
+    //get all jobs
+    let jobs = await getAllJobs();
 
     //for each job in state, send a job run
-    for (let index in state.jobs) {
+    jobs.forEach( async (job) => {
 
       //get interval for feed
-      let feedName = state.jobs[index].name;
+      let feedName = job.name;
       let pollInterval = feeds[feedName].pollInterval
 
       //check whether poll interval expired
       let now = Date.now() / 1000
-      let timeForPoll = state.jobs[index].last_request_sent + pollInterval <= now
+      let query = await queryTable("jobs", ["last_request_sent"], feedName)
+      let timeForPoll = query.last_request_sent + pollInterval <= now
 
       //if interval expired
       if (timeForPoll){
         //send a job run with type 1, indicating a job run triggered from the polling interval
-        await submitNewJobIndex(index, 1)
+        await submitNewJob(feedName, 1)
       }
-    }
+    });
   }, oneSecInterval);
 
 
@@ -424,36 +378,40 @@ const makeController = () => {
     */
   const it2 = setInterval(async () => {
 
-    //read state
-    let state = readState();
+    //get all jobs
+    let jobs = await getAllJobs();
 
-    //for each job in state
-    for (var i = 0; i < state.jobs.length; i++) {
+    //for each job
+    for (var i = 0; i < jobs.length; i++) {
       //get the job name
-      let jobName = state.jobs[i].name;
+      let jobName = jobs[i].name;
 
       let sendRequest = 0;
 
       //query the price
       let latestPrice = await queryPrice(jobName)
-      let currentPrice = jobName in state.previous_results ? state.previous_results[jobName].result : 0
+
+      //get latest price
+      let query = await queryTable("jobs", ["last_result"], jobName)
+      let currentPrice = query.last_result
 
       //query latest round
       let latestRound = await queryRound(jobName);
 
-      //reread state in case of updates
-      state = readState();
+      //get latest submitted round
+      var latestSubmittedRound = await getLatestSubmittedRound()
+    
+      //update jobs table
+      await updateTable("jobs", {"last_result" : latestPrice, "last_reported_round": latestSubmittedRound}, jobName)
 
-      //update latest price
-      state.previous_results[jobName].result = latestPrice
-      //update latest round
-      state.previous_results[jobName].round = latestRound
+      //update rounds table
+      await updateTable("rounds", latestRound, jobName)
 
       //if latest round is bigger than last reported round
-      if (latestRound.roundId > state.jobs[getJobIndex(jobName)].last_reported_round) {
+      if (latestRound.round_id > latestSubmittedRound) {
         //if submitted, update last_reported_round
-        if (latestRound.submissionMade) {
-          state.jobs[getJobIndex(jobName)].last_reported_round = latestRound.roundId
+        if (latestRound.submission_made) {
+          await updateTable("jobs", {"last_reported_round": latestSubmittedRound}, jobName)
         }
         //if not found send job request
         else {
@@ -461,8 +419,6 @@ const makeController = () => {
           sendRequest = 3
         }
       }
-
-      saveJSONDataToFile(state, STATE_FILE)
 
       //if there's a price deviation
       let priceDev = Math.abs((latestPrice - currentPrice) / currentPrice) * 100
@@ -483,20 +439,22 @@ const makeController = () => {
         //get seconds now
         let secondsNow = Date.now() / 1000
         //check seconds passed from last request
-        let secondsPassed = secondsNow - state.jobs[i].last_request_sent
+        let query = await queryTable("jobs", ["last_request_sent"], jobName)
+        let secondsPassed = secondsNow - query.last_request_sent
 
-        //check if allowed to send - 12 seconds passed or a request hasnt been made.
+        //check if allowed to send - 12 seconds passed or a request has not been made.
         //12 seconds chosen to wait at least 2 blocks
-        let allowedSend = state.jobs[i].request_id == state.previous_results[jobName].request_id || secondsPassed > Number(SEND_CHECK_INTERVAL)
+        query = await queryTable("jobs", ["last_received_request_id", "request_id"], jobName)
+        let allowedSend = query.request_id == query.last_received_request_id || secondsPassed > Number(SEND_CHECK_INTERVAL)
 
-        //if a request hadnt been made yet
+        //if a request has not been made yet
         if (allowedSend) {
           //submit job
           console.log("Initialising new CL job request")
-          submitNewJobIndex(i, sendRequest)
+          submitNewJob(jobName, sendRequest)
         }
         else{
-          console.log("Will not be initialising new job request - Still waiting for request", state.jobs[i].request_id, "to finish. Last finished request is", state.previous_results[jobName].request_id)
+          console.log("Will not be initialising new job request - Still waiting for request", query.request_id, "to finish. Last finished request is", query.last_received_request_id)
         }
       }
     }
@@ -520,9 +478,6 @@ const startBridge = (PORT) => {
   * This is used to listen for job run results
   */
   app.post('/adapter', async (req, res) => {
-    //read state
-    let state = readState()
-
     //get result
     let result = Math.round(req.body.data.result)
 
@@ -540,13 +495,16 @@ const startBridge = (PORT) => {
     } 
 
     //get last price from state
-    let lastPrice = (state.previous_results[jobName]) ? state.previous_results[jobName].result : -1
+    let query = await queryTable("jobs", ["last_result"], jobName)
+    let lastPrice = query.last_result
 
     //get push interval for feed
     let pushInterval = feeds[jobName].pushInterval
 
     //check if time for update
-    let timeForUpdate = (Date.now()/1000) >= state.previous_results[jobName].round.startedAt + Number(pushInterval)
+    query = await queryTable("rounds", ["started_at"], jobName)
+
+    let timeForUpdate = (Date.now()/1000) >= query.started_at + Number(pushInterval)
 
     //if there is no last price, if it is time for a price update or if there is a new round, update price
     let toUpdate = lastPrice == -1 || lastPrice == 0 || requestType == 1 && timeForUpdate || requestType == 3
@@ -567,34 +525,44 @@ const startBridge = (PORT) => {
       toUpdate = percChange > priceDeviationPercentage
     }
 
+    //get seconds since last price submission
+    query = await queryTable("jobs", ["last_submission_time"], jobName)
+    let timePassedSinceSubmission = (Date.now()/1000) - query.last_submission_time
+    //check if in submission
+    let inSubmission = timePassedSinceSubmission < Number(SEND_CHECK_INTERVAL)
+
     /**
       * If an update needs to happen
       * An update happens for the following reasons
       *    - First request
       *    - Job request was because time expired
       *    - Price deviation found
+      *    - PLUS not already waiting for a submission
       */
-    if (toUpdate) {
+    if (toUpdate && !inSubmission) {
 
-      //get latest queried round
-      let latestRound = state.previous_results[jobName].round
+      //get latest round
+      let latestRound = await queryRound(jobName)
+      await updateTable("rounds", latestRound, jobName)
 
       //get the round for submission
-      let lastReportedRound = state.jobs[getJobIndex(jobName)].last_reported_round
-      let lastRoundId = isNaN(latestRound.roundId) ? lastReportedRound : latestRound.roundId
+      let query = await queryTable("jobs", ["last_reported_round"], jobName)
+      let lastReportedRound = query.last_reported_round
+      let lastRoundId = isNaN(latestRound.round_id) ? lastReportedRound : latestRound.round_id
       let roundToSubmit = lastReportedRound < lastRoundId ? lastRoundId : lastRoundId + 1
 
       //check if new round
       let newRound = roundToSubmit != lastRoundId
 
-      //push price on chain if first round, haven't started previous round and havent submitted yet in the same round
-      if (roundToSubmit == 1 || (newRound && latestRound.startedBy != FROM) || (!newRound && !latestRound.submissionMade)) {
+      //push price on chain if first round, haven't started previous round and have not submitted yet in the same round
+      if (roundToSubmit == 1 || (newRound && latestRound.started_by != FROM) || (!newRound && !latestRound.submission_made)) {
         console.log("Updating price for round", roundToSubmit)
+
         let submitted = await pushPrice(result, jobName, roundToSubmit, FROM)
 
         //update last reported round
         if (submitted){
-          state.jobs[getJobIndex(jobName)].last_reported_round = roundToSubmit
+          await updateTable("jobs", {"last_reported_round": roundToSubmit}, jobName)
         }
       }
       else {
@@ -603,8 +571,7 @@ const startBridge = (PORT) => {
     }
 
     //update state
-    state.previous_results[jobName].request_id = Number(requestId)
-    saveJSONDataToFile(state, STATE_FILE)
+    await updateTable("jobs", {"last_received_request_id": Number(requestId)}, jobName)
 
   });
 
@@ -612,34 +579,13 @@ const startBridge = (PORT) => {
    * POST /jobs endpoint
    * This is used to listen for new jobs added from UI and to update state
    */
-  app.post('/jobs', (req, res) => {
+  app.post('/jobs', async (req, res) => {
     let newJob = req.body.jobId;
     let newJobName = req.body.params.name;
+    console.log("new job", newJobName, newJob)
 
-    //read state
-    let state = readState()
+    await createJob(newJob, newJobName);
 
-    //add new job to state
-    state.jobs.push({
-      job: newJob,
-      name: newJobName,
-      request_id: 0,
-      last_reported_round: 0,
-      last_request_sent: 0
-    });
-
-    //add previous results
-    state.previous_results[newJobName] = {
-      id: newJob,
-      result: 0,
-      request_id: 0,
-      round: {}
-    }
-
-    //save state
-    saveJSONDataToFile(state, STATE_FILE)
-    console.log("Got new job", newJob)
-    console.log("new jobs", state.jobs)
     res.status(200).send({ success: true })
   });
 
@@ -647,32 +593,15 @@ const startBridge = (PORT) => {
    * DELETE /jobs/:id endpoint
    * This is used to listen for jobs deleted from UI and to update state
    */
-  app.delete('/jobs/:id', (req, res) => {
+  app.delete('/jobs/:id', async (req, res) => {
     let jobId = req.params.id;
     console.log("Removing job", jobId)
 
-    //read state
-    let state = readState()
+    await deleteJob(jobId)
 
-    let jobName = ""
-
-    //loop through jobs
-    for (var index in state.jobs) {
-      //if job is found, remove it
-      if (state.jobs[index].job == jobId) {
-        jobName = state.jobs[index].name
-        state.jobs.splice(index, 1);
-        break;
-      }
-    }
-
-    delete state.previous_results[jobName]
-
-    //save state
-    saveJSONDataToFile(state, STATE_FILE)
     res.status(200).send({ success: true })
   });
-
+ 
   const listener = app.listen(PORT, '0.0.0.0', () => {
     console.log(`External adapter listening on port`, PORT);
   });
@@ -686,6 +615,21 @@ const outputAction = bridgeAction => {
   var data = JSON.stringify(capData)
   return data
 };
+
+/**
+ * Function to check if currently in submission
+ * @param {*} feed feed to check for
+ * @returns whether last submission was made in less than SEND_CHECK_INTERVAL seconds
+ */
+const checkIfInSubmission = async (feed) => {
+
+  //get last submission time
+  let query = await queryTable("jobs", ["last_submission_time"], feed)
+  //get seconds since last price submission
+  let timePassedSinceSubmission = (Date.now()/1000) - 
+  query.last_submission_time
+  return timePassedSinceSubmission < Number(SEND_CHECK_INTERVAL)
+}
 
 /**
   * Function to push price on chain to the smart wallet
@@ -717,16 +661,6 @@ const pushPrice = async (price, feed, round, from) => {
     proposal: {},
   };
 
-  //output action
-  var data = outputAction({
-    method: 'executeOffer',
-    // @ts-ignore
-    offer,
-  });
-
-  //change data to JSON
-  data = JSON.parse(data)
-
   //create keyring
   var keyring = {
     "home": "",
@@ -736,19 +670,35 @@ const pushPrice = async (price, feed, round, from) => {
   //check if submitted for round
   let submitted = await checkSubmissionForRound(from, previousOffer, round)
 
+  //check if in submission
+  let inSubmission = await checkIfInSubmission(feed)
+
   //loop retries
-  for (let i = 0; i < SUBMIT_RETRIES && !submitted; i++) {
+  for (let i = 0; i < SUBMIT_RETRIES && !submitted && !inSubmission; i++) {
 
     //query round
     let latestRound = await queryRound(feed)
     
     //if latestRound is greater than round being pushed or submission to the round is already made, abort
-    if (latestRound.roundId > round || (latestRound.roundId == round && latestRound.submissionMade)){
+    if (latestRound.round_id > round || (latestRound.round_id == round && latestRound.submission_made)){
       console.log("Price failed to be submitted for old round", round)
       return false
     }
 
     console.log("Submitting price for round", round, "try", (i + 1))
+
+    offer.id = Number(Date.now())
+
+    //output action
+    var data = outputAction({
+      method: 'executeOffer',
+      // @ts-ignore
+      offer,
+    });
+
+    //change data to JSON
+    data = JSON.parse(data)
+
     //execute
     await execSwingsetTransaction(
       "wallet-action --allow-spend '" + JSON.stringify(data) + "'",
@@ -758,11 +708,17 @@ const pushPrice = async (price, feed, round, from) => {
       keyring,
     );
 
+    //update last submission time
+    await updateTable("jobs", {"last_submission_time": Date.now()/1000}, "feed")
+
     //sleep 13 seconds to wait 2 blocks and a bit
     await delay((Number(SEND_CHECK_INTERVAL)+1) * 1000);
 
     //check submission for round
     submitted = await checkSubmissionForRound(from, previousOffer, round)
+
+    //check if in submission
+    inSubmission = await checkIfInSubmission(feed)
   }
 
   if (submitted) {
@@ -790,7 +746,7 @@ export const middleware = async () => {
   feeds = readJSONFile(FEEDS_FILE)
 
   //init
-  initialiseState()
+  await initialiseState()
 
   //start the bridge
   startBridge(PORT);
