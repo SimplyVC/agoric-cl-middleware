@@ -134,6 +134,3 @@ export const updateTable = async (table, values, name) => {
     }
     
 }
-
-
-

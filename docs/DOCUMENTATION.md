@@ -119,7 +119,7 @@ The middleware should contain the following functionalities:
 
 The monitoring script is needed to:
 1. Monitor the actual price and that it is being updated
-2. Monitor node operators submissions to ensure they are submitting values within accepatable thresholds and that they are submitting to rounds and not missing them
+2. Monitor node operators submissions to ensure they are submitting values within acceptable thresholds and that they are submitting to rounds and not missing them
 3. Monitor node operators' balances to ensure they have enough balance for transaction fees to push prices on chain
 4. Monitor the rate at which rounds are being created
 
@@ -237,7 +237,7 @@ The file contains the following functions:
 
 <b>createDBs()</b>
 
-Use: This function is used to initialise the required tables in tha DB
+Use: This function is used to initialise the required tables in the DB
 
 What it does:
   1. Creates the required tables if they do not exist using db.exec()
@@ -369,7 +369,7 @@ Use: This function is used to check whether a URL is valid
 Returns: A boolean showing whether it is a valid URL
 
 What it does:
-  1. Tryies to create a URL object
+  1. Tries to create a URL object
   2. Returns whether it is a valid URL by seeing whether the URL was successfully created or not
 
 <br>
@@ -425,7 +425,7 @@ This script makes use of the following environment variables and it requires the
 | CREDENTIALS_FILE     	| The path to the file containing the credentials to the <br>CL node                                                                                                   	| config/ei_credentials.json 	|
 
 
-The CREDENTIALS_FILE should contain a JSON object containing the credentials to communciate wioth the CL node as can be seen below
+The CREDENTIALS_FILE should contain a JSON object containing the credentials to communicate with the CL node as can be seen below
 ```json
 {
   "EI_IC_ACCESSKEY": "",
@@ -643,7 +643,7 @@ What it does:
   5. Check if the middleware is waiting for a price submission confirmation using checkIfInSubmission()
   5. If a submission is not yet made and it is not waiting for a submission confirmation, it will loop for a maximum of SUBMIT_RETRIES and it will do the following:
     a. Queries the latest round
-    b. Confirms whether the round we are submitting to is actuallyt he latest round and that we have not sent a submission for this round yet
+    b. Confirms whether the round we are submitting to is actually the latest round and that we have not sent a submission for this round yet
     c. If the above condition is satisfied, the offer is pushed on chain
     d. It will delay for SEND_CHECK_INTERVAL. This is done to ensure that the price is not still in the mempool and that two blocks (13 seconds in this case) have passed just in case.
     e. Check whether the submission was successful. If the submission was not successful after 2 blocks, the loop continues for next try.
@@ -693,7 +693,7 @@ a. <u>/adapter</u>: This is the endpoint which is used to accept job results fro
     - If it is a new round and we the oracle has not started the current on-chain round or if it is not a new round but the oracle has not submitted to the current round on-chain
     - One of the following:
       - If its time for a price update by comparing the timestamp of the last round and now by making use of <b>pushInterval</b>(for that feed) (Request type 1)
-      - If there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed) between the received price and the latets price on chain (Request type 2)
+      - If there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed) between the received price and the latest price on chain (Request type 2)
       - If there was a new a new round (Request type 3)
   - Update the 'last_reported_round' and the request ID of latest job result received from CL node in the DB
 <div id='postjobs'></div>
@@ -782,13 +782,13 @@ What it does:
 
 <b>readMonitoringState()</b>
 
-Use: This function is used to read the montoring state from the STATE_FILE. This is used upon startup to continue on previous data.
+Use: This function is used to read the monitoring state from the STATE_FILE. This is used upon startup to continue on previous data.
 
 Returns: The monitoring's state as JSON from the file or an empty initialised state
 
 What it does:
   1. Tries to read the file using <b>readJSONFile</b>
-  2. If it succeeds, it returs the state
+  2. If it succeeds, it returns the state
   3. If it fails, it initialises the state and saves it to file
   4. Returns either the state from the file or the initialised abd empty state
 
@@ -894,7 +894,7 @@ Inputs:
 
 Use: This function is used to obtain the latest submission details for an oracle
 
-Returns: An object containing details of the laste submission in the form as below
+Returns: An object containing details of the last submission in the form as below
 ```json
 {
   "price": 10.01,
@@ -920,7 +920,7 @@ What it does:
 Use: This function is used as the entry point to the monitoring script. It contains an interval based on POLL_INTERVAL to obtain details about each oracle being monitored and update the metrics
 
 What it does:
-  1. It loops throught he list of oracles to monitor and gets the latest submission details by calling <b>getLatestPrices()</b>. It does this every X seconds based on POLL_INTERVAL
+  1. It loops through the list of oracles to monitor and gets the latest submission details by calling <b>getLatestPrices()</b>. It does this every X seconds based on POLL_INTERVAL
   2. It saves the state with the latest values for the oracles being monitored
 
 <br>
@@ -942,7 +942,7 @@ What it does:
 
 Instead of having a middleware which sends Chainlink job requests to the Chainlink node, we could have used a cron job type when specifying the job specification. However, we opted to use the middleware to initiate jobs for the following reasons:
 
-1. We can send a request ID and keep track of which requests we got responses for. This can be useful when implementing an efficient startegy which does not send unneeded and extra job requests to the node, resulting in extra subscription costs for node operators.
+1. We can send a request ID and keep track of which requests we got responses for. This can be useful when implementing an efficient strategy which does not send unneeded and extra job requests to the node, resulting in extra subscription costs for node operators.
 2. We need to send CL job requests in other cases, such as when there is a new round on chain or when a price deviation is found. If we use a cron job we would not be able to initiate extra job requests without having a duplicate job just for this, making the whole setup messy and unsustainable.
 
 <div id='consid2'></div>
@@ -954,7 +954,7 @@ The middleware works in the following way:
 - It constantly listens to requests to its web server. These requests can either be that a new job was added or an existing job was removed. It can be a request indicating that a job run finished and the CL node sends the result to our server. The middleware needs this webserver to be able to constantly listen for updates from the CL node without interrupting the main thread of the execution described below.
 - In addition, it has two intervalled functions created using the native JS <b>setInterval()</b> function. 
   - One of these functions depends on POLL_INTERVAL, and it is used to create a job request on the Chainlink node every X seconds to get the latest price off-chain.
-  - The other function depends on BLOCK_INTERVAL and it is used to query the latest aggregated pric and round details on chain. This is needed in order to create an extra CL job request if there is a price deviation or a new round on chain
+  - The other function depends on BLOCK_INTERVAL and it is used to query the latest aggregated price and round details on chain. This is needed in order to create an extra CL job request if there is a price deviation or a new round on chain
 
 <div id='consid3'></div>
 

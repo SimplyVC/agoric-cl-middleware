@@ -1,0 +1,10 @@
+{
+    "cSpell.words": [
+        "UI",
+        "initialise",
+        "Agoric"
+    ],
+    "editor.wordWrap": "wordWrapColumn",
+    "editor.wordWrapColumn": 80,
+    "editor.wrappingIndent": "same"
+}
