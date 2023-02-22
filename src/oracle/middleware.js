@@ -16,7 +16,7 @@ const {
   BLOCK_INTERVAL = '6',
   SEND_CHECK_INTERVAL = '45',
   AGORIC_RPC = "http://0.0.0.0:26657",
-  FEEDS_FILE = "oracle/feeds.json"
+  FEEDS_FILE = "../config/feeds.json"
 } = process.env;
 
 /** 
