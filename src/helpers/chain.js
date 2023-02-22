@@ -52,7 +52,7 @@ export const readVStorage = async (feed, roundData) => {
 export const getOffers = async (follower) => {
   let history = [];
   let counter = 0;
-  let lastVisited = 0;
+  let lastVisited = -1;
 
   for await (const followerElement of iterateReverse(follower)) {
     if (counter === 5) {
