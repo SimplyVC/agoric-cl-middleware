@@ -42,7 +42,7 @@ export const sendJobRun = async (count, jobId, requestType) => {
   for (let i = 0; i < SUBMIT_RETRIES; i++) {
     try {
       await axios.post(options.url, options.body, {
-        timeout: 60000,
+        timeout: 5000,
         proxy: false,
         headers: options.headers,
         httpAgent: new http.Agent({ keepAlive: false }),
