@@ -18,7 +18,7 @@ const {
   FROM,
 } = process.env;
 
-if (process.env.NODE_ENV != "test") {
+if (process.env.NODE_ENV !== "test") {
   assert(FEEDS_FILE, "$FEEDS_FILE is required");
   assert(FROM, "$FROM is required");
   assert(Number(SEND_CHECK_INTERVAL), "$SEND_CHECK_INTERVAL is required");
@@ -85,12 +85,12 @@ export const startBridge = (PORT) => {
      * if there is no last price, if it is time for a price update or if there * is a new round, update price
      */
     let toUpdate =
-      lastPrice == -1 ||
-      lastPrice == 0 ||
-      (requestType == 1 && timeForUpdate) ||
-      requestType == 3;
+      lastPrice === -1 ||
+      lastPrice === 0 ||
+      (requestType === 1 && timeForUpdate) ||
+      requestType === 3;
     //if last price is found and it is a price deviation request
-    if (lastPrice != -1 && requestType == 2) {
+    if (lastPrice !== -1 && requestType === 2) {
       //get decimal places for feed
       let decimalPlaces = feeds[jobName].decimalPlaces;
       //calculate percentage change
@@ -142,14 +142,14 @@ export const startBridge = (PORT) => {
         lastReportedRound < lastRoundId ? lastRoundId : lastRoundId + 1;
 
       //check if new round
-      let newRound = roundToSubmit != lastRoundId;
+      let newRound = roundToSubmit !== lastRoundId;
 
       /**
        * push price on chain if first round, haven't started previous round and * have not submitted yet in the same round
        */
       if (
-        roundToSubmit == 1 ||
-        (newRound && latestRound.started_by != FROM) ||
+        roundToSubmit === 1 ||
+        (newRound && latestRound.started_by !== FROM) ||
         (!newRound && !latestRound.submission_made)
       ) {
         console.log("Updating price for round", roundToSubmit);

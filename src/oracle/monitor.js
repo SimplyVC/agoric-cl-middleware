@@ -30,7 +30,7 @@ const {
 assert(!isNaN(Number(PORT)), "$PORT is required");
 assert(!isNaN(Number(POLL_INTERVAL)), "$POLL_INTERVAL is required");
 assert(validUrl(AGORIC_RPC), "$AGORIC_RPC is required");
-assert(AGORIC_NET != "" && AGORIC_NET != null, "$AGORIC_NET is required");
+assert(AGORIC_NET !== "" && AGORIC_NET !== null, "$AGORIC_NET is required");
 
 // Create a Registry which registers the metrics
 const register = new Registry();
@@ -223,17 +223,17 @@ const getOffersAndBalances = async (follower, oracle) => {
   let lastVisited = 0;
 
   for await (const followerElement of iterateReverse(follower)) {
-    if (counter == 10) {
+    if (counter === 10) {
       break;
     }
 
     //if it is an offer status
-    if (followerElement.value.updated == "offerStatus") {
+    if (followerElement.value.updated === "offerStatus") {
       //get id
       let id = followerElement.value.status.id;
 
       //if a new and final state
-      if (id != lastVisited) {
+      if (id !== lastVisited) {
         //if it is not failed
         if (!followerElement.value.status.hasOwnProperty("error")) {
           toReturn["offers"].push(followerElement.value);
@@ -363,7 +363,7 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
     }
   }
 
-  return lastResults["last_offer_id"] != lastOfferId ? lastResults : state;
+  return lastResults["last_offer_id"] !== lastOfferId ? lastResults : state;
 };
 
 /**

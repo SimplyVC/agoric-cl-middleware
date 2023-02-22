@@ -13,7 +13,7 @@ const { SEND_CHECK_INTERVAL = "45" } = process.env;
 /**
  * Environment variables validation
  */
-if (process.env.NODE_ENV != "test") {
+if (process.env.NODE_ENV !== "test") {
   assert(Number(SEND_CHECK_INTERVAL), "$SEND_CHECK_INTERVAL is required");
 }
 

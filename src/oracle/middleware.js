@@ -32,13 +32,13 @@ const {
 /** 
   * Environment variables validation
   */
-if (process.env.NODE_ENV != "test"){
+if (process.env.NODE_ENV !== "test"){
   assert(FROM, '$FROM is required');
   assert(Number(PORT), "$PORT is required");
   assert(Number(BLOCK_INTERVAL), "$BLOCK_INTERVAL is required");
   assert(Number(SEND_CHECK_INTERVAL), "$SEND_CHECK_INTERVAL is required");
   assert(validUrl(AGORIC_RPC), '$AGORIC_RPC is required');
-  assert(FEEDS_FILE != "", '$FEEDS_FILE is required');
+  assert(FEEDS_FILE !== "", '$FEEDS_FILE is required');
 }
 
 var feeds;
@@ -145,7 +145,7 @@ const makeController = () => {
       }
 
       //if there is a request to be sent
-      if (sendRequest != 0) {
+      if (sendRequest !== 0) {
 
         //get seconds now
         let secondsNow = Date.now() / 1000
@@ -158,7 +158,7 @@ const makeController = () => {
          * been made.
          */
         query = await queryTable("jobs", ["last_received_request_id", "request_id"], jobName)
-        let allowedSend = query.request_id == query.last_received_request_id || secondsPassed > Number(SEND_CHECK_INTERVAL)
+        let allowedSend = query.request_id === query.last_received_request_id || secondsPassed > Number(SEND_CHECK_INTERVAL)
 
         //if a request has not been made yet
         if (allowedSend) {

@@ -22,7 +22,7 @@ import { updateTable } from "./db.js";
 
 const { FROM, SUBMIT_RETRIES = "3", SEND_CHECK_INTERVAL = "45" } = process.env;
 
-if (process.env.NODE_ENV != "test") {
+if (process.env.NODE_ENV !== "test") {
   assert(FROM, "$FROM is required");
   assert(Number(SUBMIT_RETRIES), "$SUBMIT_RETRIES is required");
   assert(Number(SEND_CHECK_INTERVAL), "$SEND_CHECK_INTERVAL is required");
@@ -55,17 +55,17 @@ export const getOffers = async (follower) => {
   let lastVisited = 0;
 
   for await (const followerElement of iterateReverse(follower)) {
-    if (counter == 5) {
+    if (counter === 5) {
       break;
     }
 
     //if it is an offer status
-    if (followerElement.value.updated == "offerStatus") {
+    if (followerElement.value.updated === "offerStatus") {
       //get id
       let id = followerElement.value.status.id;
 
       //if a new and final state
-      if (id != lastVisited) {
+      if (id !== lastVisited) {
         //if it is not failed
         if (!followerElement.value.status.hasOwnProperty("error")) {
           history.push(followerElement.value);
@@ -130,14 +130,14 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
     if (
       currentOffer["status"]["invitationSpec"]["invitationMakerName"] ==
         "PushPrice" &&
-      currentOffer["status"]["invitationSpec"]["previousOffer"] == feedOfferId
+      currentOffer["status"]["invitationSpec"]["previousOffer"] === feedOfferId
     ) {
       let offerRound = Number(
         currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
       );
 
       //if it is an offer for the round we are checking for
-      if (offerRound == roundId) {
+      if (offerRound === roundId) {
         //if there is no error
         if (!currentOffer["status"].hasOwnProperty("error")) {
           return true;
@@ -322,7 +322,7 @@ export const pushPrice = async (price, feed, round, from) => {
      */
     if (
       latestRound.round_id > round ||
-      (latestRound.round_id == round && latestRound.submission_made)
+      (latestRound.round_id === round && latestRound.submission_made)
     ) {
       console.log("Price failed to be submitted for old round", round);
       return false;

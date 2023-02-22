@@ -8,9 +8,9 @@ const {
   CREDENTIALS_FILE = "config/ei_credentials.json",
 } = process.env;
 
-if (process.env.NODE_ENV != "test") {
+if (process.env.NODE_ENV !== "test") {
   assert(EI_CHAINLINKURL, "$EI_CHAINLINKURL is required");
-  assert(CREDENTIALS_FILE != "", '$CREDENTIALS_FILE is required');
+  assert(CREDENTIALS_FILE !== "", '$CREDENTIALS_FILE is required');
 }
 
 /**
