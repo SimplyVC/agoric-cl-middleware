@@ -6,5 +6,8 @@
     ],
     "editor.wordWrap": "wordWrapColumn",
     "editor.wordWrapColumn": 80,
-    "editor.wrappingIndent": "same"
+    "editor.wrappingIndent": "same",
+    "editor.rulers": [
+        80
+    ]
 }
