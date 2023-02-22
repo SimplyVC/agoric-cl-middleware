@@ -106,7 +106,7 @@ The middleware should contain the following functionalities:
 6. An endpoint to listen for results from a CL job for submitted job requests. This endpoint should decide whether or not to push the price on chain. A price should be pushed on chain if one of the following cases is satisfied:
   a. It is a new round and the oracle has not yet submitted to this round
   b. An interval of Z minutes/hours expired since the last price pushed on chain. This is only done if the oracle has not started the previous round himself. This is done because an oracle is not allowed to start consecutive rounds.
-  c. There is a deviation of more than W% from the current price on-chain. Once again, only done if the oracle has not started the previous round himself.
+  c. There is a deviation of more than W% from the current price on-chain. Once again, only done if the oracle has not started the previous round.
 7. Keep the following information in the DB for each feed:
   a. The CL job's external id for that feed
   b. The name of the feed
@@ -122,7 +122,7 @@ The middleware should contain the following functionalities:
 
 The monitoring script is needed to:
 1. Monitor the actual price and that it is being updated
-2. Monitor node operators submissions to ensure they are submitting values within acceptable thresholds and that they are submitting to rounds and not missing them
+2. Monitor node operators' submissions to ensure they are submitting values within acceptable thresholds and that they are submitting to rounds and not missing them
 3. Monitor node operators' balances to ensure they have enough balance for transaction fees to push prices on chain
 4. Monitor the rate at which rounds are being created
 
@@ -373,7 +373,7 @@ What it does:
 
 Use: This function is used to get the oracle invitation IDs for price feeds 
 
-Returns: An JSON object with invitation IDs as below
+Returns: A JSON object with invitation IDs as below
 ```json
 {
   "ATOM-USD": "123456789",
@@ -683,7 +683,7 @@ What it does:
 
 ### <u>oracle/middleware.js</u>
 
-This file contains all the functions which are used both by the middleware. 
+This file contains all the functions which are used by the middleware. 
 
 <br>
 <div id='envvarsmiddleware'></div>
@@ -718,7 +718,7 @@ The CREDENTIALS_FILE should contain a JSON object containing the credentials to 
 
 <b>makeController()</b>
 
-Use: This function serves as the controller for the middleware and it basically consists of two intervals running separately. One is triggerred every second and it is used to create a CL job node once this timer triggers. The other is triggered every BLOCK_INTERVAL and it is used to query the latest price and round stored on-chain. The latter will check if there is a price deviation or a new round and if so, a new CL job request is sent to the CL node
+Use: This function serves as the controller for the middleware and it basically consists of two intervals running separately. One is triggerred every second and it is used to create a CL node job once this timer triggers. The other is triggered every BLOCK_INTERVAL and it is used to query the latest price and round stored on-chain. The latter will check if there is a price deviation or a new round and if so, a new CL job request is sent to the CL node
 
 What it does:
   1. Creates an interval using setInterval to trigger every second. This will go through every job in the state and creates a CL job for each job depending whether the <b>pollInterval</b> for that feed expired.
@@ -744,16 +744,16 @@ What it does:
 Use: This function is used as entry to the middleware functions
 
 What it does:
-  2. Initialises state
-  3. Starts the bridge to listen for new jobs and job results
-  4. Starts the controller on the first second of the next minute. This is done to try and have all middleware pushing jobs on approximetely the first second of each new minute
+  1. Initialises state
+  2. Starts the bridge to listen for new jobs and job results
+  3. Starts the controller on the first second of the next minute. This is done to try and have all middleware pushing jobs on approximetely the first second of each new minute
 
 <br>
 <div id='monitorjs'></div>
 
 ### <u>oracle/monitor.js</u>
 
-This file contains all the functions which are used both by the monitoring script. 
+This file contains all the functions which are used by the monitoring script. 
 
 <br>
 <div id='envvarsmonitor'></div>
@@ -789,11 +789,11 @@ The ORACLE_FILE should contain a JSON array containing the oracles to monitor al
 
 The following is a list of metrics exposed by the monitoring script:
 
-- <u>oracle_latest_value</u> - This metric contains the latest submitted value by an oracle. The labels include include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
-- <u>oracle_last_observation</u> -  This metric contains the timestamp of the latest submission by an oracle. The labels include include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
-- <u>oracle_last_round</u> - This metric contains the round of the latest submission by an oracle. The labels include include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
-- <u>oracle_price_deviation</u> - This metric contains the deviation between an oracle's submitted value and the aggregated on-chain value. The labels include include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
-- <u>oracle_balance</u> - This metric contains the balance of an oracle for a brand. The labels include include oracleName, oracle and brand which represent the oracle name, oracle address and the brand respectively.
+- <u>oracle_latest_value</u> - This metric contains the latest submitted value by an oracle. The labels include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
+- <u>oracle_last_observation</u> -  This metric contains the timestamp of the latest submission by an oracle. The labels include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
+- <u>oracle_last_round</u> - This metric contains the round of the latest submission by an oracle. The labels include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
+- <u>oracle_price_deviation</u> - This metric contains the deviation between an oracle's submitted value and the aggregated on-chain value. The labels include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
+- <u>oracle_balance</u> - This metric contains the balance of an oracle for a brand. The labels include oracleName, oracle and brand which represent the oracle name, oracle address and the brand respectively.
 - <u>actual_price</u> - This metric contains the actual aggregated value on chain. The labels include feed which represents the feed for the price.
 
 
@@ -870,7 +870,7 @@ Inputs:
 Use: This function is used to update balance metrics 
 
 What it does:
-  2. Updates the metrics
+  1. Updates the metrics
 
 <br>
 <div id='queryPriceMonitor'></div>
@@ -926,7 +926,7 @@ Inputs:
 
 Use: This function is used to obtain the latest submission details for an oracle
 
-Returns: An object containing details of the last submission in the form as below
+Returns: An object containing details of the last submission in the form below
 ```json
 {
   "price": 10.01,
