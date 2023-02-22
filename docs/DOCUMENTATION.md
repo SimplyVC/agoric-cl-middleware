@@ -95,8 +95,8 @@ The middleware is needed to:
 
 The middleware should contain the following functionalities:
 
-1. An SQLLite database to keep the middleware's state so that whenever the middleware is restarted it is able to continue from where it was stopped.
-2. An endpoint to listen for new and removed jobs from the CL node. This is needed in order to keep a list of jobs for which the middleware has to send requests.
+1. An SQLite database that allows the middleware to resume from its last execution whenever it is restarted.
+2. An endpoint that listens for new and removed jobs from the CL node, allowing the middleware to maintain a list of jobs for which requests need to be sent.
 3. Keep a list of these jobs in its state
 4. Query the price on chain and the latest round every X seconds so that a new job request is created if a new round is found
 5. Send CL job requests to the CL node with parameters including a request ID and the reason for the request every Y seconds. The reason can be one of the following 3 reasons:
@@ -138,7 +138,7 @@ The monitoring script should contain the following functionalities:
   d. The deviation of an oracle's submitted price from the latest aggregated value on-chain for a feed
   e. The oracle balance 
   f. The actual price on-chain
-4. Obtain an oracle's invitation IDs for feeds from wallets
+4. See all invitations IDs to be part of the oracle set from wallets
 5. Query the latest prices and round submissions of oracles every X seconds and update the metrics
 6. Have an efficient way of polling only the latest price pushes so be able to monitor oracles efficiently when the number of offers used start to increase
 
