@@ -5,7 +5,7 @@ import { readJSONFile } from "./utils.js";
 import { pushPrice, queryRound } from "./chain.js";
 
 const {
-  FEEDS_FILE = "../config/feeds.json",
+  FEEDS_FILE = "../config/feeds-config.json",
   SEND_CHECK_INTERVAL = "45",
   FROM,
 } = process.env;
