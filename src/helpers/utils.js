@@ -1,5 +1,5 @@
-import fs from 'fs';
-import { URL } from 'url';
+import fs from "fs";
+import { URL } from "url";
 
 /**
  * Function to read a json file
@@ -7,10 +7,10 @@ import { URL } from 'url';
  * @returns the JSON data in the file
  */
 export const readJSONFile = (filename) => {
-    let rawdata = fs.readFileSync(filename);
-    let data = JSON.parse(String(rawdata));
-    return data
-}
+  let rawdata = fs.readFileSync(filename);
+  let data = JSON.parse(String(rawdata));
+  return data;
+};
 
 /**
  * Function to save JSON data to a file
@@ -18,9 +18,9 @@ export const readJSONFile = (filename) => {
  * @param {*} filename filename to save data to
  */
 export const saveJSONDataToFile = (newData, filename) => {
-    let data = JSON.stringify(newData);
-    fs.writeFileSync(filename, data);
-}  
+  let data = JSON.stringify(newData);
+  fs.writeFileSync(filename, data);
+};
 
 /**
  * Function to check whether a URL is valid or not
@@ -28,12 +28,12 @@ export const saveJSONDataToFile = (newData, filename) => {
  * @returns whether the url is valid or not
  */
 export const validUrl = (url) => {
-    try {
-        new URL(url);
-        return true;
-    } catch (err) {
-        return false;
-    }
+  try {
+    new URL(url);
+    return true;
+  } catch (err) {
+    return false;
+  }
 };
 
 /**
@@ -42,7 +42,7 @@ export const validUrl = (url) => {
  * @returns a Promise to delay
  */
 export const delay = async (ms) => {
-    return new Promise(async(res) => await setTimeout(res, ms))
+  return new Promise(async (res) => await setTimeout(res, ms));
 };
 
 /**
@@ -53,6 +53,8 @@ export const delay = async (ms) => {
  * @returns a Promise with CapData of result
  */
 export const readVStorage = async (vstorage, feed, roundData) => {
-    let key = roundData ? "published.priceFeed."+feed+"_price_feed.latestRound" : "published.priceFeed."+feed+"_price_feed"
-    return await vstorage.readLatest(key);
-}
+  let key = roundData
+    ? "published.priceFeed." + feed + "_price_feed.latestRound"
+    : "published.priceFeed." + feed + "_price_feed";
+  return await vstorage.readLatest(key);
+};
