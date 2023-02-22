@@ -41,7 +41,7 @@ if (process.env.NODE_ENV !== "test"){
   assert(FEEDS_FILE !== "", '$FEEDS_FILE is required');
 }
 
-var feeds;
+let feeds;
 
 /**
   * Controller for the middleware
@@ -110,7 +110,7 @@ const makeController = () => {
       let latestRound = await queryRound(jobName);
 
       //get latest submitted round
-      var latestSubmittedRound = await getLatestSubmittedRound(FROM)
+      let latestSubmittedRound = await getLatestSubmittedRound(FROM)
     
       //update jobs table
       await updateTable("jobs", {"last_result" : latestPrice, "last_reported_round": latestSubmittedRound}, jobName)

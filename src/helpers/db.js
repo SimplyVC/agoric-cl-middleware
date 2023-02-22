@@ -121,7 +121,7 @@ export const updateTable = async (table, values, name) => {
 
   //create string
   let update = "";
-  for (var i = 0; i < actualFields.length; i++) {
+  for (let i = 0; i < actualFields.length; i++) {
     update += actualFields[i] + " = ?";
 
     //if not last element

@@ -122,9 +122,9 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
   let offers = await getOffers(follower);
 
   //loop through offers starting from last offer
-  for (var i = 0; i < offers.length; i++) {
+  for (let i = 0; i < offers.length; i++) {
     //get current offer
-    var currentOffer = offers[i];
+    let currentOffer = offers[i];
 
     //if a price invitation and for the correct feed
     if (
@@ -175,13 +175,13 @@ export const queryPrice = async (feed) => {
     const capDataStr = await readVStorage(feed, false);
 
     //parse the value
-    var capData = JSON.parse(JSON.parse(capDataStr).value);
+    let capData = JSON.parse(JSON.parse(capDataStr).value);
     capData = JSON.parse(capData.values[0]);
     //replace any extra characters
     capData = JSON.parse(capData.body.replaceAll("\\", ""));
 
     //get the latest price by dividing amountOut by amountIn
-    var latestPrice =
+    let latestPrice =
       Number(capData.amountOut.value.digits) /
       Number(capData.amountIn.value.digits);
 
@@ -232,7 +232,7 @@ export const queryRound = async (feed) => {
   const capDataStr = await readVStorage(feed, true);
 
   //parse the value
-  var capData = JSON.parse(JSON.parse(capDataStr).value);
+  let capData = JSON.parse(JSON.parse(capDataStr).value);
   capData = JSON.parse(capData.values[capData.values.length - 1]);
   //replace any extra characters
   capData = JSON.parse(capData.body.replaceAll("\\", ""));
@@ -253,7 +253,7 @@ export const queryRound = async (feed) => {
   );
 
   //get the latest round
-  var latestRound = {
+  let latestRound = {
     round_id: round,
     started_at: Number(capData.startedAt.digits),
     started_by: capData.startedBy,
@@ -280,7 +280,7 @@ export const outputAction = (bridgeAction) => {
  */
 export const pushPrice = async (price, feed, round, from) => {
   //create an offerId with the Date number
-  var offerId = Date.now();
+  let offerId = Date.now();
 
   //get offers
   let offers = await getOraclesInvitations();
@@ -300,7 +300,7 @@ export const pushPrice = async (price, feed, round, from) => {
   };
 
   //create keyring
-  var keyring = {
+  let keyring = {
     home: "",
     backend: "test",
   };
@@ -333,7 +333,7 @@ export const pushPrice = async (price, feed, round, from) => {
     offer.id = Number(Date.now());
 
     //output action
-    var data = outputAction({
+    let data = outputAction({
       method: "executeOffer",
       // @ts-ignore
       offer,

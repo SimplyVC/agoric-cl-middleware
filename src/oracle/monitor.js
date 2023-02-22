@@ -93,16 +93,16 @@ register.registerMetric(actualPriceGauge);
 const { agoricNames, fromBoard, vstorage } = await makeRpcUtils({ fetch });
 
 //this holds the offer ids
-var feeds = [];
+let feeds = [];
 //this holds the amounts in
-var amountsIn = {};
+let amountsIn = {};
 
 /**
  * Function to read oracles
  * @returns oracles, their names and their addresses
  */
 const readOracleAddresses = () => {
-  var oracles = readJSONFile(ORACLE_FILE);
+  let oracles = readJSONFile(ORACLE_FILE);
   return oracles;
 };
 
@@ -132,8 +132,8 @@ export const getOraclesInvitations = async () => {
   }
 };
 
-//var oracleLabels = readOracles();
-var oracles = readOracleAddresses();
+//let oracleLabels = readOracles();
+let oracles = readOracleAddresses();
 await getOraclesInvitations();
 
 /**
@@ -188,13 +188,13 @@ const queryPrice = async (feed) => {
     );
 
     //parse the value
-    var capData = JSON.parse(JSON.parse(capDataStr).value);
+    let capData = JSON.parse(JSON.parse(capDataStr).value);
     capData = JSON.parse(capData.values[0]);
     //replace any extra characters
     capData = JSON.parse(capData.body.replaceAll("\\", ""));
 
     //get the latest price by dividing amountOut by amountIn
-    var latestPrice =
+    let latestPrice =
       Number(capData.amountOut.value.digits) /
       Number(capData.amountIn.value.digits);
     amountsIn[feed] = Number(capData.amountIn.value.digits);
@@ -286,9 +286,9 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
   };
 
   //loop through offers starting from last visited index
-  for (var i = 0; i < offersBalances.offers.length; i++) {
+  for (let i = 0; i < offersBalances.offers.length; i++) {
     //get current offer
-    var currentOffer = offersBalances.offers[i];
+    let currentOffer = offersBalances.offers[i];
     let id = Number(currentOffer["status"]["id"]);
 
     //if we found the last visited offer id in previous check, stop looping
@@ -353,12 +353,12 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
   }
 
   //loop through balances
-  for (var i = 0; i < offersBalances.balances.length; i++) {
+  for (let i = 0; i < offersBalances.balances.length; i++) {
     let currentBalance = offersBalances.balances[i];
 
-    var brand = currentBalance.brand.iface.split(" ")[1];
+    let brand = currentBalance.brand.iface.split(" ")[1];
     if (brand.includes("BLD") || brand.includes("IST")) {
-      var value = Number(currentBalance.value);
+      let value = Number(currentBalance.value);
       updateBalanceMetrics(oracleDetails["oracleName"], oracle, brand, value);
     }
   }
