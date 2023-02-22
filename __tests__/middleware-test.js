@@ -6,6 +6,12 @@ jest.mock('@agoric/casting', () => {
     };
 });
 
+jest.mock('sqlite3', () => {
+    return {
+        Database: jest.fn(),
+    };
+});
+
 jest.mock('../src/lib/rpc.js', () => {
     return {
         boardSlottingMarshaller: jest.fn(),
@@ -20,19 +26,20 @@ jest.mock('../src/lib/wallet.js', () => {
     };
 });
 
-jest.mock('../src/oracle/helper.js', () => {
-    const originalModule = jest.requireActual("../src/oracle/helper")
+jest.mock('../src/helpers/utils.js', () => {
+    const originalModule = jest.requireActual("../src/helpers/utils.js")
     return {
         ...originalModule,
         readVStorage: jest.fn()
     };
 });
 
-import { readJSONFile, readVStorage } from '../src/oracle/helper.js';
+import { readJSONFile, readVStorage } from '../src/helpers/utils.js';
 import { getOffers, checkSubmissionForRound, queryPrice, queryRound, getOraclesInvitations } from '../src/oracle/middleware';
 import { iterateReverse, makeLeader, makeFollower } from '@agoric/casting';
 import { boardSlottingMarshaller, makeAgoricNames } from '../src/lib/rpc.js'
 import { getCurrent } from '../src/lib/wallet.js'
+import sqlite3 from 'sqlite3';
 
 let iterateReverseOutput = readJSONFile("__tests__/mock-objects/followerReversed.json")
 let currentOutput = readJSONFile("__tests__/mock-objects/current.json")
@@ -61,6 +68,7 @@ makeFollower.mockReturnValue({})
 boardSlottingMarshaller.mockReturnValue({})
 getCurrent.mockReturnValue(currentOutput)
 makeAgoricNames.mockReturnValue(agoricNamesOutput)
+sqlite3.Database.mockReturnValue({})
 
 /**
  * Test for get offers
@@ -150,9 +158,9 @@ test('calls queryRound to query the latest round', async () => {
     const latestPrice = await queryRound("ATOM-USD");
   
     expect(latestPrice).toStrictEqual({
-        "roundId": 802, 
-        "startedAt": 1676499365, 
-        "startedBy": "agoric1lw4e4aas9q84tq0q92j85rwjjjapf8dmnllnft", 
-        "submissionMade": false
+        "round_id": 802, 
+        "started_at": 1676499365, 
+        "started_by": "agoric1lw4e4aas9q84tq0q92j85rwjjjapf8dmnllnft", 
+        "submission_made": false
     });
 });

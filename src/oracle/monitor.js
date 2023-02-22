@@ -10,7 +10,7 @@ import {
     makeFollower,
     makeLeader,
 } from '@agoric/casting';
-import { validUrl, readJSONFile, saveJSONDataToFile } from './helper.js'
+import { validUrl, readJSONFile, saveJSONDataToFile } from '../helpers/utils.js'
 import { getCurrent } from '../lib/wallet.js';
 import { Registry, Gauge } from 'prom-client';
 import { createServer } from 'http';

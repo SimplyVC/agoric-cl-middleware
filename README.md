@@ -12,13 +12,8 @@ As can be seen below, it takes an array of oracles with their addresses and name
 }
 ```
 
-## To build oracle middleware
+## To run both the middleware and monitoring script
 
 ```bash
-docker build --tag ag-oracle-middleware -f Dockerfile.middleware .
-```
-## To build oracle monitor
-
-```bash
-docker build --tag ag-oracle-monitor -f Dockerfile.monitor .
+docker-compose up -d
 ```
