@@ -8,9 +8,9 @@ const {
   CREDENTIALS_FILE = "config/ei_credentials.json",
 } = process.env;
 
-if (process.env.NODE_ENV != "test") {
+if (process.env.NODE_ENV !== "test") {
   assert(EI_CHAINLINKURL, "$EI_CHAINLINKURL is required");
-  assert(CREDENTIALS_FILE != "", '$CREDENTIALS_FILE is required');
+  assert(CREDENTIALS_FILE !== "", '$CREDENTIALS_FILE is required');
 }
 
 /**
@@ -20,7 +20,7 @@ if (process.env.NODE_ENV != "test") {
  * @param {number} requestType the request type, 1 = time, 2 = deviation, 3 = *                             new round
  */
 export const sendJobRun = async (count, jobId, requestType) => {
-  //read initiator credentials
+  // Read initiator credentials
   const credentials = readJSONFile(CREDENTIALS_FILE);
 
   const options = {
@@ -38,11 +38,11 @@ export const sendJobRun = async (count, jobId, requestType) => {
     method: "POST",
   };
 
-  //try request with loop retries
+  // Try request with loop retries
   for (let i = 0; i < SUBMIT_RETRIES; i++) {
     try {
       await axios.post(options.url, options.body, {
-        timeout: 60000,
+        timeout: 5000,
         proxy: false,
         headers: options.headers,
         httpAgent: new http.Agent({ keepAlive: false }),

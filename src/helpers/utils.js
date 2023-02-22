@@ -1,6 +1,10 @@
 import fs from "fs";
 import { URL } from "url";
-import { createDBs, queryTable, updateTable } from "./db.js";
+import { 
+  createDBs, 
+  queryTable, 
+  updateTable 
+} from "./db.js";
 import { sendJobRun } from "./chainlink.js";
 
 // get environment variables
@@ -9,7 +13,7 @@ const { SEND_CHECK_INTERVAL = "45" } = process.env;
 /**
  * Environment variables validation
  */
-if (process.env.NODE_ENV != "test") {
+if (process.env.NODE_ENV !== "test") {
   assert(Number(SEND_CHECK_INTERVAL), "$SEND_CHECK_INTERVAL is required");
 }
 
@@ -20,8 +24,7 @@ if (process.env.NODE_ENV != "test") {
  */
 export const readJSONFile = (filename) => {
   let rawdata = fs.readFileSync(filename);
-  let data = JSON.parse(String(rawdata));
-  return data;
+  return JSON.parse(String(rawdata));
 };
 
 /**
@@ -61,7 +64,7 @@ export const delay = async (ms) => {
  * Function to initialise state
  */
 export const initialiseState = async () => {
-  //create tables if they do not exist
+  // Create tables if they do not exist
   await createDBs();
 };
 
@@ -71,10 +74,10 @@ export const initialiseState = async () => {
  * @param {number} requestType the request type to send as a parameter with the job request. 1 if a timer request, 2 if triggered by a price deviation, 3 new round.
  */
 export const submitNewJob = async (feed, requestType) => {
-  //get latest request id
+  // Get latest request id
   let query = await queryTable("jobs", ["request_id", "id"], feed);
   let newRequestId = query.request_id + 1;
-  //update table
+  // Update table
   await updateTable(
     "jobs",
     { request_id: newRequestId, last_request_sent: Date.now() / 1000 },
@@ -83,7 +86,7 @@ export const submitNewJob = async (feed, requestType) => {
 
   console.log("Sending job spec", feed, "request", newRequestId);
 
-  //send job run
+  // Send job run
   await sendJobRun(newRequestId, query.id, requestType);
 };
 
@@ -93,9 +96,9 @@ export const submitNewJob = async (feed, requestType) => {
  * @returns {boolean} whether last submission was made in less than SEND_CHECK_INTERVAL seconds
  */
 export const checkIfInSubmission = async (feed) => {
-  //get last submission time
+  // Get last submission time
   let query = await queryTable("jobs", ["last_submission_time"], feed);
-  //get seconds since last price submission
+  // Get seconds since last price submission
   let timePassedSinceSubmission =
     Date.now() / 1000 - query.last_submission_time;
   return timePassedSinceSubmission < Number(SEND_CHECK_INTERVAL);

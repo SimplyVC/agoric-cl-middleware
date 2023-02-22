@@ -1,16 +1,24 @@
 import bodyParser from "body-parser";
 import express from "express";
-import { createJob, deleteJob, queryTable, updateTable } from "./db.js";
+import { 
+    createJob, 
+    deleteJob, 
+    queryTable, 
+    updateTable 
+} from "./db.js";
 import { readJSONFile } from "./utils.js";
-import { pushPrice, queryRound } from "./chain.js";
+import { 
+    pushPrice, 
+    queryRound 
+} from "./chain.js";
 
 const {
-  FEEDS_FILE = "../config/feeds.json",
+  FEEDS_FILE = "../config/feeds-config.json",
   SEND_CHECK_INTERVAL = "45",
   FROM,
 } = process.env;
 
-if (process.env.NODE_ENV != "test") {
+if (process.env.NODE_ENV !== "test") {
   assert(FEEDS_FILE, "$FEEDS_FILE is required");
   assert(FROM, "$FROM is required");
   assert(Number(SEND_CHECK_INTERVAL), "$SEND_CHECK_INTERVAL is required");
@@ -26,7 +34,7 @@ export const startBridge = (PORT) => {
   const app = express();
   app.use(bodyParser.json());
 
-  //read feeds config
+  // Read feeds config
   let feeds = readJSONFile(FEEDS_FILE);
 
   /**
@@ -34,10 +42,10 @@ export const startBridge = (PORT) => {
    * This is used to listen for job run results
    */
   app.post("/adapter", async (req, res) => {
-    //get result
+    // Get result
     let result = Math.round(req.body.data.result);
 
-    //get run id and type
+    // Get run id and type
     let requestId = String(req.body.data.request_id);
     let requestType = Number(req.body.data.request_type);
     let jobName = req.body.data.name;
@@ -53,39 +61,39 @@ export const startBridge = (PORT) => {
         ")"
     );
 
-    //return a 200 code to the Chainlink node if a successful price is found
+    // Return a 200 code to the Chainlink node if a successful price is found
     if (!isNaN(result)) {
       res.status(200).send({ success: true });
     } else {
       res.status(500).send({ success: false });
     }
 
-    //get last price from state
+    // Get last price from state
     let query = await queryTable("jobs", ["last_result"], jobName);
     let lastPrice = query.last_result;
 
-    //get push interval for feed
+    // Get push interval for feed
     let pushInterval = feeds[jobName].pushInterval;
 
-    //check if time for update
+    // Check if time for update
     query = await queryTable("rounds", ["started_at"], jobName);
 
     let timeForUpdate =
       Date.now() / 1000 >= query.started_at + Number(pushInterval);
 
     /**
-     * if there is no last price, if it is time for a price update or if there * is a new round, update price
+     * If there is no last price, if it is time for a price update or if there * is a new round, update price
      */
     let toUpdate =
-      lastPrice == -1 ||
-      lastPrice == 0 ||
-      (requestType == 1 && timeForUpdate) ||
-      requestType == 3;
-    //if last price is found and it is a price deviation request
-    if (lastPrice != -1 && requestType == 2) {
-      //get decimal places for feed
+      lastPrice === -1 ||
+      lastPrice === 0 ||
+      (requestType === 1 && timeForUpdate) ||
+      requestType === 3;
+    // If last price is found and it is a price deviation request
+    if (lastPrice !== -1 && requestType === 2) {
+      // Get decimal places for feed
       let decimalPlaces = feeds[jobName].decimalPlaces;
-      //calculate percentage change
+      // Calculate percentage change
       lastPrice = lastPrice * Math.pow(10, Number(decimalPlaces));
 
       let percChange = Math.abs((result - lastPrice) / lastPrice) * 100;
@@ -98,17 +106,17 @@ export const startBridge = (PORT) => {
           String(lastPrice)
       );
 
-      //get price deviation threshold for feed
+      // Get price deviation threshold for feed
       let priceDeviationPercentage = feeds[jobName].priceDeviationPerc;
-      //update price if result is greater than price deviation threshold
+      // Update price if result is greater than price deviation threshold
       toUpdate = percChange > priceDeviationPercentage;
     }
 
-    //get seconds since last price submission
+    // Get seconds since last price submission
     query = await queryTable("jobs", ["last_submission_time"], jobName);
     let timePassedSinceSubmission =
       Date.now() / 1000 - query.last_submission_time;
-    //check if in submission
+    // Check if in submission
     let inSubmission = timePassedSinceSubmission < Number(SEND_CHECK_INTERVAL);
 
     /**
@@ -120,11 +128,11 @@ export const startBridge = (PORT) => {
      *    - PLUS not already waiting for a submission
      */
     if (toUpdate && !inSubmission) {
-      //get latest round
+      // Get latest round
       let latestRound = await queryRound(jobName);
       await updateTable("rounds", latestRound, jobName);
 
-      //get the round for submission
+      // Get the round for submission
       let query = await queryTable("jobs", ["last_reported_round"], jobName);
       let lastReportedRound = query.last_reported_round;
       let lastRoundId = isNaN(latestRound.round_id)
@@ -133,22 +141,22 @@ export const startBridge = (PORT) => {
       let roundToSubmit =
         lastReportedRound < lastRoundId ? lastRoundId : lastRoundId + 1;
 
-      //check if new round
-      let newRound = roundToSubmit != lastRoundId;
+      // Check if new round
+      let newRound = roundToSubmit !== lastRoundId;
 
       /**
-       * push price on chain if first round, haven't started previous round and * have not submitted yet in the same round
+       * Push price on chain if first round, haven't started previous round and * have not submitted yet in the same round
        */
       if (
-        roundToSubmit == 1 ||
-        (newRound && latestRound.started_by != FROM) ||
+        roundToSubmit === 1 ||
+        (newRound && latestRound.started_by !== FROM) ||
         (!newRound && !latestRound.submission_made)
       ) {
         console.log("Updating price for round", roundToSubmit);
 
         let submitted = await pushPrice(result, jobName, roundToSubmit, FROM);
 
-        //update last reported round
+        // Update last reported round
         if (submitted) {
           await updateTable(
             "jobs",
@@ -161,7 +169,7 @@ export const startBridge = (PORT) => {
       }
     }
 
-    //update state
+    // Update state
     await updateTable(
       "jobs",
       { last_received_request_id: Number(requestId) },

@@ -1,6 +1,10 @@
 /* global fetch, process */
 
-import { iterateReverse, makeFollower, makeLeader } from "@agoric/casting";
+import { 
+    iterateReverse, 
+    makeFollower, 
+    makeLeader 
+} from "@agoric/casting";
 import {
   makeRpcUtils,
   boardSlottingMarshaller,
@@ -10,12 +14,15 @@ import {
 } from "../lib/rpc.js";
 import { getCurrent } from "../lib/wallet.js";
 import { execSwingsetTransaction } from "../lib/chain.js";
-import { checkIfInSubmission, delay } from "./utils.js";
+import { 
+    checkIfInSubmission, 
+    delay 
+} from "./utils.js";
 import { updateTable } from "./db.js";
 
 const { FROM, SUBMIT_RETRIES = "3", SEND_CHECK_INTERVAL = "45" } = process.env;
 
-if (process.env.NODE_ENV != "test") {
+if (process.env.NODE_ENV !== "test") {
   assert(FROM, "$FROM is required");
   assert(Number(SUBMIT_RETRIES), "$SUBMIT_RETRIES is required");
   assert(Number(SEND_CHECK_INTERVAL), "$SEND_CHECK_INTERVAL is required");
@@ -45,21 +52,21 @@ export const readVStorage = async (feed, roundData) => {
 export const getOffers = async (follower) => {
   let history = [];
   let counter = 0;
-  let lastVisited = 0;
+  let lastVisited = -1;
 
   for await (const followerElement of iterateReverse(follower)) {
-    if (counter == 5) {
+    if (counter === 5) {
       break;
     }
 
-    //if it is an offer status
-    if (followerElement.value.updated == "offerStatus") {
-      //get id
+    // If it is an offer status
+    if (followerElement.value.updated === "offerStatus") {
+      // Get id
       let id = followerElement.value.status.id;
 
-      //if a new and final state
-      if (id != lastVisited) {
-        //if it is not failed
+      // If a new and final state
+      if (id !== lastVisited) {
+        // If it is not failed
         if (!followerElement.value.status.hasOwnProperty("error")) {
           history.push(followerElement.value);
           counter++;
@@ -86,7 +93,7 @@ export const getLatestSubmittedRound = async (oracle) => {
     unserializer,
   });
 
-  //get offers
+  // Get offers
   let offers = await getOffers(follower);
 
   return Number(
@@ -111,34 +118,35 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
     unserializer,
   });
 
-  //get offers
+  // Get offers
   let offers = await getOffers(follower);
 
-  //loop through offers starting from last offer
-  for (var i = 0; i < offers.length; i++) {
-    //get current offer
-    var currentOffer = offers[i];
+  // Loop through offers starting from last offer
+  for (let i = 0; i < offers.length; i++) {
+    // Get current offer
+    let currentOffer = offers[i];
 
-    //if a price invitation and for the correct feed
+    // If a price invitation and for the correct feed
+    let invitationType = currentOffer["status"]["invitationSpec"]["invitationMakerName"];
+    let previousOffer = currentOffer["status"]["invitationSpec"]["previousOffer"]
     if (
-      currentOffer["status"]["invitationSpec"]["invitationMakerName"] ==
-        "PushPrice" &&
-      currentOffer["status"]["invitationSpec"]["previousOffer"] == feedOfferId
+        invitationType === "PushPrice" &&
+        previousOffer === feedOfferId
     ) {
       let offerRound = Number(
         currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
       );
 
-      //if it is an offer for the round we are checking for
-      if (offerRound == roundId) {
-        //if there is no error
+      // If it is an offer for the round we are checking for
+      if (offerRound === roundId) {
+        // If there is no error
         if (!currentOffer["status"].hasOwnProperty("error")) {
           return true;
         }
       }
 
       /**
-       * else if offer round id is less than the round we want to check and its 
+       * Else if offer round id is less than the round we want to check and its 
        * satisfied
        */
       else if (
@@ -147,7 +155,7 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
       ) {
 
         /**
-         * return false because there cannot be a submission for a newer round 
+         * Return false because there cannot be a submission for a newer round 
          * before this offer
          */
         return false;
@@ -164,17 +172,17 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
  */
 export const queryPrice = async (feed) => {
   try {
-    //read value from vstorage
+    // Read value from vstorage
     const capDataStr = await readVStorage(feed, false);
 
     //parse the value
-    var capData = JSON.parse(JSON.parse(capDataStr).value);
+    let capData = JSON.parse(JSON.parse(capDataStr).value);
     capData = JSON.parse(capData.values[0]);
-    //replace any extra characters
+    // Replace any extra characters
     capData = JSON.parse(capData.body.replaceAll("\\", ""));
 
-    //get the latest price by dividing amountOut by amountIn
-    var latestPrice =
+    // Get the latest price by dividing amountOut by amountIn
+    let latestPrice =
       Number(capData.amountOut.value.digits) /
       Number(capData.amountIn.value.digits);
 
@@ -182,7 +190,7 @@ export const queryPrice = async (feed) => {
     return latestPrice;
   } catch (err) {
     console.log("ERROR querying price", err);
-    return 0;
+    return -1;
   }
 };
 
@@ -200,7 +208,7 @@ export const getOraclesInvitations = async () => {
   const current = await getCurrent(String(FROM), fromBoard, { vstorage });
   const invitations = current.offerToUsedInvitation;
 
-  //for each invitation
+  // For each invitation
   for (let inv in invitations) {
     let boardId = invitations[inv].value[0].instance.boardId;
     let feed = feedBoards[boardId].split(" price feed")[0];
@@ -221,32 +229,32 @@ export const getOraclesInvitations = async () => {
  * @returns {boolean} returns.submission_made Whether a submission to this *                    round was made by the oracle
  */
 export const queryRound = async (feed) => {
-  //read value from vstorage
+  // Read value from vstorage
   const capDataStr = await readVStorage(feed, true);
 
   //parse the value
-  var capData = JSON.parse(JSON.parse(capDataStr).value);
+  let capData = JSON.parse(JSON.parse(capDataStr).value);
   capData = JSON.parse(capData.values[capData.values.length - 1]);
-  //replace any extra characters
+  // Replace any extra characters
   capData = JSON.parse(capData.body.replaceAll("\\", ""));
 
-  //get round from result
+  // Get round from result
   let round = Number(capData.roundId.digits);
 
-  //get offers
+  // Get offers
   let offers = await getOraclesInvitations();
-  //get feed offer id
+  // Get feed offer id
   let feedOfferId = offers[feed];
 
-  //check if there is a submission for round
+  // Check if there is a submission for round
   let submissionForRound = await checkSubmissionForRound(
     FROM,
     feedOfferId,
     round
   );
 
-  //get the latest round
-  var latestRound = {
+  // Get the latest round
+  let latestRound = {
     round_id: round,
     started_at: Number(capData.startedAt.digits),
     started_by: capData.startedBy,
@@ -272,15 +280,15 @@ export const outputAction = (bridgeAction) => {
  * @returns {boolean} whether successful
  */
 export const pushPrice = async (price, feed, round, from) => {
-  //create an offerId with the Date number
-  var offerId = Date.now();
+  // Create an offerId with the Date number
+  let offerId = Date.now();
 
-  //get offers
+  // Get offers
   let offers = await getOraclesInvitations();
-  //get previous offer for feed
+  // Get previous offer for feed
   let previousOffer = offers[feed];
 
-  //create an offer
+  // Create an offer
   const offer = {
     id: Number(offerId),
     invitationSpec: {
@@ -292,30 +300,30 @@ export const pushPrice = async (price, feed, round, from) => {
     proposal: {},
   };
 
-  //create keyring
-  var keyring = {
+  // Create keyring
+  let keyring = {
     home: "",
     backend: "test",
   };
 
-  //check if submitted for round
+  // Check if submitted for round
   let submitted = await checkSubmissionForRound(from, previousOffer, round);
 
-  //check if in submission
+  // Check if in submission
   let inSubmission = await checkIfInSubmission(feed);
 
-  //loop retries
+  // Loop retries
   for (let i = 0; i < SUBMIT_RETRIES && !submitted && !inSubmission; i++) {
-    //query round
+    // Query round
     let latestRound = await queryRound(feed);
 
     /**
-     * if latestRound is greater than round being pushed or submission to the 
+     * If latestRound is greater than round being pushed or submission to the 
      * round is already made, abort
      */
     if (
       latestRound.round_id > round ||
-      (latestRound.round_id == round && latestRound.submission_made)
+      (latestRound.round_id === round && latestRound.submission_made)
     ) {
       console.log("Price failed to be submitted for old round", round);
       return false;
@@ -325,17 +333,17 @@ export const pushPrice = async (price, feed, round, from) => {
 
     offer.id = Number(Date.now());
 
-    //output action
-    var data = outputAction({
+    // Output action
+    let data = outputAction({
       method: "executeOffer",
       // @ts-ignore
       offer,
     });
 
-    //change data to JSON
+    // Change data to JSON
     data = JSON.parse(data);
 
-    //execute
+    // Execute
     await execSwingsetTransaction(
       "wallet-action --allow-spend '" + JSON.stringify(data) + "'",
       networkConfig,
@@ -344,20 +352,20 @@ export const pushPrice = async (price, feed, round, from) => {
       keyring
     );
 
-    //update last submission time
+    // Update last submission time
     await updateTable(
       "jobs",
       { last_submission_time: Date.now() / 1000 },
       "feed"
     );
 
-    //sleep 13 seconds to wait 2 blocks and a bit
+    // Sleep 13 seconds to wait 2 blocks and a bit
     await delay((Number(SEND_CHECK_INTERVAL) + 1) * 1000);
 
-    //check submission for round
+    // Check submission for round
     submitted = await checkSubmissionForRound(from, previousOffer, round);
 
-    //check if in submission
+    // Check if in submission
     inSubmission = await checkIfInSubmission(feed);
   }
 

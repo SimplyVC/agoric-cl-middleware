@@ -92,7 +92,7 @@ export const deleteJob = async (id) => {
  * @returns {Object} an object containing the state of the job for the given *                   feed and fields
  */
 export const queryTable = async (table, fields, name) => {
-  let keyName = table == "jobs" ? "name" : "feed";
+  let keyName = table === "jobs" ? "name" : "feed";
   return new Promise((resolve, reject) => {
     db.get(
       "SELECT " + fields.join(", ") + " from " + table + " where " +
@@ -119,18 +119,18 @@ export const updateTable = async (table, values, name) => {
   let actualFields = Object.keys(values);
   let actualValues = Object.values(values);
 
-  //create string
+  // Create string
   let update = "";
-  for (var i = 0; i < actualFields.length; i++) {
+  for (let i = 0; i < actualFields.length; i++) {
     update += actualFields[i] + " = ?";
 
-    //if not last element
-    if (i != actualFields.length - 1) {
+    // If not last element
+    if (i !== actualFields.length - 1) {
       update += ", ";
     }
   }
 
-  let keyName = table == "jobs" ? "name" : "feed";
+  let keyName = table === "jobs" ? "name" : "feed";
 
   try {
     await db.run(
