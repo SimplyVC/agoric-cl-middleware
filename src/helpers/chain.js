@@ -182,7 +182,7 @@ export const queryPrice = async (feed) => {
     return latestPrice;
   } catch (err) {
     console.log("ERROR querying price", err);
-    return 0;
+    return -1;
   }
 };
 
