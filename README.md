@@ -15,5 +15,6 @@ As can be seen below, it takes an array of oracles with their addresses and name
 ## To run both the middleware and monitoring script
 
 ```bash
+docker-compose build
 docker-compose up -d
 ```
