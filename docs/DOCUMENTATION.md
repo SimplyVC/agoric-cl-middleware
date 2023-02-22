@@ -66,7 +66,7 @@
 <br>
 
 Each node operator has to run:
-- A Chainlink node hosted locally in Docker that queries Chainlink adapters
+- A Chainlink node hosted locally in Docker that queries <a href="https://docs.chain.link/chainlink-nodes/external-adapters/external-adapters/">Chainlink adapters</a>
 - Chainlink adapters hosted beside the Chainlink node that act as middleware between the node as various 3rd party APIs
 - Middleware which initiates jobs on the Chainlink node through its API if a round hasn't been created in 1 minute on the on chain aggregator contract. Rounds are also created if the oracle operator's current price is deviated past X% from the latest on-chain median price. Oracle operators are not allowed to create 2 rounds subsequently to prevent spamming.
 - An Agoric node hosted on their own infrastructure to allow the middleware / oracle proxy to communicate and broadcast transactions reliably to the network.
@@ -74,7 +74,7 @@ Each node operator has to run:
 
 ## Smart Contract Details
 
-Smart Contract - https://github.com/Agoric/agoric-sdk/blob/master/packages/inter-protocol/src/price/priceAggregatorChainlink.js
+Smart Contract - https://github.com/Agoric/agoric-sdk/tree/8720d22ddf25a005aee25786bfa8ee4bccaf19c9/packages/inter-protocol/src/price
 
 - The smart contract resembles a native Chainlink Solidity Flux-Monitor smart contract on Ethereum.
 - For each feed, there will be a smart contract on chain and each node operator receives invitations to their smart wallet to be part of the oracle set. Then, oracles can use that invitation to push prices on chain.
@@ -97,26 +97,38 @@ The middleware should contain the following functionalities:
 
 1. An SQLite database that allows the middleware to resume from its last execution whenever it is restarted.
 2. An endpoint that listens for new and removed jobs from the CL node, allowing the middleware to maintain a list of jobs for which requests need to be sent.
-3. Keep a list of these jobs in its state
+3. Keep a list of active jobs in its state
 4. Query the price on chain and the latest round every X seconds so that a new job request is created if a new round is found
 5. Send CL job requests to the CL node with parameters including a request ID and the reason for the request every Y seconds. The reason can be one of the following 3 reasons:
-  a. Type 1: Time expired and a new request have to be made
-  b. Type 2: A price deviation from the on-chain price was found
-  c. Type 3: A new round was found
+    1. Type 1: Time expired and a new request have to be made
+    2. Type 2: A price deviation from the on-chain price was found
+    3. Type 3: A new round was found
 6. An endpoint to listen for results from a CL job for submitted job requests. This endpoint should decide whether or not to push the price on chain. A price should be pushed on chain if one of the following cases is satisfied:
-  a. It is a new round and the oracle has not yet submitted to this round
-  b. An interval of Z minutes/hours expired since the last price pushed on chain. This is only done if the oracle has not started the previous round himself. This is done because an oracle is not allowed to start consecutive rounds.
-  c. There is a deviation of more than W% from the current price on-chain. Once again, only done if the oracle has not started the previous round.
-7. Keep the following information in the DB for each feed:
-  a. The CL job's external id for that feed
-  b. The name of the feed
-  c. The last request id
-  d. The last reported round on chain
-  e. The timestamp of the last price submission made on chain
-  f. The timestamp of the last request made to the CL node
-  g. The last aggregated price on chain
-  h. The request id of the last result received from the CL node
-  i. The details of the latest on-chain round including the round id, the timestamp when it was started, by whom it was started and whether the oracle made a submission for that round
+    1.  It is a new round and the oracle has not yet submitted to this round
+    2. An interval of Z minutes/hours expired since the last price pushed on chain. **NOTE**: This is only done if the oracle has not started the previous round, as oracles are not allowed to start consecutive rounds.
+    3. There is a deviation of more than W% from the current price on-chain. Once again, only done if the oracle has not started the previous round.
+7. Keep the following information in the DB for each job in the jobs table
+
+| Table Name 	| Field Name               	| Description                                                 	| Type   	|
+|------------	|--------------------------	|-------------------------------------------------------------	|--------	|
+| jobs       	| id                       	| The CL job's external id for that feed                      	| String 	|
+| jobs       	| name                     	| The name of the feed                                        	| String 	|
+| jobs       	| request_id               	| The last request id                                         	| Number 	|
+| jobs       	| last_reported_round      	| The last reported round on chain                            	| Number 	|
+| jobs       	| last_request_sent        	| The timestamp of the last price submission made on chain    	| Number 	|
+| jobs       	| last_submission_time     	| The timestamp of the last request made to the CL node       	| Number 	|
+| jobs       	| last_result              	| The last aggregated price on chain                          	| Number 	|
+| jobs       	| last_received_request_id 	| The request id of the last result received from the CL node 	| Number 	|
+
+8. Keep the following information in the DB for each job in the jobs table:
+
+| Table Name 	| Field Name      	| Description                                        	| Type    	|
+|------------	|-----------------	|----------------------------------------------------	|---------	|
+| rounds     	| feed            	| The name of the feed                               	| String  	|
+| rounds     	| round_id        	| Latest round id                                    	| Number  	|
+| rounds     	| started_at      	| The timestamp when the round was started           	| Number  	|
+| started_at 	| started_by      	| The address who started the latest round           	| String  	|
+| started_at 	| submission_made 	| Whether a submission was made for the latest round 	| Boolean 	|
 
 #### Monitoring
 
@@ -132,12 +144,12 @@ The monitoring script should contain the following functionalities:
 2. Monitor multiple oracles at once
 3. An endpoint to expose prometheus metrics 
 4. Expose the following metrics
-  a. The latest submitted value on chain by an oracle for a feed
-  b. The timestamp in which an oracle made an on-chain submission for a feed 
-  c. The last round for which an oracle made an on-chain submission for a feed
-  d. The deviation of an oracle's submitted price from the latest aggregated value on-chain for a feed
-  e. The oracle balance 
-  f. The actual price on-chain
+    1. The latest submitted value on chain by an oracle for a feed
+    2. The timestamp in which an oracle made an on-chain submission for a feed 
+    3. The last round for which an oracle made an on-chain submission for a feed
+    4. The deviation of an oracle's submitted price from the latest aggregated value on-chain for a feed
+    5. The oracle balance 
+    6. The actual price on-chain
 4. See all invitations IDs to be part of the oracle set from wallets
 5. Query the latest prices and round submissions of oracles every X seconds and update the metrics
 6. Have an efficient way of polling only the latest price pushes so be able to monitor oracles efficiently when the number of offers used start to increase
@@ -154,15 +166,15 @@ The scripts directory contains scripts which are used to for deployments.
 The following are the different scripts which can be found in this directory
 
 1. accept-oracle-invitation.sh - This script can be used to accept an oracle invitation. This script takes in 3 parameters, the wallet name, the brand in and brand out. An example of a command to run this is ```./accept-oracle-invitation.sh $WALLET_NAME $BRAND_IN $BRAND_OUT```
-2. get-sdk-package-names.sh - This script was copied from the agoric-sdk repository and it is used to get the sdk package names.
-3. npm-audit-fix.sh - This script was copied from the agoric-sdk repository and it is used to fix issues with npm.
+2. get-sdk-package-names.sh - This script was copied from the <a href="https://github.com/Agoric/agoric-sdk/blob/8720d22ddf25a005aee25786bfa8ee4bccaf19c9/packages/agoric-cli/scripts/get-sdk-package-names.js">agoric-sdk repository</a> and it is used to get the sdk package names.
+3. npm-audit-fix.sh - This script was copied from the <a href="https://github.com/Agoric/agoric-sdk/blob/8720d22ddf25a005aee25786bfa8ee4bccaf19c9/packages/agoric-cli/scripts/npm-audit-fix.sh">agoric-sdk repository</a>
 4. provision-wallet.sh - This script can be used to provision a smart wallet. This script takes in one parameter, the wallet name. An example of a command to run this is ```./provision-wallet.sh $WALLET_NAME```
 
 #### src
 
 This directory includes all the source code. It is split into three other directories, <b>helpers</b>, <b>oracle</b> and <b>lib</b>.
 
-Furthermore, it contains the following two files which serve as an entry point to the middleware and monitoring script
+Furthermore, it contains the following two files which serve as an entry point to the middleware and monitoring script:
 
 * <b>bin-middleware.js</b> - This serves as an entry point to the middleware by calling the middleware() function
 * <b>bin-monitor.js</b> - This serves as an entry point to the monitoring script by calling the getOraclesInvitations() and monitor() functions to first get the oracle invitation IDs and then starting the monitoring. 
@@ -343,8 +355,8 @@ What it does:
   1. Obtains a follower of offers and balances for the oracle address
   2. Gets the latest offers by calling <b>getOffers()</b> 
   3. Loops through the offers and does the following:
-    a. Returns True if the offer is a 'PushPrice' offer, the feed offer ID matches to the inputted one and the offer has no error and has a matching round number.
-    b. Returns False if it finds a successful 'PushPrice' offer with a round id smaller than the one passed as a parameter because a submission for an old round cannot be made. Since we are traversing offers started from the most recent one, if an offer for smaller round id is found, it is useless to continue looping as it is impossible to find an older offer for a more recent round.
+      1. Returns True if the offer is a 'PushPrice' offer, the feed offer ID matches to the inputted one and the offer has no error and has a matching round number.
+      2. Returns False if it finds a successful 'PushPrice' offer with a round id smaller than the one passed as a parameter because a submission for an old round cannot be made. Since we are traversing offers started from the most recent one, if an offer for smaller round id is found, it is useless to continue looping as it is impossible to find an older offer for a more recent round.
   4. False is returned if the recent offers are traversed and no matching successful offer is found.
 
 
@@ -363,7 +375,7 @@ Returns: The latest price
 What it does:
   1. Reads the latest published price from vstorage using Agoric's functions from agoric-sdk
   2. Parses the value and returns it 
-  3. If the above fails for some reason, 0 is returned. A reason for failing could be the first time a feed is created and there is no price on-chain yet
+  3. If the above fails for some reason, -1 is returned. A reason for failing could be the first time a feed is created and there is no price on-chain yet
   
 
 <br>
@@ -436,12 +448,12 @@ What it does:
   4. It checks whether a submission for this round was already made to avoid double submissions to save transaction fees.
   5. Check if the middleware is waiting for a price submission confirmation using checkIfInSubmission()
   5. If a submission is not yet made and it is not waiting for a submission confirmation, it will loop for a maximum of SUBMIT_RETRIES and it will do the following:
-    a. Queries the latest round
-    b. Confirms whether the round we are submitting to is actually the latest round and that we have not sent a submission for this round yet
-    c. If the above condition is satisfied, the offer is pushed on chain
-    d. It will delay for SEND_CHECK_INTERVAL. This is done to ensure that the price is not still in the mempool and that two blocks (13 seconds in this case) have passed just in case.
-    e. Check whether the submission was successful. If the submission was not successful after 2 blocks, the loop continues for next try.
-    f. Once the loop finishes and all the tries were done, true or false will be returned indicating whether the price was successfully pushed or not
+      1. Queries the latest round
+      2. Confirms whether the round we are submitting to is actually the latest round and that we have not sent a submission for this round yet
+      3. If the above condition is satisfied, the offer is pushed on chain
+      4. It will delay for SEND_CHECK_INTERVAL. This is done to ensure that the price is not still in the mempool and that two blocks (13 seconds in this case) have passed just in case.
+      5. Check whether the submission was successful. If the submission was not successful after 2 blocks, the loop continues for next try.
+      6. Once the loop finishes and all the tries were done, true or false will be returned indicating whether the price was successfully pushed or not
 
 
 <div id='chainlinkjs'></div>
@@ -723,17 +735,17 @@ Use: This function serves as the controller for the middleware and it basically 
 What it does:
   1. Creates an interval using setInterval to trigger every second. This will go through every job in the state and creates a CL job for each job depending whether the <b>pollInterval</b> for that feed expired.
   2. Creates a second interval using setInterval to trigger every BLOCK_INTERVAL. This will do the following:
-    a. Reads the jobs from the DB
-    b. Loops through all the jobs
-    c. For every job it does the following:
-      - Queries the price on-chain
-      - Queries the round on-chain
-      - Update the latest price and round in the DB for that job
-      - If there is a new round and a submission is already made for that round, the 'last_reported_round' is updated in the DB. Otherwise, if a submission is not made, a new CL job request of type 3 is prepared
-      - It will check for a price deviation from the previous on-chain price and if there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed), a new CL job request of type 2 is prepared
-      - If one of the above conditions is met and a CL job request is prepared, a final check is made. <b>This is done to avoid creating duplicate CL job requests resulting in extra subscription costs for oracles</b>. The CL job request is ONLY sent if one of the following conditions is met:
-        - 1. There is no pending CL job request for which we are still waiting for. This is done by checking the comparing the request ID of the last request sent and received from the DB.
-        - 2. An interval of SEND_CHECK_INTERVAL passed from the last CL job request which was sent.
+      1. Reads the jobs from the DB
+      2. Loops through all the jobs
+      3. For every job it does the following:
+          - Queries the price on-chain
+          - Queries the round on-chain
+          - Update the latest price and round in the DB for that job
+          - If there is a new round and a submission is already made for that round, the 'last_reported_round' is updated in the DB. Otherwise, if a submission is not made, a new CL job request of type 3 is prepared
+          - It will check for a price deviation from the previous on-chain price and if there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed), a new CL job request of type 2 is prepared
+          - If one of the above conditions is met and a CL job request is prepared, a final check is made. <b>This is done to avoid creating duplicate CL job requests resulting in extra subscription costs for oracles</b>. The CL job request is ONLY sent if one of the following conditions is met:
+            1. There is no pending CL job request for which we are still waiting for. This is done by checking the comparing the request ID of the last request sent and received from the DB.
+            2. An interval of SEND_CHECK_INTERVAL passed from the last CL job request which was sent.
 
 
 <br>
@@ -859,7 +871,7 @@ What it does:
 <br>
 <div id='updateBalanceMetrics'></div>
 
-<b>updateMetrics(oracleName, oracle, brand, value)</b>
+<b>updateBalanceMetrics(oracleName, oracle, brand, value)</b>
 
 Inputs:
 * oracleName - The name of the oracle
@@ -939,9 +951,9 @@ What it does:
   1. Gets the latest offers and balances for the oracle using <b>getOffersAndBalances</b>
   2. Gets the last visited offer ID from the state in order not to loop through offers which were already examined in previous checks
   3. Loops through each offer obtained and does the following:
-    a. Gets the ID of the current offer in the loop
-    b. If the ID of the current offer is less or equal to the last visited offer ID, the loop is abandoned because we do not want to loop through offers which we already examined
-    c. If the current offer is a 'PricePush', it does not contain any errors and the round for that submission is greater than the last observed round, the metrics are updated with the current offer's details by calling <b>updateMetrics</b>
+      1. Gets the ID of the current offer in the loop
+      2. If the ID of the current offer is less or equal to the last visited offer ID, the loop is abandoned because we do not want to loop through offers which we already examined
+      3. If the current offer is a 'PricePush', it does not contain any errors and the round for that submission is greater than the last observed round, the metrics are updated with the current offer's details by calling <b>updateMetrics</b>
   4. Loops through the balances and the balances for IST and BLD are updated by calling <b>updateBalanceMetrics</b>
 
 <br>
