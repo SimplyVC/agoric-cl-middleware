@@ -1,9 +1,6 @@
 // @ts-nocheck
 /* eslint-disable func-names */
 
-/** 
- * IMPORTS
- */
 import { validUrl, readJSONFile, initialiseState, submitNewJob } from '../helpers/utils.js';
 import { getAllJobs, queryTable, updateTable} from '../helpers/db.js'
 import { startBridge } from '../helpers/bridge.js'
