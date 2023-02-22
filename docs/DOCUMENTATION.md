@@ -822,7 +822,7 @@ What it does:
   1. Tries to read the file using <b>readJSONFile</b>
   2. If it succeeds, it returns the state
   3. If it fails, it initialises the state and saves it to file
-  4. Returns either the state from the file or the initialised abd empty state
+  4. Returns either the state from the file or the initialised state
 
 <br>
 <div id='getOraclesInvitations'></div>
