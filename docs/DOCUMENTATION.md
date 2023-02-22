@@ -88,10 +88,10 @@ Smart Contract - https://github.com/Agoric/agoric-sdk/blob/master/packages/inter
 #### Middleware
 
 The middleware is needed to:
-1. Create CL jobs. Chainlink Jobs are created every minute. A cron job is not used in order to be able to pass in particular inputs to the job run so that the progress of the request can be stored and monitored.
+1. Create CL jobs. CL jobs are created every minute. A cron job is not used in order to be able to pass in particular inputs to the job run so that the progress of the request can be stored and monitored.
 2. Get results back from the CL node.
 3. Query smart contract for new rounds.
-3. Push price updates on chain.
+4. Submit a transaction to update prices on-chain.
 
 The middleware should contain the following functionalities:
 
