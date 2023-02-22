@@ -59,14 +59,14 @@ export const getOffers = async (follower) => {
       break;
     }
 
-    //if it is an offer status
+    // If it is an offer status
     if (followerElement.value.updated === "offerStatus") {
-      //get id
+      // Get id
       let id = followerElement.value.status.id;
 
-      //if a new and final state
+      // If a new and final state
       if (id !== lastVisited) {
-        //if it is not failed
+        // If it is not failed
         if (!followerElement.value.status.hasOwnProperty("error")) {
           history.push(followerElement.value);
           counter++;
@@ -93,7 +93,7 @@ export const getLatestSubmittedRound = async (oracle) => {
     unserializer,
   });
 
-  //get offers
+  // Get offers
   let offers = await getOffers(follower);
 
   return Number(
@@ -118,15 +118,15 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
     unserializer,
   });
 
-  //get offers
+  // Get offers
   let offers = await getOffers(follower);
 
-  //loop through offers starting from last offer
+  // Loop through offers starting from last offer
   for (let i = 0; i < offers.length; i++) {
-    //get current offer
+    // Get current offer
     let currentOffer = offers[i];
 
-    //if a price invitation and for the correct feed
+    // If a price invitation and for the correct feed
     let invitationType = currentOffer["status"]["invitationSpec"]["invitationMakerName"];
     let previousOffer = currentOffer["status"]["invitationSpec"]["previousOffer"]
     if (
@@ -137,16 +137,16 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
         currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
       );
 
-      //if it is an offer for the round we are checking for
+      // If it is an offer for the round we are checking for
       if (offerRound === roundId) {
-        //if there is no error
+        // If there is no error
         if (!currentOffer["status"].hasOwnProperty("error")) {
           return true;
         }
       }
 
       /**
-       * else if offer round id is less than the round we want to check and its 
+       * Else if offer round id is less than the round we want to check and its 
        * satisfied
        */
       else if (
@@ -155,7 +155,7 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
       ) {
 
         /**
-         * return false because there cannot be a submission for a newer round 
+         * Return false because there cannot be a submission for a newer round 
          * before this offer
          */
         return false;
@@ -172,16 +172,16 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
  */
 export const queryPrice = async (feed) => {
   try {
-    //read value from vstorage
+    // Read value from vstorage
     const capDataStr = await readVStorage(feed, false);
 
     //parse the value
     let capData = JSON.parse(JSON.parse(capDataStr).value);
     capData = JSON.parse(capData.values[0]);
-    //replace any extra characters
+    // Replace any extra characters
     capData = JSON.parse(capData.body.replaceAll("\\", ""));
 
-    //get the latest price by dividing amountOut by amountIn
+    // Get the latest price by dividing amountOut by amountIn
     let latestPrice =
       Number(capData.amountOut.value.digits) /
       Number(capData.amountIn.value.digits);
@@ -208,7 +208,7 @@ export const getOraclesInvitations = async () => {
   const current = await getCurrent(String(FROM), fromBoard, { vstorage });
   const invitations = current.offerToUsedInvitation;
 
-  //for each invitation
+  // For each invitation
   for (let inv in invitations) {
     let boardId = invitations[inv].value[0].instance.boardId;
     let feed = feedBoards[boardId].split(" price feed")[0];
@@ -229,31 +229,31 @@ export const getOraclesInvitations = async () => {
  * @returns {boolean} returns.submission_made Whether a submission to this *                    round was made by the oracle
  */
 export const queryRound = async (feed) => {
-  //read value from vstorage
+  // Read value from vstorage
   const capDataStr = await readVStorage(feed, true);
 
   //parse the value
   let capData = JSON.parse(JSON.parse(capDataStr).value);
   capData = JSON.parse(capData.values[capData.values.length - 1]);
-  //replace any extra characters
+  // Replace any extra characters
   capData = JSON.parse(capData.body.replaceAll("\\", ""));
 
-  //get round from result
+  // Get round from result
   let round = Number(capData.roundId.digits);
 
-  //get offers
+  // Get offers
   let offers = await getOraclesInvitations();
-  //get feed offer id
+  // Get feed offer id
   let feedOfferId = offers[feed];
 
-  //check if there is a submission for round
+  // Check if there is a submission for round
   let submissionForRound = await checkSubmissionForRound(
     FROM,
     feedOfferId,
     round
   );
 
-  //get the latest round
+  // Get the latest round
   let latestRound = {
     round_id: round,
     started_at: Number(capData.startedAt.digits),
@@ -280,15 +280,15 @@ export const outputAction = (bridgeAction) => {
  * @returns {boolean} whether successful
  */
 export const pushPrice = async (price, feed, round, from) => {
-  //create an offerId with the Date number
+  // Create an offerId with the Date number
   let offerId = Date.now();
 
-  //get offers
+  // Get offers
   let offers = await getOraclesInvitations();
-  //get previous offer for feed
+  // Get previous offer for feed
   let previousOffer = offers[feed];
 
-  //create an offer
+  // Create an offer
   const offer = {
     id: Number(offerId),
     invitationSpec: {
@@ -300,25 +300,25 @@ export const pushPrice = async (price, feed, round, from) => {
     proposal: {},
   };
 
-  //create keyring
+  // Create keyring
   let keyring = {
     home: "",
     backend: "test",
   };
 
-  //check if submitted for round
+  // Check if submitted for round
   let submitted = await checkSubmissionForRound(from, previousOffer, round);
 
-  //check if in submission
+  // Check if in submission
   let inSubmission = await checkIfInSubmission(feed);
 
-  //loop retries
+  // Loop retries
   for (let i = 0; i < SUBMIT_RETRIES && !submitted && !inSubmission; i++) {
-    //query round
+    // Query round
     let latestRound = await queryRound(feed);
 
     /**
-     * if latestRound is greater than round being pushed or submission to the 
+     * If latestRound is greater than round being pushed or submission to the 
      * round is already made, abort
      */
     if (
@@ -333,17 +333,17 @@ export const pushPrice = async (price, feed, round, from) => {
 
     offer.id = Number(Date.now());
 
-    //output action
+    // Output action
     let data = outputAction({
       method: "executeOffer",
       // @ts-ignore
       offer,
     });
 
-    //change data to JSON
+    // Change data to JSON
     data = JSON.parse(data);
 
-    //execute
+    // Execute
     await execSwingsetTransaction(
       "wallet-action --allow-spend '" + JSON.stringify(data) + "'",
       networkConfig,
@@ -352,20 +352,20 @@ export const pushPrice = async (price, feed, round, from) => {
       keyring
     );
 
-    //update last submission time
+    // Update last submission time
     await updateTable(
       "jobs",
       { last_submission_time: Date.now() / 1000 },
       "feed"
     );
 
-    //sleep 13 seconds to wait 2 blocks and a bit
+    // Sleep 13 seconds to wait 2 blocks and a bit
     await delay((Number(SEND_CHECK_INTERVAL) + 1) * 1000);
 
-    //check submission for round
+    // Check submission for round
     submitted = await checkSubmissionForRound(from, previousOffer, round);
 
-    //check if in submission
+    // Check if in submission
     inSubmission = await checkIfInSubmission(feed);
   }
 

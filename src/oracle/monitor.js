@@ -3,7 +3,6 @@ import { inspect } from "util";
 import {
   boardSlottingMarshaller,
   makeRpcUtils,
-  storageHelper,
   networkConfig,
 } from "../lib/rpc.js";
 import { makeFollower, makeLeader } from "@agoric/casting";
@@ -40,42 +39,42 @@ register.setDefaultLabels({
   app: "agoric-cl-oracle-monitor",
 });
 
-//Create gauge for value
+// Create gauge for value
 const oracleSubmission = new Gauge({
   name: "oracle_latest_value",
   help: "Latest value submitted by oracle",
   labelNames: ["oracleName", "oracle", "feed"],
 });
 
-//Create gauge for timestamp
+// Create gauge for timestamp
 const oracleObservation = new Gauge({
   name: "oracle_last_observation",
   help: "Last epoch in which oracle made an observation",
   labelNames: ["oracleName", "oracle", "feed"],
 });
 
-//Create gauge for last round
+// Create gauge for last round
 const oracleLastRound = new Gauge({
   name: "oracle_last_round",
   help: "Last round in which oracle made an observation",
   labelNames: ["oracleName", "oracle", "feed"],
 });
 
-//Create gauge for price deviation
+// Create gauge for price deviation
 const oracleDeviation = new Gauge({
   name: "oracle_price_deviation",
   help: "Latest price deviation by oracle",
   labelNames: ["oracleName", "oracle", "feed"],
 });
 
-//Create gauge for balance
+// Create gauge for balance
 const oracleBalance = new Gauge({
   name: "oracle_balance",
   help: "Oracle balances",
   labelNames: ["oracleName", "oracle", "brand"],
 });
 
-//Create gauge for last price
+// Create gauge for last price
 const actualPriceGauge = new Gauge({
   name: "actual_price",
   help: "Actual last price from feed",
@@ -92,9 +91,9 @@ register.registerMetric(actualPriceGauge);
 
 const { agoricNames, fromBoard, vstorage } = await makeRpcUtils({ fetch });
 
-//this holds the offer ids
+// This holds the offer ids
 let feeds = [];
-//this holds the amounts in
+// This holds the amounts in
 let amountsIn = {};
 
 /**
@@ -110,15 +109,15 @@ const readOracleAddresses = () => {
  * Function to get oracles feed invitations
  */
 export const getOraclesInvitations = async () => {
-  //get the feeds
+  // Get the feeds
   feeds = agoricNames.reverse;
 
-  //for each oracle
+  // For each oracle
   for (let oracle in oracles) {
     const current = await getCurrent(oracle, fromBoard, { vstorage });
     const invitations = current.offerToUsedInvitation;
 
-    //for each invitation
+    // For each invitation
     for (let inv in invitations) {
       let boardId = invitations[inv].value[0].instance.boardId;
       let feed = feeds[boardId].split(" price feed")[0];
@@ -126,13 +125,13 @@ export const getOraclesInvitations = async () => {
       if (!("feeds" in oracles[oracle])) {
         oracles[oracle]["feeds"] = {};
       }
-      //add feed
+      // Add feed
       oracles[oracle]["feeds"][String(inv)] = feed;
     }
   }
 };
 
-//let oracleLabels = readOracles();
+// Let oracleLabels = readOracles();
 let oracles = readOracleAddresses();
 await getOraclesInvitations();
 
@@ -155,7 +154,7 @@ const updateMetrics = (
   actualPrice,
   lastRound
 ) => {
-  //calculate price deviation from actual value
+  // Calculate price deviation from actual value
   let priceDeviation = Math.abs((value - actualPrice) / actualPrice) * 100;
 
   oracleSubmission.labels(oracleName, oracle, feed).set(value);
@@ -190,10 +189,10 @@ const queryPrice = async (feed) => {
     //parse the value
     let capData = JSON.parse(JSON.parse(capDataStr).value);
     capData = JSON.parse(capData.values[0]);
-    //replace any extra characters
+    // Replace any extra characters
     capData = JSON.parse(capData.body.replaceAll("\\", ""));
 
-    //get the latest price by dividing amountOut by amountIn
+    // Get the latest price by dividing amountOut by amountIn
     let latestPrice =
       Number(capData.amountOut.value.digits) /
       Number(capData.amountIn.value.digits);
@@ -227,14 +226,14 @@ const getOffersAndBalances = async (follower, oracle) => {
       break;
     }
 
-    //if it is an offer status
+    // If it is an offer status
     if (followerElement.value.updated === "offerStatus") {
-      //get id
+      // Get id
       let id = followerElement.value.status.id;
 
-      //if a new and final state
+      // If a new and final state
       if (id !== lastVisited) {
-        //if it is not failed
+        // If it is not failed
         if (!followerElement.value.status.hasOwnProperty("error")) {
           toReturn["offers"].push(followerElement.value);
           counter++;
@@ -244,7 +243,7 @@ const getOffersAndBalances = async (follower, oracle) => {
     }
   }
 
-  //get current purses
+  // Get current purses
   let current = await getCurrent(oracle, fromBoard, { vstorage });
   for (let i = 0; i < current.purses.length; i++) {
     let currentPurse = current.purses[i];
@@ -262,7 +261,7 @@ const getOffersAndBalances = async (follower, oracle) => {
  * @returns last results including the oracle submitted price
  */
 export const getLatestPrices = async (oracle, oracleDetails, state) => {
-  //get feeds for oracle
+  // Get feeds for oracle
   let feeds = oracleDetails["feeds"];
   console.log("Getting prices for", oracle, feeds);
 
@@ -276,28 +275,28 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
 
   let offersBalances = await getOffersAndBalances(follower, oracle);
 
-  //get last offer id from offers from state
+  // Get last offer id from offers from state
   let lastOfferId = isNaN(state["last_offer_id"]) ? 0 : state["last_offer_id"];
 
-  //initialise variable to hold results
+  // Initialise variable to hold results
   let lastResults = {
     last_offer_id: lastOfferId,
     values: state["values"] ? state["values"] : {},
   };
 
-  //loop through offers starting from last visited index
+  // Loop through offers starting from last visited index
   for (let i = 0; i < offersBalances.offers.length; i++) {
-    //get current offer
+    // Get current offer
     let currentOffer = offersBalances.offers[i];
     let id = Number(currentOffer["status"]["id"]);
 
-    //if we found the last visited offer id in previous check, stop looping
+    // If we found the last visited offer id in previous check, stop looping
     console.log("lastOfferId", lastOfferId, "currentId", id);
     if (id <= lastOfferId) {
       break;
     }
 
-    //if a price invitation
+    // If a price invitation
     if (
       currentOffer["status"]["invitationSpec"]["invitationMakerName"] ==
       "PushPrice"
@@ -308,17 +307,17 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
         currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
       );
 
-      //get feeds last observed round from state
+      // Get feeds last observed round from state
       let lastObservedRound = state["values"].hasOwnProperty(feed)
         ? state["values"][feed]["round"]
         : 0;
 
-      //if round is bigger than last observed and the offer didn't fail
+      // If round is bigger than last observed and the offer didn't fail
       if (
         lastRound > lastObservedRound &&
         !currentOffer["status"].hasOwnProperty("error")
       ) {
-        //if id is bigger than last offer id in state, set it
+        // If id is bigger than last offer id in state, set it
         lastResults["last_offer_id"] = id;
 
         let price =
@@ -328,7 +327,7 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
             ]
           ) / amountsIn[feed];
 
-        //fill results variable
+        // Fill results variable
         lastResults["values"][feed] = {
           price: price,
           id: id,
@@ -336,9 +335,9 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
         };
         state = lastResults;
 
-        //get latest feed price
+        // Get latest feed price
         let feedPrice = await queryPrice(feed);
-        //update metrics
+        // Update metrics
         updateMetrics(
           oracleDetails["oracleName"],
           oracle,
@@ -352,7 +351,7 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
     }
   }
 
-  //loop through balances
+  // Loop through balances
   for (let i = 0; i < offersBalances.balances.length; i++) {
     let currentBalance = offersBalances.balances[i];
 
@@ -371,11 +370,11 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
  * @returns latest monitoring state
  */
 const readMonitoringState = () => {
-  //try to read from file
+  // Try to read from file
   try {
     return readJSONFile(STATE_FILE);
   } catch (err) {
-    //if it fails, initialise and save
+    // If it fails, initialise and save
     let initialState = {};
 
     for (let oracle in oracles) {
@@ -385,7 +384,7 @@ const readMonitoringState = () => {
       };
     }
 
-    //save to file
+    // Save to file
     saveJSONDataToFile(initialState, STATE_FILE);
     return initialState;
   }
@@ -395,14 +394,14 @@ const readMonitoringState = () => {
  * Main function to monitor
  */
 export const monitor = async () => {
-  //create interval
+  // Create interval
   setInterval(async () => {
-    //read monitoring state
+    // Read monitoring state
     let state = readMonitoringState();
 
-    //for each oracle
+    // For each oracle
     for (let oracle in oracles) {
-      //check if there is state for oracle
+      // Check if there is state for oracle
       if (!(oracle in state)) {
         state[oracle] = {
           last_offer_id: 0,
@@ -411,7 +410,7 @@ export const monitor = async () => {
       }
       console.log("ORACLE STATE", oracle, state[oracle]);
 
-      //get latest prices for oracle
+      // Get latest prices for oracle
       let latestOracleState = await getLatestPrices(
         oracle,
         oracles[oracle],
@@ -420,7 +419,7 @@ export const monitor = async () => {
       state[oracle] = latestOracleState;
     }
 
-    //update state
+    // Update state
     saveJSONDataToFile(state, STATE_FILE);
   }, POLL_INTERVAL * 1000);
 };

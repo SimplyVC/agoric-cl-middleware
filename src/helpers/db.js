@@ -119,12 +119,12 @@ export const updateTable = async (table, values, name) => {
   let actualFields = Object.keys(values);
   let actualValues = Object.values(values);
 
-  //create string
+  // Create string
   let update = "";
   for (let i = 0; i < actualFields.length; i++) {
     update += actualFields[i] + " = ?";
 
-    //if not last element
+    // If not last element
     if (i !== actualFields.length - 1) {
       update += ", ";
     }
