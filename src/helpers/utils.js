@@ -24,8 +24,7 @@ if (process.env.NODE_ENV !== "test") {
  */
 export const readJSONFile = (filename) => {
   let rawdata = fs.readFileSync(filename);
-  let data = JSON.parse(String(rawdata));
-  return data;
+  return JSON.parse(String(rawdata));
 };
 
 /**
