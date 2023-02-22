@@ -47,10 +47,10 @@ let feeds;
   * Controller for the middleware
   */
 const makeController = () => {
-  const oneSecInterval = 1 * 1_000;
+  const oneSecInterval = 1_000;
 
   // Create an interval which creates a job request every second
-  const it = setInterval(async () => {
+  setInterval(async () => {
 
     // Get all jobs
     let jobs = await getAllJobs();
@@ -87,7 +87,7 @@ const makeController = () => {
     * create an interval which query the price and creates a Chainlink job
     * request if the price deviates more than a specific threshold
     */
-  const it2 = setInterval(async () => {
+  setInterval(async () => {
 
     // Get all jobs
     let jobs = await getAllJobs();
