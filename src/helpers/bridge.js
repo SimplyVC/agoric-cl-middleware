@@ -1,8 +1,16 @@
 import bodyParser from "body-parser";
 import express from "express";
-import { createJob, deleteJob, queryTable, updateTable } from "./db.js";
+import { 
+    createJob, 
+    deleteJob, 
+    queryTable, 
+    updateTable 
+} from "./db.js";
 import { readJSONFile } from "./utils.js";
-import { pushPrice, queryRound } from "./chain.js";
+import { 
+    pushPrice, 
+    queryRound 
+} from "./chain.js";
 
 const {
   FEEDS_FILE = "../config/feeds-config.json",

@@ -1,6 +1,10 @@
 /* global fetch, process */
 
-import { iterateReverse, makeFollower, makeLeader } from "@agoric/casting";
+import { 
+    iterateReverse, 
+    makeFollower, 
+    makeLeader 
+} from "@agoric/casting";
 import {
   makeRpcUtils,
   boardSlottingMarshaller,
@@ -10,7 +14,10 @@ import {
 } from "../lib/rpc.js";
 import { getCurrent } from "../lib/wallet.js";
 import { execSwingsetTransaction } from "../lib/chain.js";
-import { checkIfInSubmission, delay } from "./utils.js";
+import { 
+    checkIfInSubmission, 
+    delay 
+} from "./utils.js";
 import { updateTable } from "./db.js";
 
 const { FROM, SUBMIT_RETRIES = "3", SEND_CHECK_INTERVAL = "45" } = process.env;

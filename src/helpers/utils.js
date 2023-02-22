@@ -1,6 +1,10 @@
 import fs from "fs";
 import { URL } from "url";
-import { createDBs, queryTable, updateTable } from "./db.js";
+import { 
+  createDBs, 
+  queryTable, 
+  updateTable 
+} from "./db.js";
 import { sendJobRun } from "./chainlink.js";
 
 // get environment variables

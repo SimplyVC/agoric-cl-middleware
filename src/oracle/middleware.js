@@ -1,10 +1,23 @@
 // @ts-nocheck
 /* eslint-disable func-names */
 
-import { validUrl, readJSONFile, initialiseState, submitNewJob } from '../helpers/utils.js';
-import { getAllJobs, queryTable, updateTable} from '../helpers/db.js'
+import { 
+  validUrl, 
+  readJSONFile, 
+  initialiseState, 
+  submitNewJob 
+} from '../helpers/utils.js';
+import { 
+  getAllJobs, 
+  queryTable, 
+  updateTable
+} from '../helpers/db.js'
 import { startBridge } from '../helpers/bridge.js'
-import { queryPrice, queryRound, getLatestSubmittedRound } from '../helpers/chain.js'
+import { 
+  queryPrice, 
+  queryRound, 
+  getLatestSubmittedRound 
+} from '../helpers/chain.js'
 
 // get environment variables
 const {
