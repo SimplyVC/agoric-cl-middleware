@@ -166,7 +166,6 @@ export const queryPrice = async (feed) => {
   try {
     //read value from vstorage
     const capDataStr = await readVStorage(feed, false);
-    console.log("capDataStr", capDataStr)
 
     //parse the value
     var capData = JSON.parse(JSON.parse(capDataStr).value);
