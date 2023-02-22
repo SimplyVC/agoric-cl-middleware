@@ -12,11 +12,24 @@ jest.mock('sqlite3', () => {
     };
 });
 
+
+jest.mock('../src/helpers/chain.js', () => {
+    const originalModule = jest.requireActual("../src/helpers/chain.js")
+    return {
+        ...originalModule,
+        readVStorage: jest.fn()
+    };
+});
+
+
 jest.mock('../src/lib/rpc.js', () => {
     return {
         boardSlottingMarshaller: jest.fn(),
         networkConfig: { rpcAddrs: ["http://127.0.0.1:26657"], chainName: "agoriclocal" },
-        makeAgoricNames: jest.fn()
+        makeAgoricNames: jest.fn(),
+        makeVStorage: jest.fn(),
+        makeFromBoard: jest.fn(),
+        makeRpcUtils: jest.fn()
     };
 });
 
@@ -26,18 +39,10 @@ jest.mock('../src/lib/wallet.js', () => {
     };
 });
 
-jest.mock('../src/helpers/utils.js', () => {
-    const originalModule = jest.requireActual("../src/helpers/utils.js")
-    return {
-        ...originalModule,
-        readVStorage: jest.fn()
-    };
-});
-
-import { readJSONFile, readVStorage } from '../src/helpers/utils.js';
-import { getOffers, checkSubmissionForRound, queryPrice, queryRound, getOraclesInvitations } from '../src/oracle/middleware';
+import { readJSONFile, } from '../src/helpers/utils.js';
+import { getOffers, checkSubmissionForRound, queryPrice, queryRound, getOraclesInvitations } from '../src/helpers/chain.js';
 import { iterateReverse, makeLeader, makeFollower } from '@agoric/casting';
-import { boardSlottingMarshaller, makeAgoricNames } from '../src/lib/rpc.js'
+import { boardSlottingMarshaller, makeAgoricNames, makeFromBoard, makeRpcUtils, makeVStorage } from '../src/lib/rpc.js'
 import { getCurrent } from '../src/lib/wallet.js'
 import sqlite3 from 'sqlite3';
 
@@ -65,6 +70,8 @@ const asyncIterator = {
 iterateReverse.mockReturnValue(asyncIterator)
 makeLeader.mockReturnValue({})
 makeFollower.mockReturnValue({})
+makeFromBoard.mockReturnValue({})
+makeRpcUtils.mockReturnValue(Promise.resolve({agoricNames: agoricNamesOutput, fromBoard: {}, vstorage: {}}))
 boardSlottingMarshaller.mockReturnValue({})
 getCurrent.mockReturnValue(currentOutput)
 makeAgoricNames.mockReturnValue(agoricNamesOutput)
@@ -129,8 +136,8 @@ test('calls checkSubmissionForRound to check if there was a submission for round
  */
 test('calls queryPrice to query the latest price', async () => {
 
-    readVStorage.mockReturnValue(JSON.stringify({"value": "{\"blockHeight\":\"161547\",\"values\":[\"{\\\"body\\\":\\\"{\\\\\\\"amountIn\\\\\\\":{\\\\\\\"brand\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"slot\\\\\\\",\\\\\\\"iface\\\\\\\":\\\\\\\"Alleged: ATOM brand\\\\\\\",\\\\\\\"index\\\\\\\":0},\\\\\\\"value\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"bigint\\\\\\\",\\\\\\\"digits\\\\\\\":\\\\\\\"1000000\\\\\\\"}},\\\\\\\"amountOut\\\\\\\":{\\\\\\\"brand\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"slot\\\\\\\",\\\\\\\"iface\\\\\\\":\\\\\\\"Alleged: USD brand\\\\\\\",\\\\\\\"index\\\\\\\":1},\\\\\\\"value\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"bigint\\\\\\\",\\\\\\\"digits\\\\\\\":\\\\\\\"14059528\\\\\\\"}},\\\\\\\"timer\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"slot\\\\\\\",\\\\\\\"iface\\\\\\\":\\\\\\\"Alleged: timerService\\\\\\\",\\\\\\\"index\\\\\\\":2},\\\\\\\"timestamp\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"bigint\\\\\\\",\\\\\\\"digits\\\\\\\":\\\\\\\"1676499385\\\\\\\"}}\\\",\\\"slots\\\":[\\\"board05311\\\",\\\"board02810\\\",null]}\"]}"}))
-  
+    makeVStorage.mockReturnValue({readLatest: (key) => JSON.stringify({"value": "{\"blockHeight\":\"161547\",\"values\":[\"{\\\"body\\\":\\\"{\\\\\\\"amountIn\\\\\\\":{\\\\\\\"brand\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"slot\\\\\\\",\\\\\\\"iface\\\\\\\":\\\\\\\"Alleged: ATOM brand\\\\\\\",\\\\\\\"index\\\\\\\":0},\\\\\\\"value\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"bigint\\\\\\\",\\\\\\\"digits\\\\\\\":\\\\\\\"1000000\\\\\\\"}},\\\\\\\"amountOut\\\\\\\":{\\\\\\\"brand\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"slot\\\\\\\",\\\\\\\"iface\\\\\\\":\\\\\\\"Alleged: USD brand\\\\\\\",\\\\\\\"index\\\\\\\":1},\\\\\\\"value\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"bigint\\\\\\\",\\\\\\\"digits\\\\\\\":\\\\\\\"14059528\\\\\\\"}},\\\\\\\"timer\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"slot\\\\\\\",\\\\\\\"iface\\\\\\\":\\\\\\\"Alleged: timerService\\\\\\\",\\\\\\\"index\\\\\\\":2},\\\\\\\"timestamp\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"bigint\\\\\\\",\\\\\\\"digits\\\\\\\":\\\\\\\"1676499385\\\\\\\"}}\\\",\\\"slots\\\":[\\\"board05311\\\",\\\"board02810\\\",null]}\"]}"})})
+
     const latestPrice = await queryPrice("ATOM-USD");
   
     expect(latestPrice).toBe(14.059528);
@@ -153,7 +160,7 @@ test('calls getOraclesInvitations to get the invitation IDs', async () => {
  */
 test('calls queryRound to query the latest round', async () => {
 
-    readVStorage.mockReturnValue(JSON.stringify({"value": "{\"blockHeight\":\"161542\",\"values\":[\"{\\\"body\\\":\\\"{\\\\\\\"roundId\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"bigint\\\\\\\",\\\\\\\"digits\\\\\\\":\\\\\\\"802\\\\\\\"},\\\\\\\"startedAt\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"bigint\\\\\\\",\\\\\\\"digits\\\\\\\":\\\\\\\"1676499365\\\\\\\"},\\\\\\\"startedBy\\\\\\\":\\\\\\\"agoric1lw4e4aas9q84tq0q92j85rwjjjapf8dmnllnft\\\\\\\"}\\\",\\\"slots\\\":[]}\"]}"}))
+    makeVStorage.mockReturnValue({readLatest: (key) => JSON.stringify({"value": "{\"blockHeight\":\"161542\",\"values\":[\"{\\\"body\\\":\\\"{\\\\\\\"roundId\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"bigint\\\\\\\",\\\\\\\"digits\\\\\\\":\\\\\\\"802\\\\\\\"},\\\\\\\"startedAt\\\\\\\":{\\\\\\\"@qclass\\\\\\\":\\\\\\\"bigint\\\\\\\",\\\\\\\"digits\\\\\\\":\\\\\\\"1676499365\\\\\\\"},\\\\\\\"startedBy\\\\\\\":\\\\\\\"agoric1lw4e4aas9q84tq0q92j85rwjjjapf8dmnllnft\\\\\\\"}\\\",\\\"slots\\\":[]}\"]}"})})
   
     const latestPrice = await queryRound("ATOM-USD");
   

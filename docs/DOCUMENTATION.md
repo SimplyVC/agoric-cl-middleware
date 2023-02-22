@@ -7,6 +7,22 @@
   - [Monitoring](#monitoring)
 - [File structure](#file-structure)
 - [Technical Documentation](#technical-documentation)
+  - [helpers/bridge.js](#bridgejs)
+    - [startBridge(port)](#startBridge)
+      - [POST /adapter](#postadapter)
+      - [POST /jobs](#postjobs)
+      - [DELETE /jobs/:id](#deljobs)
+  - [helpers/chain.js](#chainjs)
+    - [readVStorage(feed, roundData)](#readvstorage)
+    - [getOffers(follower)](#getOffers)
+    - [getLatestSubmittedRound(oracle)](#getLatestSubmittedRound)
+    - [checkSubmissionForRound(oracle, feedOfferId, roundId)](#checkSubmissionForRound)
+    - [queryPrice(feed)](#queryPrice)
+    - [getOraclesInvitations()](#getOraclesInvitationsMiddleware)
+    - [queryRound(feed)](#queryRound)
+    - [pushPrice(price, feed, round, from)](#pushPrice)
+  - [helpers/chainlink.js](#chainlinkjs)
+    - [sendJobRun(count, jobId, requestType)](#sendJobRun)
   - [helpers/db.js](#dbjs)
     - [createDBs()](#createDBs)
     - [getAllJobs()](#getAllJobs)
@@ -19,25 +35,12 @@
     - [saveJSONDataToFile(newData, filename)](#saveJSONDataToFile)
     - [validUrl(url)](#validUrl)
     - [delay(ms)](#delay)
-    - [readVStorage(vstorage, feed, roundData)](#readvstorage)
+    - [initialiseState()](#initialiseState)
+    - [submitNewJob(feed, requestType)](#submitNewJob)
+    - [checkIfInSubmission(feed)](#checkIfInSubmission)
   - [oracle/middleware.js](#middlewarejs)
     - [Environment Variables](#envvarsmiddleware)
-    - [initialiseState()](#initialiseState)
-    - [sendJobRun(credentials, count, jobId, chainlinkUrl, requestType)](#sendJobRun)
-    - [getOffers(follower)](#getOffers)
-    - [getLatestSubmittedRound()](#getLatestSubmittedRound)
-    - [checkSubmissionForRound(oracle, feedOfferId, roundId)](#checkSubmissionForRound)
-    - [queryPrice(feed)](#queryPrice)
-    - [queryRound(feed)](#queryRound)
-    - [submitNewJob(feed, requestType)](#submitNewJob)
     - [makeController()](#makeController)
-    - [getOraclesInvitations()](#getOraclesInvitationsMiddleware)
-    - [pushPrice(price, feed, round, from)](#pushPrice)
-    - [checkIfInSubmission(feed)](#checkIfInSubmission)
-    - [startBridge(port)](#startBridge)
-      - [POST /adapter](#postadapter)
-      - [POST /jobs](#postjobs)
-      - [DELETE /jobs/:id](#deljobs)
     - [middleware()](#middlewarefunc)
   - [oracle/monitor.js](#monitorjs)
     - [Environment Variables](#envvarsmonitor)
@@ -168,6 +171,9 @@ Furthermore, it contains the following two files which serve as an entry point t
 
 This directory contains the following files:
 
+1. <b>bridge.js</b> - This file contains the NodeJS server which will listen to requests from the CL node
+1. <b>chain.js</b> - This file contains helper functions which are needed to interact with the agoric chain
+1. <b>chainlink.js</b> - This file contains helper functions to send job requests to the CL node
 1. <b>db.js</b> - This file contains helper functions related to the database
 2. <b>utils.js</b> - This file contains basic utility and helper functions 
 
@@ -223,6 +229,246 @@ This is a Grafana template to monitor an oracle node or the whole oracle network
 ## Technical Documentation
 
 In this section, I will go over the <b>oracle</b> directory and explain in detail each function in the files inside it.
+
+<div id='bridgejs'></div>
+
+### <u>helpers/bridge.js</u>
+
+
+<br>
+<div id='startBridge'></div>
+
+<b>startBridge(port)</b>
+
+Inputs:
+* port - The port to listen on
+
+User: This function is used to start a server which listens to requests for a job addition, a job removal and a new job result. This server should serve the following endpoints:
+1. <b>POST /adapter</b> - to get a job result from a CL node
+2. <b>POST /jobs</b> - to get a new job addition from a CL node
+3. <b>DELETE /jobs/:id</b> - to get a job removal from a CL node
+
+What it does:
+
+<div id='postadapter'></div>
+
+a. <u>/adapter</u>: This is the endpoint which is used to accept job results from CL job requests. This endpoint does the following:
+  - Read the result, request ID, request Type and job name from the received body
+  - Check if an actual result was received and if not return a status 500 response. If a result is received, a 200 is sent as response.
+  - Obtain the last price on-chain from the DB
+  - Obtain the round to push the price for by checking whether the latest round on-chain is greater than the oracle's last reported round. If so, the round ID would be the latest round on chain. Otherwise, the latest round on chain is incremented by 1 as a new round would need to be created.
+  - Push the price on chain if it satisfies all the following criteria:
+    - SEND_CHECK_INTERVAL seconds passed from the last price push update to ensure that multiple price updates are not pushed simultaneously
+    - If it is a new round and we the oracle has not started the current on-chain round or if it is not a new round but the oracle has not submitted to the current round on-chain
+    - One of the following:
+      - If its time for a price update by comparing the timestamp of the last round and now by making use of <b>pushInterval</b>(for that feed) (Request type 1)
+      - If there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed) between the received price and the latest price on chain (Request type 2)
+      - If there was a new a new round (Request type 3)
+  - Update the 'last_reported_round' and the request ID of latest job result received from CL node in the DB
+<div id='postjobs'></div>
+
+b. <u>/jobs</u>: This is the endpoint which is used to handle a new job created on the CL node. This endpoint adds the job to the jobs table in the DB.
+
+<div id='deljobs'></div>
+
+c. <u>/jobs/:id</u>:  This is the endpoint which is used to handle a job removal on the CL node. This endpoint removes the job from the DB.
+
+
+<div id='chainjs'></div>
+
+### <u>helpers/chain.js</u>
+
+<br>
+<div id='readvstorage'></div>
+
+<b>readVStorage(feed, roundData)</b>
+
+Inputs:
+* feed - The feed name
+* roundData - A boolean indicating whether we are reading round data. A false means we are reading price data
+
+Use: This function is used read price or round data from vstorage
+
+Returns: CapDataString by calling vstorage.readLatest().
+
+<br>
+<div id='getOffers'></div>
+
+<b>getOffers(follower)</b>
+
+Inputs:
+* follower - Follower object containing offers and balances. This is obtained by using Agoric's functions from agoric-sdk
+
+Use: This function is used to get the latest offers from an address
+
+Returns: The latest offer statuses from the last 5 entries in form of an array
+
+What it does:
+  1. Reverses all the offers and loops through the reversed array
+  2. If it is an offer status and it does not have an 'error' property, it is added to the array to be returned
+  3. Returns the array consisting of succeeded offers.
+
+<br>
+<div id='getLatestSubmittedRound'></div>
+
+<b>getLatestSubmittedRound(oracle)</b>
+
+Inputs:
+* oracle - The address of the oracle of whom we are getting the latest submitted round
+
+Use: This function is used to get the latest round for which a submission was made
+
+Returns: The latest round ID for which a submission was made
+
+What it does:
+  1. Obtains a follower of offers and balances for the oracle address
+  2. Gets the latest offers by calling <b>getOffers()</b> 
+  3. Returns the round ID of the latest offer
+
+<br>
+<div id='checkSubmissionForRound'></div>
+
+<b>checkSubmissionForRound(oracle, feedOfferId, roundId)</b>
+
+Inputs:
+* oracle - The address of the oracle
+* feedOfferId - The ID of the feed offer
+* roundId - The round ID to check the submission for
+
+Use: This function is used to check whether an oracle submitted an observation for a particular round
+
+Returns: A boolean indicating whether the oracle made a successful observation to the passed round id
+
+What it does:
+  1. Obtains a follower of offers and balances for the oracle address
+  2. Gets the latest offers by calling <b>getOffers()</b> 
+  3. Loops through the offers and does the following:
+    a. Returns True if the offer is a 'PushPrice' offer, the feed offer ID matches to the inputted one and the offer has no error and has a matching round number.
+    b. Returns False if it finds a successful 'PushPrice' offer with a round id smaller than the one passed as a parameter because a submission for an old round cannot be made. Since we are traversing offers started from the most recent one, if an offer for smaller round id is found, it is useless to continue looping as it is impossible to find an older offer for a more recent round.
+  4. False is returned if the recent offers are traversed and no matching successful offer is found.
+
+
+<br>
+<div id='queryPrice'></div>
+
+<b>queryPrice(feed)</b>
+
+Inputs:
+* feed - Feed name to query price for
+
+Use: This function is used to query the latest on-chain price for a feed
+
+Returns: The latest price
+
+What it does:
+  1. Reads the latest published price from vstorage using Agoric's functions from agoric-sdk
+  2. Parses the value and returns it 
+  3. If the above fails for some reason, 0 is returned. A reason for failing could be the first time a feed is created and there is no price on-chain yet
+  
+
+<br>
+<div id='getOraclesInvitationsMiddleware'></div>
+
+<b>getOraclesInvitations()</b>
+
+Use: This function is used to get the oracle invitation IDs for price feeds 
+
+Returns: An JSON object with invitation IDs as below
+```json
+{
+  "ATOM-USD": "123456789",
+  "OSMO-USD": "987654321"
+}
+```
+
+What it does:
+  1. Loops through each oracle to monitor and obtain their invitation IDs for feeds
+  2. The invitations IDs are returned in a JSON objects with the keys being the feed names and the values being the invitation IDs
+
+
+
+<br>
+<div id='queryRound'></div>
+
+<b>queryRound(feed)</b>
+
+Inputs:
+* feed - Feed name to query round for
+
+Use: This function is used to query the latest on-chain round for a feed
+
+Returns: The latest round in an object containing the round ID, the timestamp when it was started, who started it and whether a submission was made by the oracle running this middleware using the FROM environment variable. The result object has the following structure
+```json
+{
+  "round_id": 1,
+  "started_at": 1612345678,
+  "started_by": "agoric123456789",
+  "submission_made": false
+}
+```
+
+What it does:
+  1. Reads the latest published round from vstorage using Agoric's functions from agoric-sdk
+  2. Parses the values for round ID, started timestamp and who started the round
+  3. Calls <b>checkSubmissionForRound</b> to check whether the oracle address running this middleware submitted to this round
+  4. Appends all the details to an object and returns it
+
+
+<br>
+<div id='pushPrice'></div>
+
+<b>pushPrice(price, feed, round, from)</b>
+
+Inputs:
+* price - The price to push
+* feed - The feed to push the price to
+* round - The round to push the price to
+* from - The oracle address from where to push the price
+
+Use: This function is used to push a price on chain for a specific feed and round
+
+Returns: A boolean indicating whether the push submission was successful or not
+
+What it does:
+  1. Creates an ID for the offer. The ID is a timestamp
+  2. Obtains the feed offer id from the wallet using <b>getOraclesInvitations()</b>
+  3. Creates an offer object with the feed offer id, the created id, the price and the round
+  4. It checks whether a submission for this round was already made to avoid double submissions to save transaction fees.
+  5. Check if the middleware is waiting for a price submission confirmation using checkIfInSubmission()
+  5. If a submission is not yet made and it is not waiting for a submission confirmation, it will loop for a maximum of SUBMIT_RETRIES and it will do the following:
+    a. Queries the latest round
+    b. Confirms whether the round we are submitting to is actually the latest round and that we have not sent a submission for this round yet
+    c. If the above condition is satisfied, the offer is pushed on chain
+    d. It will delay for SEND_CHECK_INTERVAL. This is done to ensure that the price is not still in the mempool and that two blocks (13 seconds in this case) have passed just in case.
+    e. Check whether the submission was successful. If the submission was not successful after 2 blocks, the loop continues for next try.
+    f. Once the loop finishes and all the tries were done, true or false will be returned indicating whether the price was successfully pushed or not
+
+
+<div id='chainlinkjs'></div>
+
+### <u>helpers/chainlink.js</u>
+
+<br>
+<div id='sendJobRun'></div>
+
+<b>sendJobRun(count, jobId, requestType)</b>
+
+Inputs:
+* count - The request id
+* jobId - The job id to send the request to
+* requestType - The type of request. The request can have the following 3 values:
+  - 1 - Time interval expired. This serves a cron and depends on <b>pollInterval</b>(for that feed)
+  - 2 - Price deviation trigger. There was a price deviation greater than <b>priceDeviationPerc</b>(for that feed) between the new and previous on-chain prices
+  - 3 - A new round was found on-chain
+
+Use: This function is used to send a job request to the job on CL node. If it fails, it retries for a maximum of SUBMIT_RETRIES (defined in environment variables).
+
+What it does:
+  1. Reads the credentials from CREDENTIALS_FILE
+  2. Creates the request by appending the request id and the request type
+  3. It loops for a maximum of SUBMIT_RETRIES and tries to submit the job to the CL node
+
+
 
 <div id='dbjs'></div>
 
@@ -384,19 +630,53 @@ Use: This function is used to create a delay
 
 Returns: A Promise with a delay of a specified number of milliseconds
 
-<br>
-<div id='readvstorage'></div>
 
-<b>readVStorage(vstorage, feed, roundData)</b>
+<br>
+<div id='initialiseState'></div>
+
+<b>initialiseState()</b>
+
+Use: This function is used to initialise the state by creating the necessary tables in the DB
+
+What it does:
+  1. Creates the tables in the DB using the function createDBs()
+
+
+<br>
+<div id='submitNewJob'></div>
+
+<b>submitNewJob(feed, requestType)</b>
 
 Inputs:
-* vstorage - vstorage object obtained on startup
-* feed - The feed name
-* roundData - A boolean indicating whether we are reading round data. A false means we are reading price data
+* feed - The feed to submit a new job request for
+* requestType - The request type to send as a parameter with the job request. 1 if a timer request, 2 if triggered by a price deviation, 3 for a new round.
 
-Use: This function is used read price or round data from vstorage
+Use: This function is used to send a job request to the CL node
 
-Returns: CapDataString by calling vstorage.readLatest().
+What it does:
+  1. Gets the latest request ID from the DB
+  2. Increments the request ID
+  3. Updates the 'last_request_sent' timestamp to the current timestamp in the DB
+  5. Calls <b>sendJobRun</b> to send a job request to the CL node
+
+
+<br>
+<div id='checkIfInSubmission'></div>
+
+<b>checkIfInSubmission(feed)</b>
+
+Inputs:
+* feed - The feed to check if a submission was made
+
+Use: This function is used to check if the middleware is still waiting for a price submission confirmation
+
+Returns: A boolean indicating whether last submission was made in less than SEND_CHECK_INTERVAL seconds
+
+What it does:
+  1. Gets the time of the last price submission from the DB
+  2. Calculates the number of seconds passed from the submission
+  3. Returns whether the number of seconds passed exceed SEND_CHECK_INTERVAL
+
 
 <br>
 <div id='middleware'></div>
@@ -434,152 +714,6 @@ The CREDENTIALS_FILE should contain a JSON object containing the credentials to 
 ```
 
 <br>
-<div id='initialiseState'></div>
-
-<b>initialiseState()</b>
-
-Use: This function is used to initialise the state by creating the necessary tables in the DB
-
-What it does:
-  1. Creates the tables in the DB using the function createDBs()
-
-<br>
-<div id='sendJobRun'></div>
-
-<b>sendJobRun(credentials, count, jobId, chainlinkUrl, requestType)</b>
-
-Inputs:
-* credentials - The credentials of the CL node to communicate with it
-* count - The request id
-* jobId - The job id to send the request to
-* chainlinkUrl - The URL of the CL node where to send the request
-* requestType - The type of request. The request can have the following 3 values:
-  - 1 - Time interval expired. This serves a cron and depends on <b>pollInterval</b>(for that feed)
-  - 2 - Price deviation trigger. There was a price deviation greater than <b>priceDeviationPerc</b>(for that feed) between the new and previous on-chain prices
-  - 3 - A new round was found on-chain
-
-Use: This function is used to send a job request to the job on CL node. If it fails, it retries for a maximum of SUBMIT_RETRIES (defined in environment variables).
-
-What it does:
-  1. Creates the request by appending the request id and the request type
-  2. It loops for a maximum of SUBMIT_RETRIES and tries to submit the job to the CL node
-
-<br>
-<div id='getOffers'></div>
-
-<b>getOffers(follower)</b>
-
-Inputs:
-* follower - Follower object containing offers and balances. This is obtained by using Agoric's functions from agoric-sdk
-
-Use: This function is used to get the latest offers from an address
-
-Returns: The latest offer statuses from the last 5 entries in form of an array
-
-What it does:
-  1. Reverses all the offers and loops through the reversed array
-  2. If it is an offer status and it does not have an 'error' property, it is added to the array to be returned
-  3. Returns the array consisting of succeeded offers.
-
-<br>
-<div id='getLatestSubmittedRound'></div>
-
-<b>getLatestSubmittedRound()</b>
-
-Use: This function is used to get the latest round for which a submission was made
-
-Returns: The latest round ID for which a submission was made
-
-What it does:
-  1. Obtains a follower of offers and balances for the oracle address
-  2. Gets the latest offers by calling <b>getOffers()</b> 
-  3. Returns the round ID of the latest offer
-
-<br>
-<div id='checkSubmissionForRound'></div>
-
-<b>checkSubmissionForRound(oracle, feedOfferId, roundId)</b>
-
-Inputs:
-* oracle - The address of the oracle
-* feedOfferId - The ID of the feed offer
-* roundId - The round ID to check the submission for
-
-Use: This function is used to check whether an oracle submitted an observation for a particular round
-
-Returns: A boolean indicating whether the oracle made a successful observation to the passed round id
-
-What it does:
-  1. Obtains a follower of offers and balances for the oracle address
-  2. Gets the latest offers by calling <b>getOffers()</b> 
-  3. Loops through the offers and does the following:
-    a. Returns True if the offer is a 'PushPrice' offer, the feed offer ID matches to the inputted one and the offer has no error and has a matching round number.
-    b. Returns False if it finds a successful 'PushPrice' offer with a round id smaller than the one passed as a parameter because a submission for an old round cannot be made. Since we are traversing offers started from the most recent one, if an offer for smaller round id is found, it is useless to continue looping as it is impossible to find an older offer for a more recent round.
-  4. False is returned if the recent offers are traversed and no matching successful offer is found.
-
-
-<br>
-<div id='queryPrice'></div>
-
-<b>queryPrice(feed)</b>
-
-Inputs:
-* feed - Feed name to query price for
-
-Use: This function is used to query the latest on-chain price for a feed
-
-Returns: The latest price
-
-What it does:
-  1. Reads the latest published price from vstorage using Agoric's functions from agoric-sdk
-  2. Parses the value and returns it 
-  3. If the above fails for some reason, 0 is returned. A reason for failing could be the first time a feed is created and there is no price on-chain yet
-  
-<br>
-<div id='queryRound'></div>
-
-<b>queryRound(feed)</b>
-
-Inputs:
-* feed - Feed name to query round for
-
-Use: This function is used to query the latest on-chain round for a feed
-
-Returns: The latest round in an object containing the round ID, the timestamp when it was started, who started it and whether a submission was made by the oracle running this middleware using the FROM environment variable. The result object has the following structure
-```json
-{
-  "round_id": 1,
-  "started_at": 1612345678,
-  "started_by": "agoric123456789",
-  "submission_made": false
-}
-```
-
-What it does:
-  1. Reads the latest published round from vstorage using Agoric's functions from agoric-sdk
-  2. Parses the values for round ID, started timestamp and who started the round
-  3. Calls <b>checkSubmissionForRound</b> to check whether the oracle address running this middleware submitted to this round
-  4. Appends all the details to an object and returns it
-
-<br>
-<div id='submitNewJob'></div>
-
-<b>submitNewJob(feed, requestType)</b>
-
-Inputs:
-* feed - The feed to submit a new job request for
-* requestType - The request type to send as a parameter with the job request. 1 if a timer request, 2 if triggered by a price deviation, 3 for a new round.
-
-Use: This function is used to send a job request to the CL node
-
-What it does:
-  1. Gets the latest request ID from the DB
-  2. Increments the request ID
-  3. Updates the 'last_request_sent' timestamp to the current timestamp in the DB
-  5. Calls <b>sendJobRun</b> to send a job request to the CL node
-
-
-<br>
 <div id='makeController'></div>
 
 <b>makeController()</b>
@@ -601,108 +735,6 @@ What it does:
         - 1. There is no pending CL job request for which we are still waiting for. This is done by checking the comparing the request ID of the last request sent and received from the DB.
         - 2. An interval of SEND_CHECK_INTERVAL passed from the last CL job request which was sent.
 
-<br>
-<div id='getOraclesInvitationsMiddleware'></div>
-
-<b>getOraclesInvitations()</b>
-
-Use: This function is used to get the oracle invitation IDs for price feeds 
-
-Returns: An JSON object with invitation IDs as below
-```json
-{
-  "ATOM-USD": "123456789",
-  "OSMO-USD": "987654321"
-}
-```
-
-What it does:
-  1. Loops through each oracle to monitor and obtain their invitation IDs for feeds
-  2. The invitations IDs are returned in a JSON objects with the keys being the feed names and the values being the invitation IDs
-
-<br>
-<div id='pushPrice'></div>
-
-<b>pushPrice(price, feed, round, from)</b>
-
-Inputs:
-* price - The price to push
-* feed - The feed to push the price to
-* round - The round to push the price to
-* from - The oracle address from where to push the price
-
-Use: This function is used to push a price on chain for a specific feed and round
-
-Returns: A boolean indicating whether the push submission was successful or not
-
-What it does:
-  1. Creates an ID for the offer. The ID is a timestamp
-  2. Obtains the feed offer id from the wallet using <b>getOraclesInvitations()</b>
-  3. Creates an offer object with the feed offer id, the created id, the price and the round
-  4. It checks whether a submission for this round was already made to avoid double submissions to save transaction fees.
-  5. Check if the middleware is waiting for a price submission confirmation using checkIfInSubmission()
-  5. If a submission is not yet made and it is not waiting for a submission confirmation, it will loop for a maximum of SUBMIT_RETRIES and it will do the following:
-    a. Queries the latest round
-    b. Confirms whether the round we are submitting to is actually the latest round and that we have not sent a submission for this round yet
-    c. If the above condition is satisfied, the offer is pushed on chain
-    d. It will delay for SEND_CHECK_INTERVAL. This is done to ensure that the price is not still in the mempool and that two blocks (13 seconds in this case) have passed just in case.
-    e. Check whether the submission was successful. If the submission was not successful after 2 blocks, the loop continues for next try.
-    f. Once the loop finishes and all the tries were done, true or false will be returned indicating whether the price was successfully pushed or not
-
-<br>
-<div id='checkIfInSubmission'></div>
-
-<b>checkIfInSubmission(feed)</b>
-
-Inputs:
-* feed - The feed to check if a submission was made
-
-Use: This function is used to check if the middleware is still waiting for a price submission confirmation
-
-Returns: A boolean indicating whether last submission was made in less than SEND_CHECK_INTERVAL seconds
-
-What it does:
-  1. Gets the time of the last price submission from the DB
-  2. Calculates the number of seconds passed from the submission
-  3. Returns whether the number of seconds passed exceed SEND_CHECK_INTERVAL
-
-<br>
-<div id='startBridge'></div>
-
-<b>startBridge(port)</b>
-
-Inputs:
-* port - The port to listen on
-
-User: This function is used to start a server which listens to requests for a job addition, a job removal and a new job result. This server should serve the following endpoints:
-1. <b>POST /adapter</b> - to get a job result from a CL node
-2. <b>POST /jobs</b> - to get a new job addition from a CL node
-3. <b>DELETE /jobs/:id</b> - to get a job removal from a CL node
-
-What it does:
-
-<div id='postadapter'></div>
-
-a. <u>/adapter</u>: This is the endpoint which is used to accept job results from CL job requests. This endpoint does the following:
-  - Read the result, request ID, request Type and job name from the received body
-  - Check if an actual result was received and if not return a status 500 response. If a result is received, a 200 is sent as response.
-  - Obtain the last price on-chain from the DB
-  - Obtain the round to push the price for by checking whether the latest round on-chain is greater than the oracle's last reported round. If so, the round ID would be the latest round on chain. Otherwise, the latest round on chain is incremented by 1 as a new round would need to be created.
-  - Push the price on chain if it satisfies all the following criteria:
-    - SEND_CHECK_INTERVAL seconds passed from the last price push update to ensure that multiple price updates are not pushed simultaneously
-    - If it is a new round and we the oracle has not started the current on-chain round or if it is not a new round but the oracle has not submitted to the current round on-chain
-    - One of the following:
-      - If its time for a price update by comparing the timestamp of the last round and now by making use of <b>pushInterval</b>(for that feed) (Request type 1)
-      - If there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed) between the received price and the latest price on chain (Request type 2)
-      - If there was a new a new round (Request type 3)
-  - Update the 'last_reported_round' and the request ID of latest job result received from CL node in the DB
-<div id='postjobs'></div>
-
-b. <u>/jobs</u>: This is the endpoint which is used to handle a new job created on the CL node. This endpoint adds the job to the jobs table in the DB.
-
-<div id='deljobs'></div>
-
-c. <u>/jobs/:id</u>:  This is the endpoint which is used to handle a job removal on the CL node. This endpoint removes the job from the DB.
 
 <br>
 <div id='middlewarefunc'></div>
