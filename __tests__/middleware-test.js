@@ -1,3 +1,11 @@
+
+import { readJSONFile, } from '../src/helpers/utils.js';
+import { getOffers, checkSubmissionForRound, queryPrice, queryRound, getOraclesInvitations } from '../src/helpers/chain.js';
+import { iterateReverse, makeLeader, makeFollower } from '@agoric/casting';
+import { boardSlottingMarshaller, makeAgoricNames, makeFromBoard, makeRpcUtils, makeVStorage } from '../src/lib/rpc.js'
+import { getCurrent } from '../src/lib/wallet.js'
+import sqlite3 from 'sqlite3';
+
 jest.mock('@agoric/casting', () => {
     return {
         iterateReverse: jest.fn(),
@@ -38,13 +46,6 @@ jest.mock('../src/lib/wallet.js', () => {
         getCurrent: jest.fn(),
     };
 });
-
-import { readJSONFile, } from '../src/helpers/utils.js';
-import { getOffers, checkSubmissionForRound, queryPrice, queryRound, getOraclesInvitations } from '../src/helpers/chain.js';
-import { iterateReverse, makeLeader, makeFollower } from '@agoric/casting';
-import { boardSlottingMarshaller, makeAgoricNames, makeFromBoard, makeRpcUtils, makeVStorage } from '../src/lib/rpc.js'
-import { getCurrent } from '../src/lib/wallet.js'
-import sqlite3 from 'sqlite3';
 
 let iterateReverseOutput = readJSONFile("__tests__/mock-objects/followerReversed.json")
 let currentOutput = readJSONFile("__tests__/mock-objects/current.json")
