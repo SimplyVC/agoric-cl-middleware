@@ -89,8 +89,8 @@ Smart Contract - https://github.com/Agoric/agoric-sdk/tree/8720d22ddf25a005aee25
 
 The middleware is needed to:
 1. Create CL jobs. CL jobs are created every minute. A cron job is not used in order to be able to pass in particular inputs to the job run so that the progress of the request can be stored and monitored.
-2. Get results back from the CL node.
-3. Query smart contract for new rounds.
+2. Get price responses back from the CL node after Job requests are made from the middleware.
+3. Query smart contract to see if submission period for a new round is open.
 4. Submit a transaction to update prices on-chain.
 
 The middleware should contain the following functionalities:
