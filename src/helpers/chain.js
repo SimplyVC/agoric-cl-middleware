@@ -194,7 +194,7 @@ export const queryPrice = async (feed) => {
  * Function to get oracles feed invitations
  * @returns {Object} an object containing feed invitation IDs. Each field in 
  *                   the object represents the feed name (Ex. ATOM-USD) and its 
- *                   value is a number * where which is the invitation ID.
+ *                   value is a number which is the invitation ID.
  */
 export const getOraclesInvitations = async () => {
   let { agoricNames, fromBoard, vstorage } = await makeRpcUtils({ fetch });
