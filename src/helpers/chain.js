@@ -118,7 +118,10 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
   let offers = await getOffers(follower);
 
   // Loop through offers starting from last offer
-  offers.forEach( async (currentOffer) => {
+  for (let i = 0; i < offers.length; i++) {
+
+    // Get current offer
+    let currentOffer = offers[i]
 
     // If a price invitation and for the correct feed
     let invitationType = currentOffer["status"]["invitationSpec"]["invitationMakerName"];
@@ -152,7 +155,7 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
         return false;
       }
     }
-  });
+  };
   return false;
 };
 
