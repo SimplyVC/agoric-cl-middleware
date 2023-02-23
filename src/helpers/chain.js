@@ -316,18 +316,18 @@ export const pushPrice = async (price, feed, round, from) => {
     let latestRound = await queryRound(feed);
 
     /**
-     * If latestRound is greater than round being pushed or submission to the 
+     * If latestRound is greater than round being pushed or submission to the
      * round is already made, abort
      */
-    if (
-      latestRound.round_id > round ||
-      (latestRound.round_id === round && latestRound.submission_made)
-    ) {
+    let latestRoundGreater = latestRound.round_id > round;
+    let submissionAlreadyMade =
+      latestRound.round_id === round && latestRound.submission_made;
+    if (latestRoundGreater || submissionAlreadyMade) {
       console.log("Price failed to be submitted for old round", round);
       return false;
     }
 
-    console.log("Submitting price for round", round, "try", i + 1);
+    console.log("Submitting price for round", round, "attempt", i + 1);
 
     offer.id = Number(Date.now());
 
