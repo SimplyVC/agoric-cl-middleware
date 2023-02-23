@@ -447,7 +447,7 @@ What it does:
   3. Creates an offer object with the feed offer id, the created id, the price and the round
   4. It checks whether a submission for this round was already made to avoid double submissions to save transaction fees.
   5. Check if the middleware is waiting for a price submission confirmation using checkIfInSubmission()
-  5. If a submission is not yet made and it is not waiting for a submission confirmation, it will loop for a maximum of SUBMIT_RETRIES and it will do the following:
+  6. If a submission is not yet made and it is not waiting for a submission confirmation, it will loop for a maximum of SUBMIT_RETRIES and it will do the following:
       1. Queries the latest round
       2. Confirms whether the round we are submitting to is actually the latest round and that we have not sent a submission for this round yet
       3. If the above condition is satisfied, the offer is pushed on chain
@@ -669,7 +669,7 @@ What it does:
   1. Gets the latest request ID from the DB
   2. Increments the request ID
   3. Updates the 'last_request_sent' timestamp to the current timestamp in the DB
-  5. Calls <b>sendJobRun</b> to send a job request to the CL node
+  4. Calls <b>sendJobRun</b> to send a job request to the CL node
 
 
 <br>
@@ -744,7 +744,7 @@ What it does:
           - If there is a new round and a submission is already made for that round, the 'last_reported_round' is updated in the DB. Otherwise, if a submission is not made, a new CL job request of type 3 is prepared
           - It will check for a price deviation from the previous on-chain price and if there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed), a new CL job request of type 2 is prepared
           - If one of the above conditions is met and a CL job request is prepared, a final check is made. <b>This is done to avoid creating duplicate CL job requests resulting in extra subscription costs for oracles</b>. The CL job request is ONLY sent if one of the following conditions is met:
-            1. There is no pending CL job request for which we are still waiting for. This is done by checking the comparing the request ID of the last request sent and received from the DB.
+            1. There is no pending CL job request for which we are still waiting for. This is done by comparing the request ID of the last request sent and received from the DB.
             2. An interval of SEND_CHECK_INTERVAL passed from the last CL job request which was sent.
 
 
