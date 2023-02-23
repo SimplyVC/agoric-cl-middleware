@@ -135,22 +135,25 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
         currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
       );
 
-      // If it is an offer for the round we are checking for
-      if (offerRound === roundId) {
-        // If there is no error
-        if (!currentOffer["status"].hasOwnProperty("error")) {
-          return true;
-        }
+      /**
+       * If it is an offer for the round we are checking for and there is no
+       * error
+       */
+      if (
+        offerRound === roundId &&
+        !currentOffer["status"].hasOwnProperty("error")
+      ) {
+        return true;
       } else if (
         /**
-         * Else if offer round id is less than the round we want to check and 
+         * Else if offer round id is less than the round we want to check and
          * its satisfied
          */
         offerRound < roundId &&
         !currentOffer["status"].hasOwnProperty("error")
       ) {
         /**
-         * Return false because there cannot be a submission for a newer round 
+         * Return false because there cannot be a submission for a newer round
          * before this offer
          */
         return false;
