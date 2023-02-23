@@ -12,6 +12,7 @@ services:
     environment:
       AGORIC_NET: agoriclocal 
       AGORIC_RPC: http://$THIS_VM_IP:26657
+      EI_CHAINLINKURL: http://$THIS_VM_IP:6691
     restart: always
   middleware:
     build:
