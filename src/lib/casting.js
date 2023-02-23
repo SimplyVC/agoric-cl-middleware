@@ -1,4 +1,3 @@
-// @ts-check
 
 import { delay, exponentialBackoff, randomBackoff } from '@agoric/casting';
 

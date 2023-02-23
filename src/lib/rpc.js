@@ -1,5 +1,4 @@
 export const networkConfig = { rpcAddrs: [process.env.AGORIC_RPC], chainName: process.env.AGORIC_NET };
-// @ts-check
 /* eslint-disable @jessie.js/no-nested-await */
 /* global Buffer, fetch, process */
 

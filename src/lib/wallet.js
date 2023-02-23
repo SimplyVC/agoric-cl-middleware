@@ -1,4 +1,3 @@
-// @ts-check
 
 import { storageHelper } from './rpc.js';
 

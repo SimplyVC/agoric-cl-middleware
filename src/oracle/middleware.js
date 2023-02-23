@@ -1,4 +1,3 @@
-// @ts-nocheck
 /* eslint-disable func-names */
 
 import { 
