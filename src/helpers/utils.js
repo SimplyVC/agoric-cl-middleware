@@ -102,9 +102,11 @@ export const submitNewJob = async (feed, requestType) => {
 export const checkIfInSubmission = async (feed) => {
   // Get last submission time
   let query = await queryTable("jobs", ["last_submission_time"], feed);
+  
   // Get seconds since last price submission
   let timePassedSinceSubmission =
     Date.now() / 1000 - query.last_submission_time;
+
   return timePassedSinceSubmission < Number(SEND_CHECK_INTERVAL);
 };
 
@@ -190,7 +192,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
     // Get price deviation threshold for feed
     let priceDeviationPercentage = Number(feeds[jobName].priceDeviationPerc);
-    
+
     // Update price if result is greater than price deviation threshold
     toUpdate = percChange >= priceDeviationPercentage;
   }
