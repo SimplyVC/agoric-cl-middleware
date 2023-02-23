@@ -51,11 +51,10 @@ export const readVStorage = async (feed, roundData) => {
  */
 export const getOffers = async (follower) => {
   let history = [];
-  let counter = 0;
   let lastVisited = -1;
 
   for await (const followerElement of iterateReverse(follower)) {
-    if (counter === 5) {
+    if (history.length === 5) {
       break;
     }
 
@@ -69,7 +68,6 @@ export const getOffers = async (follower) => {
         // If it is not failed
         if (!followerElement.value.status.hasOwnProperty("error")) {
           history.push(followerElement.value);
-          counter++;
         }
         lastVisited = id;
       }
