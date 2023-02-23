@@ -186,6 +186,7 @@ const queryPrice = async (feed) => {
     //parse the value
     let capData = JSON.parse(JSON.parse(capDataStr).value);
     capData = JSON.parse(capData.values[0]);
+    
     // Replace any extra characters
     capData = JSON.parse(capData.body.replaceAll("\\", ""));
 
