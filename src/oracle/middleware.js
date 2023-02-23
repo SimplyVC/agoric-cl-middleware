@@ -123,9 +123,8 @@ const makeController = () => {
         // If submitted, update last_reported_round
         if (latestRound.submission_made) {
           await updateTable("jobs", {"last_reported_round": latestSubmittedRound}, jobName)
-        }
-        // If not found send job request
-        else {
+        } else {
+          // If not found, send job request
           console.log("Found new round.")
           sendRequest = 3
         }
@@ -165,8 +164,7 @@ const makeController = () => {
           // Submit job
           console.log("Initialising new CL job request")
           submitNewJob(jobName, sendRequest)
-        }
-        else{
+        } else {
           console.log("Will not be initialising new job request - Still waiting for request", query.request_id, "to finish. Last finished request is", query.last_received_request_id)
         }
       }
