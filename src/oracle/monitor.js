@@ -5,7 +5,6 @@ import {
 } from "../lib/rpc.js";
 import { makeFollower, makeLeader } from "@agoric/casting";
 import {
-  validUrl,
   readJSONFile,
   saveJSONDataToFile,
 } from "../helpers/utils.js";
@@ -15,19 +14,16 @@ import { createServer } from "http";
 import { parse } from "url";
 import { iterateReverse } from "@agoric/casting";
 
-const {
-  PORT = "3001",
-  POLL_INTERVAL = "10",
-  AGORIC_NET,
-  AGORIC_RPC = "http://0.0.0.0:26657",
-  STATE_FILE = "data/monitoring_state.json",
-  ORACLE_FILE = "config/oracles.json",
-} = process.env;
 
-assert(!isNaN(Number(PORT)), "$PORT is required");
-assert(!isNaN(Number(POLL_INTERVAL)), "$POLL_INTERVAL is required");
-assert(validUrl(AGORIC_RPC), "$AGORIC_RPC is required");
-assert(AGORIC_NET !== "" && AGORIC_NET !== null, "$AGORIC_NET is required");
+let envvars = {};
+try{
+  envvars = new MonitorENV();
+} catch (err) {
+  if (process.env.NODE_ENV !== "test") {
+    console.log("ERROR LOADING ENV VARS", err)
+    process.exit(1);
+  }
+}
 
 // Create a Registry which registers the metrics
 const register = new Registry();
@@ -99,7 +95,7 @@ let amountsIn = {};
  * @returns {Object[]} oracles, their names and their addresses
  */
 const readOracleAddresses = () => {
-  return readJSONFile(ORACLE_FILE);
+  return readJSONFile(envvars.ORACLE_FILE);
 };
 
 /**
@@ -296,7 +292,7 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
     // If a price invitation
     let invMakerName = currentOffer["status"]["invitationSpec"][
     "invitationMakerName"]
-    
+
     if ( invMakerName === "PushPrice" ) {
       let feed =
         feeds[currentOffer["status"]["invitationSpec"]["previousOffer"]];
@@ -370,7 +366,7 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
 const readMonitoringState = () => {
   // Try to read from file
   try {
-    return readJSONFile(STATE_FILE);
+    return readJSONFile(envvars.STATE_FILE);
   } catch (err) {
     // If it fails, initialise and save
     let initialState = {};
@@ -383,7 +379,7 @@ const readMonitoringState = () => {
     }
 
     // Save to file
-    saveJSONDataToFile(initialState, STATE_FILE);
+    saveJSONDataToFile(initialState, envvars.STATE_FILE);
     return initialState;
   }
 };
@@ -416,8 +412,8 @@ export const monitor = async () => {
     }
 
     // Update state
-    saveJSONDataToFile(state, STATE_FILE);
-  }, POLL_INTERVAL * 1000);
+    saveJSONDataToFile(state, envvars.STATE_FILE);
+  }, envvars.POLL_INTERVAL * 1000);
 };
 
 /**
@@ -436,7 +432,7 @@ const startServer = () => {
     }
   });
 
-  server.listen(PORT);
+  server.listen(envvars.PORT);
 };
 
 startServer();

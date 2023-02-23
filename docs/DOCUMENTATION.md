@@ -28,7 +28,6 @@
   - [helpers/utils.js](#helperjs)
     - [readJSONFile(filename)](#readJSONFile)
     - [saveJSONDataToFile(newData, filename)](#saveJSONDataToFile)
-    - [validUrl(url)](#validUrl)
     - [delay(ms)](#delay)
     - [initialiseState()](#initialiseState)
     - [submitNewJob(feed, requestType)](#submitNewJob)
@@ -578,22 +577,6 @@ Use: This function is used to save a JSON object/array to a file
 What it does:
   1. Stringifies the data
   2. Writes the data to the file
-
-<br>
-<div id='validUrl'></div>
-
-<b>validUrl(url)</b>
-
-Inputs:
-* url - This is the URL to check
-
-Use: This function is used to check whether a URL is valid
-
-Returns: A boolean showing whether it is a valid URL
-
-What it does:
-  1. Tries to create a URL object
-  2. Returns whether it is a valid URL by seeing whether the URL was successfully created or not
 
 <br>
 <div id='delay'></div>

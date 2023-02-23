@@ -1,9 +1,6 @@
 /* eslint-disable func-names */
 
-import { 
-  validUrl, 
-  initialiseState, 
-} from '../helpers/utils.js';
+import { initialiseState, } from '../helpers/utils.js';
 import { startBridge } from './bridge.js'
 import { makeController } from './controller.js'
 import { MiddlewareENV } from '../helpers/middlewareEnv.js';

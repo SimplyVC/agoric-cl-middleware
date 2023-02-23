@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { validUrl } from './utils.js';
+import { URL } from "url";
 
 export class MiddlewareENV {
   constructor() {
@@ -53,4 +53,18 @@ export class MiddlewareENV {
       return false;
     }
   }
+
+  /**
+   * Function to check whether a URL is valid or not
+   * @param {string} url the URL to check
+   * @returns {boolean} whether the url is valid or not
+   */
+  validUrl(url) {
+    try {
+      new URL(url);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  };
 }

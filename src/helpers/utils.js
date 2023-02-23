@@ -40,20 +40,6 @@ export const saveJSONDataToFile = (newData, filename) => {
 };
 
 /**
- * Function to check whether a URL is valid or not
- * @param {string} url the URL to check
- * @returns {boolean} whether the url is valid or not
- */
-export const validUrl = (url) => {
-  try {
-    new URL(url);
-    return true;
-  } catch (err) {
-    return false;
-  }
-};
-
-/**
  * Function to create a delay
  * @param {number} ms milliseconds to delay
  * @returns {Promise} a Promise to delay
