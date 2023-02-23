@@ -45,7 +45,7 @@ const oracleSubmission = new Gauge({
 });
 
 // Create gauge for timestamp
-const oracleObservation = new Gauge({
+const oracleLastEpoch = new Gauge({
   name: "oracle_last_observation",
   help: "Last epoch in which oracle made an observation",
   labelNames: ["oracleName", "oracle", "feed"],
@@ -81,7 +81,7 @@ const actualPriceGauge = new Gauge({
 
 // Register the gauges
 register.registerMetric(oracleSubmission);
-register.registerMetric(oracleObservation);
+register.registerMetric(oracleLastEpoch);
 register.registerMetric(oracleLastRound);
 register.registerMetric(oracleBalance);
 register.registerMetric(oracleDeviation);
@@ -155,7 +155,7 @@ const updateMetrics = (
   let priceDeviation = Math.abs((value - actualPrice) / actualPrice) * 100;
 
   oracleSubmission.labels(oracleName, oracle, feed).set(value);
-  oracleObservation.labels(oracleName, oracle, feed).set(id);
+  oracleLastEpoch.labels(oracleName, oracle, feed).set(id);
   oracleLastRound.labels(oracleName, oracle, feed).set(lastRound);
   oracleDeviation.labels(oracleName, oracle, feed).set(priceDeviation);
   actualPriceGauge.labels(feed).set(actualPrice);
