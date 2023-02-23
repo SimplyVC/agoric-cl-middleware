@@ -130,7 +130,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   // Get time now 
   let now = Date.now() / 1000;
   // Get seconds since last price submission
-  query = await queryTable("jobs", ["last_submission_time"], jobName);
+  let query = await queryTable("jobs", ["last_submission_time"], jobName);
   let timePassedSinceSubmission = now - query.last_submission_time;
   // Check if in submission
   let inSubmission = timePassedSinceSubmission < Number(SEND_CHECK_INTERVAL);
@@ -141,7 +141,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   }
 
   // Get last price from state
-  let query = await queryTable("jobs", ["last_result"], jobName);
+  query = await queryTable("jobs", ["last_result"], jobName);
   let lastPrice = query.last_result;
 
   // Get push interval for feed
