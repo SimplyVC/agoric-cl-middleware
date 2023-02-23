@@ -157,10 +157,16 @@ const makeController = () => {
          * been made.
          */
         query = await queryTable("jobs", ["last_received_request_id", "request_id"], jobName)
-        let allowedSend = query.request_id === query.last_received_request_id || secondsPassed > Number(SEND_CHECK_INTERVAL)
 
-        // If a request has not been made yet
-        if (allowedSend) {
+        /**
+         * Checks if there are any pending CL job requests for which we are
+         * still waiting. If so, a new CL job request should not be sent
+         */
+        let noPendingRequests = query.request_id === query.last_received_request_id;
+        let enoughTimePassed = secondsPassed > Number(SEND_CHECK_INTERVAL)
+
+        // If a request has not been made yet and we are not waiting
+        if (noPendingRequests || enoughTimePassed) {
           // Submit job
           console.log("Initialising new CL job request")
           submitNewJob(jobName, sendRequest)
