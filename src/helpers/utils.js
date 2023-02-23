@@ -83,7 +83,7 @@ export const submitNewJob = async (feed, requestType) => {
   // Get latest request id
   let query = await queryTable("jobs", ["request_id", "id"], feed);
   let newRequestId = query.request_id + 1;
-  
+
   // Update table
   await updateTable(
     "jobs",
@@ -100,7 +100,8 @@ export const submitNewJob = async (feed, requestType) => {
 /**
  * Function to check if currently in submission
  * @param {string} feed feed to check for
- * @returns {boolean} whether last submission was made in less than SEND_CHECK_INTERVAL seconds
+ * @returns {boolean} whether last submission was made in less than 
+ *                    SEND_CHECK_INTERVAL seconds
  */
 export const checkIfInSubmission = async (feed) => {
   // Get last submission time
