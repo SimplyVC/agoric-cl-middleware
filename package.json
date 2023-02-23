@@ -12,7 +12,6 @@
     "exported.js"
   ],
   "scripts": {
-    "build": "node ./scripts/get-sdk-package-names.js > src/sdk-package-names.js",
     "test": "jest --config ./jest.config.cjs",
     "test:c8": "c8 $C8_OPTIONS ava --config=ava-nesm.config.js",
     "test:xs": "exit 0",

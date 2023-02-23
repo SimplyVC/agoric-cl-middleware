@@ -168,9 +168,7 @@ The scripts directory contains scripts which are used to for deployments.
 The following are the different scripts which can be found in this directory
 
 1. accept-oracle-invitation.sh - This script can be used to accept an oracle invitation. This script takes in 3 parameters, the wallet name, the brand in and brand out. An example of a command to run this is ```./accept-oracle-invitation.sh $WALLET_NAME ATOM USD```
-2. get-sdk-package-names.sh - This script was copied from the <a href="https://github.com/Agoric/agoric-sdk/blob/8720d22ddf25a005aee25786bfa8ee4bccaf19c9/packages/agoric-cli/scripts/get-sdk-package-names.js">agoric-sdk repository</a> and it is used to get the sdk package names.
-3. npm-audit-fix.sh - This script was copied from the <a href="https://github.com/Agoric/agoric-sdk/blob/8720d22ddf25a005aee25786bfa8ee4bccaf19c9/packages/agoric-cli/scripts/npm-audit-fix.sh">agoric-sdk repository</a>
-4. provision-wallet.sh - This script can be used to provision a smart wallet. This script takes in one parameter, the wallet name. An example of a command to run this is ```./provision-wallet.sh $WALLET_NAME```
+2. provision-wallet.sh - This script can be used to provision a smart wallet. This script takes in one parameter, the wallet name. An example of a command to run this is ```./provision-wallet.sh $WALLET_NAME```
 
 #### config
 
