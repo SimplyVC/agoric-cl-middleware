@@ -32,7 +32,7 @@ const marshaller = boardSlottingMarshaller();
 
 /**
  * Function to read from vstorage
- * @param {string} feed the feed to read
+ * @param {string} feed the feed to read (Ex. ATOM-USD)
  * @param {boolean} roundData whether to read round data or price data
  * @returns {string} CapData of result
  */
@@ -163,7 +163,7 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
 
 /**
  * Function to query price from chain
- * @param {string} feed feed name of the price to query in the form of ATOM-USD
+ * @param {string} feed feed name of the price to query (Ex. ATOM-USD)
  * @returns {number} the latest price
  */
 export const queryPrice = async (feed) => {
@@ -219,7 +219,7 @@ export const getOraclesInvitations = async () => {
 
 /**
  * Function to query round from chain
- * @param {string} feed feed name of the price to query in the form of ATOM-USD
+ * @param {string} feed feed name of the price to query (Ex. ATOM-USD)
  * @returns {Object} the latest round
  * @returns {number} returns.round_id The round id
  * @returns {number} returns.started_at The timestamp when the round 
@@ -273,7 +273,7 @@ export const outputAction = (bridgeAction) => {
 /**
  * Function to push price on chain to the smart wallet
  * @param {number} price price to push
- * @param {string} feed feed to push price to
+ * @param {string} feed feed to push price to (Ex. ATOM-USD)
  * @param {number} round round to push result to
  * @param {string} from account to push from
  * @returns {boolean} whether successful

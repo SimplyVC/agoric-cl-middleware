@@ -74,7 +74,7 @@ export const initialiseState = async () => {
 
 /**
  * Function to submit a new job run to the Chainlink node
- * @param {string} feed the feed to submit a job for
+ * @param {string} feed the feed to submit a job for (Ex. ATOM-USD)
  * @param {number} requestType the request type to send as a parameter with the 
  *                             job request. 1 if a timer request, 2 if 
  *                             triggered by a price deviation, 3 new round.
@@ -99,7 +99,7 @@ export const submitNewJob = async (feed, requestType) => {
 
 /**
  * Function to check if currently in submission
- * @param {string} feed feed to check for
+ * @param {string} feed feed to check for (Ex. ATOM-USD)
  * @returns {boolean} whether last submission was made in less than 
  *                    SEND_CHECK_INTERVAL seconds
  */
@@ -123,7 +123,7 @@ export const checkIfInSubmission = async (feed) => {
  *  - There is a new round
  *  - The middleware is not waiting for a submission to be confirmed
  * 
- * @param {string} jobName the job name to check for
+ * @param {string} jobName the job name to check for (Ex. ATOM-USD)
  * @param {number} requestType the type of request for which we received a price
  * @param {number} result the price received from the CL node
  * @returns {boolean} whether a price should be updated on chain
