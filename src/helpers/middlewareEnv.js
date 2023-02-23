@@ -9,6 +9,7 @@ export class MiddlewareENV {
       FROM,
       SUBMIT_RETRIES = "3",
       SEND_CHECK_INTERVAL = "45",
+      BLOCK_INTERVAL = "6",
       EI_CHAINLINKURL,
       CREDENTIALS_FILE = "config/ei_credentials.json",
       DB_FILE = "data/database.db",
@@ -20,6 +21,7 @@ export class MiddlewareENV {
     this.FROM = FROM;
     this.SUBMIT_RETRIES = SUBMIT_RETRIES;
     this.SEND_CHECK_INTERVAL = SEND_CHECK_INTERVAL;
+    this.BLOCK_INTERVAL = BLOCK_INTERVAL;
     this.EI_CHAINLINKURL = EI_CHAINLINKURL;
     this.CREDENTIALS_FILE = CREDENTIALS_FILE;
     this.DB_FILE = DB_FILE;
