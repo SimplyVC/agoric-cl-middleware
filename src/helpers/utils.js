@@ -83,6 +83,7 @@ export const submitNewJob = async (feed, requestType) => {
   // Get latest request id
   let query = await queryTable("jobs", ["request_id", "id"], feed);
   let newRequestId = query.request_id + 1;
+  
   // Update table
   await updateTable(
     "jobs",
