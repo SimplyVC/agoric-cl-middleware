@@ -5,15 +5,15 @@ import {
     deleteJob, 
     queryTable, 
     updateTable 
-} from "./db.js";
+} from "../helpers/db.js";
 import { 
     checkForPriceUpdate, 
     readJSONFile 
-} from "./utils.js";
+} from "../helpers/utils.js";
 import { 
     pushPrice, 
     queryRound 
-} from "./chain.js";
+} from "../helpers/chain.js";
 
 const {
   FEEDS_FILE = "../config/feeds-config.json",

@@ -7,11 +7,6 @@
   - [Monitoring](#monitoring)
 - [File structure](#file-structure)
 - [Technical Documentation](#technical-documentation)
-  - [helpers/bridge.js](#bridgejs)
-    - [startBridge(port)](#startBridge)
-      - [POST /adapter](#postadapter)
-      - [POST /jobs](#postjobs)
-      - [DELETE /jobs/:id](#deljobs)
   - [helpers/chain.js](#chainjs)
     - [readVStorage(feed, roundData)](#readvstorage)
     - [getOffers(follower)](#getOffers)
@@ -39,9 +34,15 @@
     - [submitNewJob(feed, requestType)](#submitNewJob)
     - [checkIfInSubmission(feed)](#checkIfInSubmission)
     - [checkForPriceUpdate(jobName, requestType)](#checkForPriceUpdate)
+  - [oracle/controller.js](#controllerjs)
+    - [makeController()](#makeController)
+  - [oracle/bridge.js](#bridgejs)
+    - [startBridge(port)](#startBridge)
+      - [POST /adapter](#postadapter)
+      - [POST /jobs](#postjobs)
+      - [DELETE /jobs/:id](#deljobs)
   - [oracle/middleware.js](#middlewarejs)
     - [Environment Variables](#envvarsmiddleware)
-    - [makeController()](#makeController)
     - [middleware()](#middlewarefunc)
   - [oracle/monitor.js](#monitorjs)
     - [Environment Variables](#envvarsmonitor)
@@ -211,7 +212,6 @@ Furthermore, it contains the following two files which serve as an entry point t
 
 This directory contains the following files:
 
-1. <b>bridge.js</b> - This file contains the NodeJS server which will listen to requests from the CL node
 1. <b>chain.js</b> - This file contains helper functions which are needed to interact with the agoric chain
 1. <b>chainlink.js</b> - This file contains helper functions to send job requests to the CL node
 1. <b>db.js</b> - This file contains helper functions related to the database
@@ -221,8 +221,10 @@ This directory contains the following files:
 
 This directory contains the following files
 
-1. <b>middleware.js</b> - This file contains all the necessary code and functions for the middleware
-2. <b>monitor.js</b> - This file contains all the necessary code and functions for monitoring the oracle network
+1. <b>bridge.js</b> - This file contains the NodeJS server which will listen to requests from the CL node
+2. <b>controller.js</b> - This file contains the controller which will query the chain for rounds and prices
+3. <b>middleware.js</b> - This file contains all the necessary code and functions for the middleware
+4. <b>monitor.js</b> - This file contains all the necessary code and functions for monitoring the oracle network
 
 ##### lib
 
@@ -247,43 +249,6 @@ This is a Grafana template to monitor an oracle node or the whole oracle network
 ## Technical Documentation
 
 In this section, I will go over the <b>oracle</b> directory and explain in detail each function in the files inside it.
-
-<div id='bridgejs'></div>
-
-### <u>helpers/bridge.js</u>
-
-
-<br>
-<div id='startBridge'></div>
-
-<b>startBridge(port)</b>
-
-Inputs:
-* port - The port to listen on
-
-User: This function is used to start a server which listens to requests for a job addition, a job removal and a new job result. This server should serve the following endpoints:
-1. <b>POST /adapter</b> - to get a job result from a CL node
-2. <b>POST /jobs</b> - to get a new job addition from a CL node
-3. <b>DELETE /jobs/:id</b> - to get a job removal from a CL node
-
-What it does:
-
-<div id='postadapter'></div>
-
-a. <u>/adapter</u>: This is the endpoint which is used to accept job results from CL job requests. This endpoint does the following:
-  - Read the result, request ID, request Type and job name from the received body
-  - Check if an actual result was received and if not return a status 500 response. If a result is received, a 200 is sent as response.
-  - Obtain the last price on-chain from the DB
-  - Obtain the round to push the price for by checking whether the latest round on-chain is greater than the oracle's last reported round. If so, the round ID would be the latest round on chain. Otherwise, the latest round on chain is incremented by 1 as a new round would need to be created.
-  - Checks whether a price update should be submitted on chain by calling checkForPriceUpdate()
-  - Update the 'last_reported_round' and the request ID of latest job result received from CL node in the DB
-<div id='postjobs'></div>
-
-b. <u>/jobs</u>: This is the endpoint which is used to handle a new job created on the CL node. This endpoint adds the job to the jobs table in the DB.
-
-<div id='deljobs'></div>
-
-c. <u>/jobs/:id</u>:  This is the endpoint which is used to handle a job removal on the CL node. This endpoint removes the job from the DB.
 
 
 <div id='chainjs'></div>
@@ -713,7 +678,73 @@ What it does:
     - If there was a new a new round (Request type 3)
 
 <br>
-<div id='middleware'></div>
+<div id='bridgejs'></div>
+
+### <u>oracle/bridge.js</u>
+
+
+<br>
+<div id='startBridge'></div>
+
+<b>startBridge(port)</b>
+
+Inputs:
+* port - The port to listen on
+
+User: This function is used to start a server which listens to requests for a job addition, a job removal and a new job result. This server should serve the following endpoints:
+1. <b>POST /adapter</b> - to get a job result from a CL node
+2. <b>POST /jobs</b> - to get a new job addition from a CL node
+3. <b>DELETE /jobs/:id</b> - to get a job removal from a CL node
+
+What it does:
+
+<div id='postadapter'></div>
+
+a. <u>/adapter</u>: This is the endpoint which is used to accept job results from CL job requests. This endpoint does the following:
+  - Read the result, request ID, request Type and job name from the received body
+  - Check if an actual result was received and if not return a status 500 response. If a result is received, a 200 is sent as response.
+  - Obtain the last price on-chain from the DB
+  - Obtain the round to push the price for by checking whether the latest round on-chain is greater than the oracle's last reported round. If so, the round ID would be the latest round on chain. Otherwise, the latest round on chain is incremented by 1 as a new round would need to be created.
+  - Checks whether a price update should be submitted on chain by calling checkForPriceUpdate()
+  - Update the 'last_reported_round' and the request ID of latest job result received from CL node in the DB
+<div id='postjobs'></div>
+
+b. <u>/jobs</u>: This is the endpoint which is used to handle a new job created on the CL node. This endpoint adds the job to the jobs table in the DB.
+
+<div id='deljobs'></div>
+
+c. <u>/jobs/:id</u>:  This is the endpoint which is used to handle a job removal on the CL node. This endpoint removes the job from the DB.
+
+<br>
+<div id='controllerjs'></div>
+
+### <u>oracle/controller.js</u>
+
+<br>
+<div id='makeController'></div>
+
+<b>makeController()</b>
+
+Use: This function serves as the controller for the middleware and it basically consists of two intervals running separately. One is triggerred every second and it is used to create a CL node job once this timer triggers. The other is triggered every BLOCK_INTERVAL and it is used to query the latest price and round stored on-chain. The latter will check if there is a price deviation or a new round and if so, a new CL job request is sent to the CL node
+
+What it does:
+  1. Creates an interval using setInterval to trigger every second. This will go through every job in the state and creates a CL job for each job depending whether the <b>pollInterval</b> for that feed expired.
+  2. Creates a second interval using setInterval to trigger every BLOCK_INTERVAL. This will do the following:
+      1. Reads the jobs from the DB
+      2. Loops through all the jobs
+      3. For every job it does the following:
+          - Queries the price on-chain
+          - Queries the round on-chain
+          - Update the latest price and round in the DB for that job
+          - If there is a new round and a submission is already made for that round, the 'last_reported_round' is updated in the DB. Otherwise, if a submission is not made, a new CL job request of type 3 is prepared
+          - It will check for a price deviation from the previous on-chain price and if there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed), a new CL job request of type 2 is prepared
+          - If one of the above conditions is met and a CL job request is prepared, a final check is made. <b>This is done to avoid creating duplicate CL job requests resulting in extra subscription costs for oracles</b>. The CL job request is ONLY sent if one of the following conditions is met:
+            1. There is no pending CL job request for which we are still waiting for. This is done by comparing the request ID of the last request sent and received from the DB.
+            2. An interval of SEND_CHECK_INTERVAL passed from the last CL job request which was sent.
+
+
+<br>
+<div id='middlewarejs'></div>
 
 ### <u>oracle/middleware.js</u>
 
@@ -746,29 +777,6 @@ The CREDENTIALS_FILE should contain a JSON object containing the credentials to 
   "EI_IC_SECRET": ""
 }
 ```
-
-<br>
-<div id='makeController'></div>
-
-<b>makeController()</b>
-
-Use: This function serves as the controller for the middleware and it basically consists of two intervals running separately. One is triggerred every second and it is used to create a CL node job once this timer triggers. The other is triggered every BLOCK_INTERVAL and it is used to query the latest price and round stored on-chain. The latter will check if there is a price deviation or a new round and if so, a new CL job request is sent to the CL node
-
-What it does:
-  1. Creates an interval using setInterval to trigger every second. This will go through every job in the state and creates a CL job for each job depending whether the <b>pollInterval</b> for that feed expired.
-  2. Creates a second interval using setInterval to trigger every BLOCK_INTERVAL. This will do the following:
-      1. Reads the jobs from the DB
-      2. Loops through all the jobs
-      3. For every job it does the following:
-          - Queries the price on-chain
-          - Queries the round on-chain
-          - Update the latest price and round in the DB for that job
-          - If there is a new round and a submission is already made for that round, the 'last_reported_round' is updated in the DB. Otherwise, if a submission is not made, a new CL job request of type 3 is prepared
-          - It will check for a price deviation from the previous on-chain price and if there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed), a new CL job request of type 2 is prepared
-          - If one of the above conditions is met and a CL job request is prepared, a final check is made. <b>This is done to avoid creating duplicate CL job requests resulting in extra subscription costs for oracles</b>. The CL job request is ONLY sent if one of the following conditions is met:
-            1. There is no pending CL job request for which we are still waiting for. This is done by comparing the request ID of the last request sent and received from the DB.
-            2. An interval of SEND_CHECK_INTERVAL passed from the last CL job request which was sent.
-
 
 <br>
 <div id='middlewarefunc'></div>
