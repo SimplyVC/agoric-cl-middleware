@@ -28,7 +28,7 @@ export class MonitorENV {
   validate() {
     assert(Number(this.PORT), "$PORT should be a valid number");
     assert(Number(this.POLL_INTERVAL), "$POLL_INTERVAL is required");
-    assert(this.AGORIC_NET && this.AGORIC_NET != "", "$AGORIC_NET is required");
+    assert(this.AGORIC_NET && this.AGORIC_NET !== "", "$AGORIC_NET is required");
     assert(this.checkFileExists(this.ORACLE_FILE), "$ORACLE_FILE does not exist")
     assert(this.validUrl(this.AGORIC_RPC), "$AGORIC_RPC is not valid")
   }
