@@ -73,6 +73,7 @@ Each node operator has to run:
 - Middleware which initiates jobs on the Chainlink node through its API if a round hasn't been created in 1 minute on the on chain aggregator contract. Rounds are also created if the oracle operator's current price is deviated past X% from the latest on-chain median price. Oracle operators are not allowed to create 2 rounds subsequently to prevent spamming.
 - An Agoric node hosted on their own infrastructure to allow the middleware / oracle proxy to communicate and broadcast transactions reliably to the network.
 
+Before making use of this middleware, oracles should prepare their setups using this <a href="https://github.com/jacquesvcritien/agoric-chainlink-setup-docs">setup guide</a>.
 
 ## Smart Contract Details
 
@@ -167,7 +168,7 @@ The scripts directory contains scripts which are used to for deployments.
 
 The following are the different scripts which can be found in this directory
 
-1. accept-oracle-invitation.sh - This script can be used to accept an oracle invitation. This script takes in 3 parameters, the wallet name, the brand in and brand out. An example of a command to run this is ```./accept-oracle-invitation.sh $WALLET_NAME ATOM USD```
+1. accept-oracle-invitation.sh - This script can be used to accept an oracle invitation. This script takes in 3 parameters, the wallet name, the brand in and brand out. An example of a command to run this is ```./accept-oracle-invitation.sh $WALLET_NAME ATOM USD```. This requires the oracles to have provisioned a smart wallet as per the <a href="https://github.com/jacquesvcritien/agoric-chainlink-setup-docs">setup docs</a>.
 2. provision-wallet.sh - This script can be used to provision a smart wallet. This script takes in one parameter, the wallet name. An example of a command to run this is ```./provision-wallet.sh $WALLET_NAME```
 
 #### config
