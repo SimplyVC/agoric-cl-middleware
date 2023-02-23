@@ -130,7 +130,7 @@ export const getOraclesInvitations = async () => {
 
 // Let oracleLabels = readOracles();
 let oracles = readOracleAddresses();
-await getOraclesInvitations();
+
 
 /**
  * Function to update metrics
@@ -393,6 +393,7 @@ const readMonitoringState = () => {
 export const monitor = async () => {
   // Create interval
   setInterval(async () => {
+    await getOraclesInvitations();
     // Read monitoring state
     let state = readMonitoringState();
 
