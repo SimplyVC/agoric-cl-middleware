@@ -38,12 +38,16 @@ export const createDBs = async () => {
  * @returns {Object[]} array of jobs in DB
  * @returns {string} returns[].id The CL job ID
  * @returns {string} returns[].name The name of the feed
- * @returns {number} returns[].request_id The ID of the last request made to *                   the CL node
+ * @returns {number} returns[].request_id The ID of the last request made to  
+ *                   the CL node
  * @returns {number} returns[].last_reported_round The latest submitted round
- * @returns {number} returns[].last_request_sent The timestamp when the last CL *                   job request was sent
- * @returns {number} returns[].last_submission_time The timestamp when the last *                   on-chain price submission was made
+ * @returns {number} returns[].last_request_sent The timestamp when the last CL 
+ *                   job request was sent
+ * @returns {number} returns[].last_submission_time The timestamp when the last 
+ *                   on-chain price submission was made
  * @returns {number} returns[].last_result The last on-chain price
- * @returns {number} returns[].last_received_request_id The ID of the last *                   request whose response was received from the CL node
+ * @returns {number} returns[].last_received_request_id The ID of the last 
+ *                   request whose response was received from the CL node
  */
 export const getAllJobs = async () => {
   return new Promise((resolve, reject) => {
@@ -89,7 +93,8 @@ export const deleteJob = async (id) => {
  * @param {string} table table name
  * @param {string[]} fields fields to obtain
  * @param {string} name feed name to query
- * @returns {Object} an object containing the state of the job for the given *                   feed and fields
+ * @returns {Object} an object containing the state of the job for the given 
+ *                   feed and fields
  */
 export const queryTable = async (table, fields, name) => {
   let keyName = table === "jobs" ? "name" : "feed";
@@ -112,7 +117,9 @@ export const queryTable = async (table, fields, name) => {
 /**
  * Function to make an update to a table
  * @param {string} table table name
- * @param {Object} values values to update in a JSON object. The properties *                        would be the column names and the values would be the *                        values to set
+ * @param {Object} values values to update in a JSON object. The properties 
+ *                        would be the column names and the values would be the 
+ *                        values to set
  * @param {string} name feed name of the record to update
  */
 export const updateTable = async (table, values, name) => {

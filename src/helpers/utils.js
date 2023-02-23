@@ -75,7 +75,9 @@ export const initialiseState = async () => {
 /**
  * Function to submit a new job run to the Chainlink node
  * @param {string} feed the feed to submit a job for
- * @param {number} requestType the request type to send as a parameter with the job request. 1 if a timer request, 2 if triggered by a price deviation, 3 new round.
+ * @param {number} requestType the request type to send as a parameter with the 
+ *                             job request. 1 if a timer request, 2 if 
+ *                             triggered by a price deviation, 3 new round.
  */
 export const submitNewJob = async (feed, requestType) => {
   // Get latest request id
@@ -102,7 +104,7 @@ export const submitNewJob = async (feed, requestType) => {
 export const checkIfInSubmission = async (feed) => {
   // Get last submission time
   let query = await queryTable("jobs", ["last_submission_time"], feed);
-  
+
   // Get seconds since last price submission
   let timePassedSinceSubmission =
     Date.now() / 1000 - query.last_submission_time;

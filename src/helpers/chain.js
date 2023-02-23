@@ -192,7 +192,9 @@ export const queryPrice = async (feed) => {
 
 /**
  * Function to get oracles feed invitations
- * @returns {Object} an object containing feed invitation IDs. Each field in *                   the object represents the feed name (Ex. ATOM-USD) and its *                   value is a number * where which is the invitation ID.
+ * @returns {Object} an object containing feed invitation IDs. Each field in 
+ *                   the object represents the feed name (Ex. ATOM-USD) and its 
+ *                   value is a number * where which is the invitation ID.
  */
 export const getOraclesInvitations = async () => {
   let { agoricNames, fromBoard, vstorage } = await makeRpcUtils({ fetch });
@@ -220,7 +222,8 @@ export const getOraclesInvitations = async () => {
  * @param {string} feed feed name of the price to query in the form of ATOM-USD
  * @returns {Object} the latest round
  * @returns {number} returns.round_id The round id
- * @returns {number} returns.started_at The timestamp when the round *                   was started
+ * @returns {number} returns.started_at The timestamp when the round 
+ *                   was started
  * @returns {string} returns.started_by The address of who started the round
  * @returns {boolean} returns.submission_made Whether a submission to this *                    round was made by the oracle
  */

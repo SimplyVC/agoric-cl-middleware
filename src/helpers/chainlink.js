@@ -17,7 +17,8 @@ if (process.env.NODE_ENV !== "test") {
  * Function to send a job run to the CL node
  * @param {number} count the request id
  * @param {string} jobId the Chainlink external job id
- * @param {number} requestType the request type, 1 = time, 2 = deviation, 3 = *                             new round
+ * @param {number} requestType the request type, 1 = time, 2 = deviation, 3 = 
+ *                             new round
  */
 export const sendJobRun = async (count, jobId, requestType) => {
   // Read initiator credentials
@@ -38,7 +39,7 @@ export const sendJobRun = async (count, jobId, requestType) => {
     method: "POST",
   };
 
-  // Try request with loop retries
+  //try request with loop retries
   for (let i = 0; i < SUBMIT_RETRIES; i++) {
     try {
       await axios.post(options.url, options.body, {
