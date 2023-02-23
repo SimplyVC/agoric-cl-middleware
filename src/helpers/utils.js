@@ -8,12 +8,16 @@ import {
 import { sendJobRun } from "./chainlink.js";
 
 // get environment variables
-const { SEND_CHECK_INTERVAL = "45" } = process.env;
+const { 
+  SEND_CHECK_INTERVAL = "45",
+  FEEDS_FILE = "../config/feeds-config.json",
+ } = process.env;
 
 /**
  * Environment variables validation
  */
 if (process.env.NODE_ENV !== "test") {
+  assert(FEEDS_FILE, "$FEEDS_FILE is required");
   assert(Number(SEND_CHECK_INTERVAL), "$SEND_CHECK_INTERVAL is required");
 }
 
@@ -103,3 +107,80 @@ export const checkIfInSubmission = async (feed) => {
     Date.now() / 1000 - query.last_submission_time;
   return timePassedSinceSubmission < Number(SEND_CHECK_INTERVAL);
 };
+
+/**
+ * Function to check if an update should happen
+ * 
+ * There needs to be a price update if:
+ *  - There is no last price
+ *  - It is time for a price update
+ *  - There is a new round
+ *  - The middleware is not waiting for a submission to be confirmed
+ * 
+ * @param {string} jobName the job name to check for
+ * @param {number} requestType the type of request for which we received a price
+ * @param {number} result the price received from the CL node
+ * @returns {boolean} whether a price should be updated on chain
+ */
+export const checkForPriceUpdate = async (jobName, requestType, result) => {
+
+  //get feeds
+  let feeds = readJSONFile(FEEDS_FILE);
+
+  // Get time now 
+  let now = Date.now() / 1000;
+  // Get seconds since last price submission
+  query = await queryTable("jobs", ["last_submission_time"], jobName);
+  let timePassedSinceSubmission = now - query.last_submission_time;
+  // Check if in submission
+  let inSubmission = timePassedSinceSubmission < Number(SEND_CHECK_INTERVAL);
+
+  // If in submission return false
+  if (inSubmission) {
+    return false
+  }
+
+  // Get last price from state
+  let query = await queryTable("jobs", ["last_result"], jobName);
+  let lastPrice = query.last_result;
+
+  // Get push interval for feed
+  let pushInterval = Number(feeds[jobName].pushInterval);
+
+  // Check if time for update
+  query = await queryTable("rounds", ["started_at"], jobName);
+
+  let timeForUpdate = now >= query.started_at + pushInterval;
+
+  let noLastPrice = lastPrice === -1 || lastPrice === 0;
+  let updateTimeExpired = requestType === 1 && timeForUpdate;
+  let newRoundFound = requestType === 3;
+  let toUpdate = noLastPrice || updateTimeExpired || newRoundFound
+
+  let priceDeviationRequest = requestType === 2
+
+  // If last price is found and it is a price deviation request
+  if (!noLastPrice && priceDeviationRequest) {
+    // Get decimal places for feed
+    let decimalPlaces = Number(feeds[jobName].decimalPlaces);
+    // Calculate percentage change
+    lastPrice = lastPrice * Math.pow(10, decimalPlaces);
+
+    let percChange = Math.abs((result - lastPrice) / lastPrice) * 100;
+    console.log(
+      "Price change is " +
+        percChange +
+        "%. Last Price: " +
+        String(result) +
+        ". Current Price: " +
+        String(lastPrice)
+    );
+
+    // Get price deviation threshold for feed
+    let priceDeviationPercentage = Number(feeds[jobName].priceDeviationPerc);
+    // Update price if result is greater than price deviation threshold
+    toUpdate = percChange >= priceDeviationPercentage;
+  }
+
+  return toUpdate
+}

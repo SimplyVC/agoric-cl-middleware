@@ -6,7 +6,10 @@ import {
     queryTable, 
     updateTable 
 } from "./db.js";
-import { readJSONFile } from "./utils.js";
+import { 
+    checkForPriceUpdate, 
+    readJSONFile 
+} from "./utils.js";
 import { 
     pushPrice, 
     queryRound 
@@ -68,66 +71,10 @@ export const startBridge = (PORT) => {
       res.status(500).send({ success: false });
     }
 
-    // Get last price from state
-    let query = await queryTable("jobs", ["last_result"], jobName);
-    let lastPrice = query.last_result;
+    // Check if a price update should be made
+    let toUpdate = await checkForPriceUpdate(jobName, requestType, result)
 
-    // Get push interval for feed
-    let pushInterval = feeds[jobName].pushInterval;
-
-    // Check if time for update
-    query = await queryTable("rounds", ["started_at"], jobName);
-
-    let timeForUpdate =
-      Date.now() / 1000 >= query.started_at + Number(pushInterval);
-
-    /**
-     * If there is no last price, if it is time for a price update or if there * is a new round, update price
-     */
-    let toUpdate =
-      lastPrice === -1 ||
-      lastPrice === 0 ||
-      (requestType === 1 && timeForUpdate) ||
-      requestType === 3;
-    // If last price is found and it is a price deviation request
-    if (lastPrice !== -1 && requestType === 2) {
-      // Get decimal places for feed
-      let decimalPlaces = feeds[jobName].decimalPlaces;
-      // Calculate percentage change
-      lastPrice = lastPrice * Math.pow(10, Number(decimalPlaces));
-
-      let percChange = Math.abs((result - lastPrice) / lastPrice) * 100;
-      console.log(
-        "Price change is " +
-          percChange +
-          "%. Last Price: " +
-          String(result) +
-          ". Current Price: " +
-          String(lastPrice)
-      );
-
-      // Get price deviation threshold for feed
-      let priceDeviationPercentage = feeds[jobName].priceDeviationPerc;
-      // Update price if result is greater than price deviation threshold
-      toUpdate = percChange > priceDeviationPercentage;
-    }
-
-    // Get seconds since last price submission
-    query = await queryTable("jobs", ["last_submission_time"], jobName);
-    let timePassedSinceSubmission =
-      Date.now() / 1000 - query.last_submission_time;
-    // Check if in submission
-    let inSubmission = timePassedSinceSubmission < Number(SEND_CHECK_INTERVAL);
-
-    /**
-     * If an update needs to happen
-     * An update happens for the following reasons
-     *    - First request
-     *    - Job request was because time expired
-     *    - Price deviation found
-     *    - PLUS not already waiting for a submission
-     */
-    if (toUpdate && !inSubmission) {
+    if (toUpdate) {
       // Get latest round
       let latestRound = await queryRound(jobName);
       await updateTable("rounds", latestRound, jobName);
@@ -145,13 +92,16 @@ export const startBridge = (PORT) => {
       let newRound = roundToSubmit !== lastRoundId;
 
       /**
-       * Push price on chain if first round, haven't started previous round and * have not submitted yet in the same round
+       * Push price on chain if:
+       *  - First round
+       *  - Have not started previous round 
+       *  - Have not submitted yet in the same round
        */
-      if (
-        roundToSubmit === 1 ||
-        (newRound && latestRound.started_by !== FROM) ||
-        (!newRound && !latestRound.submission_made)
-      ) {
+      let firstRound = roundToSubmit === 1;
+      let notConsecutiveNewRound = newRound && latestRound.started_by !== FROM;
+      let noSubmissionForRound = !newRound && !latestRound.submission_made
+
+      if ( firstRound || notConsecutiveNewRound || noSubmissionForRound ) {
         console.log("Updating price for round", roundToSubmit);
 
         let submitted = await pushPrice(result, jobName, roundToSubmit, FROM);

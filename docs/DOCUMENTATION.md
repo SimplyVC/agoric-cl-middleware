@@ -38,6 +38,7 @@
     - [initialiseState()](#initialiseState)
     - [submitNewJob(feed, requestType)](#submitNewJob)
     - [checkIfInSubmission(feed)](#checkIfInSubmission)
+    - [checkForPriceUpdate(jobName, requestType)](#checkForPriceUpdate)
   - [oracle/middleware.js](#middlewarejs)
     - [Environment Variables](#envvarsmiddleware)
     - [makeController()](#makeController)
@@ -269,13 +270,7 @@ a. <u>/adapter</u>: This is the endpoint which is used to accept job results fro
   - Check if an actual result was received and if not return a status 500 response. If a result is received, a 200 is sent as response.
   - Obtain the last price on-chain from the DB
   - Obtain the round to push the price for by checking whether the latest round on-chain is greater than the oracle's last reported round. If so, the round ID would be the latest round on chain. Otherwise, the latest round on chain is incremented by 1 as a new round would need to be created.
-  - Push the price on chain if it satisfies all the following criteria:
-    - SEND_CHECK_INTERVAL seconds passed from the last price push update to ensure that multiple price updates are not pushed simultaneously
-    - If it is a new round and we the oracle has not started the current on-chain round or if it is not a new round but the oracle has not submitted to the current round on-chain
-    - One of the following:
-      - If its time for a price update by comparing the timestamp of the last round and now by making use of <b>pushInterval</b>(for that feed) (Request type 1)
-      - If there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed) between the received price and the latest price on chain (Request type 2)
-      - If there was a new a new round (Request type 3)
+  - Checks whether a price update should be submitted on chain by calling checkForPriceUpdate()
   - Update the 'last_reported_round' and the request ID of latest job result received from CL node in the DB
 <div id='postjobs'></div>
 
@@ -689,6 +684,28 @@ What it does:
   2. Calculates the number of seconds passed from the submission
   3. Returns whether the number of seconds passed exceed SEND_CHECK_INTERVAL
 
+<br>
+<div id='checkForPriceUpdate'></div>
+
+<b>checkForPriceUpdate(jobName, requestType, result)</b>
+
+Inputs:
+* jobName - The job name or feed for which we want to check
+* requestType - The requestType of the price received from the CL node
+* result - The price received from the CL node
+
+Use: This function is used to check if a price update should be made on chain after receiving a price from the CL job
+
+Returns: A boolean indicating whether a price update should be made on chain
+
+What it does:
+- Checks whether the following criteria is satisfied:
+  - SEND_CHECK_INTERVAL seconds passed from the last price push update to ensure that multiple price updates are not pushed simultaneously
+  - If it is a new round and we the oracle has not started the current on-chain round or if it is not a new round but the oracle has not submitted to the current round on-chain
+  - One of the following:
+    - If its time for a price update by comparing the timestamp of the last round and now by making use of <b>pushInterval</b>(for that feed) (Request type 1)
+    - If there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed) between the received price and the latest price on chain (Request type 2)
+    - If there was a new a new round (Request type 3)
 
 <br>
 <div id='middleware'></div>
