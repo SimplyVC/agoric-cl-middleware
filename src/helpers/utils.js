@@ -150,13 +150,22 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   // Check if time for update
   query = await queryTable("rounds", ["started_at"], jobName);
 
+  // Check if it is time for an update
   let timeForUpdate = now >= query.started_at + pushInterval;
 
+  // Check if there was a last price
   let noLastPrice = lastPrice === -1 || lastPrice === 0;
+
+  // Check if update time expired
   let updateTimeExpired = requestType === 1 && timeForUpdate;
+
+  // Check if a new round was found
   let newRoundFound = requestType === 3;
+
+  // Check if an update is needed
   let toUpdate = noLastPrice || updateTimeExpired || newRoundFound
 
+  //Check if it is a price deviation request
   let priceDeviationRequest = requestType === 2
 
   // If last price is found and it is a price deviation request
