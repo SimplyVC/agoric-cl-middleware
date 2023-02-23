@@ -409,9 +409,7 @@ export const monitor = async () => {
 
       // Get latest prices for oracle
       let latestOracleState = await getLatestPrices(
-        oracle,
-        oracles[oracle],
-        state[oracle]
+        oracle, oracles[oracle], state[oracle]
       );
       state[oracle] = latestOracleState;
     }
