@@ -1,4 +1,3 @@
-// @ts-check
 /* eslint-disable @typescript-eslint/prefer-ts-expect-error -- https://github.com/Agoric/agoric-sdk/issues/4620 */
 // eslint-disable-next-line no-unused-vars -- typeof below
 import { makeAgoricNames } from './rpc.js';
@@ -87,7 +86,6 @@ export const fmtRecordOfLines = record => {
     items.map(item => `    ${stringify(item)}`),
   ]);
   const lineEntries = groups.map(
-    // @ts-expect-error ???
     ([key, lines]) => `  ${stringify(key)}: [\n${lines.join(',\n')}\n  ]`,
   );
   return `{\n${lineEntries.join(',\n')}\n}`;
@@ -103,7 +101,6 @@ export const offerStatusTuples = (state, agoricNames) => {
   const { brands, offerStatuses } = state;
   const fmt = makeAmountFormatter(
     // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error -- https://github.com/Agoric/agoric-sdk/issues/4620 */
-    // @ts-ignore xxx RpcRemote
     [...brands.values()],
   );
   const fmtRecord = r =>
@@ -136,7 +133,6 @@ export const offerStatusTuples = (state, agoricNames) => {
         } = o;
         // xxx could be O(1)
         const entry = Object.entries(agoricNames.instance).find(
-          // @ts-ignore minimarshal types are off by a bit
           ([_name, candidate]) => candidate === instance,
         );
         const instanceName = entry ? entry[0] : '???';
@@ -166,10 +162,8 @@ export const summarize = (current, coalesced, agoricNames) => {
     lastOfferId: [current.lastOfferId],
     purses: purseBalanceTuples(
       // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error -- https://github.com/Agoric/agoric-sdk/issues/4620 */
-      // @ts-ignore xxx RpcRemote
       [...current.purses.values()],
       // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error -- https://github.com/Agoric/agoric-sdk/issues/4620 */
-      // @ts-ignore xxx RpcRemote
       [...current.brands.values()],
     ),
     usedInvitations: Object.entries(current.offerToUsedInvitation).map(

@@ -6,7 +6,11 @@ import {
   queryRound,
   getOraclesInvitations,
 } from "../src/helpers/chain.js";
-import { iterateReverse, makeLeader, makeFollower } from "@agoric/casting";
+import { 
+  iterateReverse, 
+  makeLeader, 
+  makeFollower 
+} from "@agoric/casting";
 import {
   boardSlottingMarshaller,
   makeAgoricNames,

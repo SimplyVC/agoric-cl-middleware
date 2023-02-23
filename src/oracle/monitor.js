@@ -266,7 +266,6 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
   const leader = makeLeader(networkConfig.rpcAddrs[0]);
 
   const follower = await makeFollower(`:published.wallet.${oracle}`, leader, {
-    // @ts-expect-error xxx
     unserializer,
   });
 

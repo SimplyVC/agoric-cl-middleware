@@ -87,7 +87,6 @@ export const getLatestSubmittedRound = async (oracle) => {
   const leader = makeLeader(networkConfig.rpcAddrs[0]);
 
   const follower = await makeFollower(`:published.wallet.${oracle}`, leader, {
-    // @ts-expect-error xxx
     unserializer,
   });
 
@@ -112,7 +111,6 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
   const leader = makeLeader(networkConfig.rpcAddrs[0]);
 
   const follower = await makeFollower(`:published.wallet.${oracle}`, leader, {
-    // @ts-expect-error xxx
     unserializer,
   });
 
@@ -333,7 +331,6 @@ export const pushPrice = async (price, feed, round, from) => {
     // Output action
     let data = outputAction({
       method: "executeOffer",
-      // @ts-ignore
       offer,
     });
 
