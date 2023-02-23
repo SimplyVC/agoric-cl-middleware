@@ -108,7 +108,10 @@ sqlite3.Database.mockReturnValue({});
 test("calls getOffers to get latest successful submissions", async () => {
   const offers = await getOffers({});
 
-  //notice how only the first offer should be calculated because for every offer there will be 3 entries
+  /**
+   * Notice how only the first offer should be calculated because for every 
+   * offer there will be 3 entries
+   */
   expect(offers).toStrictEqual([
     {
       status: {
