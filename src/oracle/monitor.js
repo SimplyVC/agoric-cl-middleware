@@ -1,5 +1,3 @@
-import { Command } from "commander";
-import { inspect } from "util";
 import {
   boardSlottingMarshaller,
   makeRpcUtils,
@@ -81,7 +79,7 @@ const actualPriceGauge = new Gauge({
   labelNames: ["feed"],
 });
 
-// Register the gaugex
+// Register the gauges
 register.registerMetric(oracleSubmission);
 register.registerMetric(oracleObservation);
 register.registerMetric(oracleLastRound);
@@ -319,6 +317,7 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
       ) {
         // If id is bigger than last offer id in state, set it
         lastResults["last_offer_id"] = id;
+        lastOfferId = id
 
         let price =
           Number(
