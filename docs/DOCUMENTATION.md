@@ -128,8 +128,8 @@ The middleware should contain the following functionalities:
 | rounds     	| feed            	| The name of the feed                               	| String  	|
 | rounds     	| round_id        	| Latest round id                                    	| Number  	|
 | rounds     	| started_at      	| The timestamp when the round was started           	| Number  	|
-| started_at 	| started_by      	| The address who started the latest round           	| String  	|
-| started_at 	| submission_made 	| Whether a submission was made for the latest round 	| Boolean 	|
+| rounds 	    | started_by      	| The address who started the latest round           	| String  	|
+| rounds 	    | submission_made 	| Whether a submission was made for the latest round 	| Boolean 	|
 
 #### Monitoring
 
@@ -171,30 +171,11 @@ The following are the different scripts which can be found in this directory
 3. npm-audit-fix.sh - This script was copied from the <a href="https://github.com/Agoric/agoric-sdk/blob/8720d22ddf25a005aee25786bfa8ee4bccaf19c9/packages/agoric-cli/scripts/npm-audit-fix.sh">agoric-sdk repository</a>
 4. provision-wallet.sh - This script can be used to provision a smart wallet. This script takes in one parameter, the wallet name. An example of a command to run this is ```./provision-wallet.sh $WALLET_NAME```
 
-#### src
+#### config
 
-This directory includes all the source code. It is split into three other directories, <b>helpers</b>, <b>oracle</b> and <b>lib</b>.
+This directory contains the following file:
 
-Furthermore, it contains the following two files which serve as an entry point to the middleware and monitoring script:
-
-* <b>bin-middleware.js</b> - This serves as an entry point to the middleware by calling the middleware() function
-* <b>bin-monitor.js</b> - This serves as an entry point to the monitoring script by calling the getOraclesInvitations() and monitor() functions to first get the oracle invitation IDs and then starting the monitoring. 
-
-##### helpers
-
-This directory contains the following files:
-
-1. <b>bridge.js</b> - This file contains the NodeJS server which will listen to requests from the CL node
-1. <b>chain.js</b> - This file contains helper functions which are needed to interact with the agoric chain
-1. <b>chainlink.js</b> - This file contains helper functions to send job requests to the CL node
-1. <b>db.js</b> - This file contains helper functions related to the database
-2. <b>utils.js</b> - This file contains basic utility and helper functions 
-
-##### oracle
-
-This directory contains the following files
-
-1. <b>feeds.json</b> - This file contains the configuration for each feed in the oracle network. Each feed will have the following fields:
+1. <b>feeds-config.json</b> - This file contains the configuration for each feed in the oracle network. Each feed will have the following fields:
   - <u>pollInterval</u> - The interval in seconds which needs to pass between each CL job
   - <u>pushInterval</u> - The interval in seconds which needs to pass between each round creation on-chain
   - <u>decimalPlaces</u> - The number of decimal places allowed for the price
@@ -216,8 +197,32 @@ The file should have the following structure
     }
 }
 ```
-2. <b>middleware.js</b> - This file contains all the necessary code and functions for the middleware
-3. <b>monitor.js</b> - This file contains all the necessary code and functions for monitoring the oracle network
+
+#### src
+
+This directory includes all the source code. It is split into three other directories, <b>helpers</b>, <b>oracle</b> and <b>lib</b>.
+
+Furthermore, it contains the following two files which serve as an entry point to the middleware and monitoring script:
+
+* <b>bin-middleware.js</b> - This serves as an entry point to the middleware by calling the middleware() function
+* <b>bin-monitor.js</b> - This serves as an entry point to the monitoring script by calling the getOraclesInvitations() and monitor() functions to first get the oracle invitation IDs and then starting the monitoring. 
+
+##### helpers
+
+This directory contains the following files:
+
+1. <b>bridge.js</b> - This file contains the NodeJS server which will listen to requests from the CL node
+1. <b>chain.js</b> - This file contains helper functions which are needed to interact with the agoric chain
+1. <b>chainlink.js</b> - This file contains helper functions to send job requests to the CL node
+1. <b>db.js</b> - This file contains helper functions related to the database
+2. <b>utils.js</b> - This file contains basic helper functions 
+
+##### oracle
+
+This directory contains the following files
+
+1. <b>middleware.js</b> - This file contains all the necessary code and functions for the middleware
+2. <b>monitor.js</b> - This file contains all the necessary code and functions for monitoring the oracle network
 
 ##### lib
 
