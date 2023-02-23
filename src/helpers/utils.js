@@ -129,9 +129,11 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
   // Get time now 
   let now = Date.now() / 1000;
+
   // Get seconds since last price submission
   let query = await queryTable("jobs", ["last_submission_time"], jobName);
   let timePassedSinceSubmission = now - query.last_submission_time;
+
   // Check if in submission
   let inSubmission = timePassedSinceSubmission < Number(SEND_CHECK_INTERVAL);
 
@@ -170,6 +172,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
   // If last price is found and it is a price deviation request
   if (!noLastPrice && priceDeviationRequest) {
+
     // Get decimal places for feed
     let decimalPlaces = Number(feeds[jobName].decimalPlaces);
     // Calculate percentage change
@@ -187,6 +190,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
     // Get price deviation threshold for feed
     let priceDeviationPercentage = Number(feeds[jobName].priceDeviationPerc);
+    
     // Update price if result is greater than price deviation threshold
     toUpdate = percChange >= priceDeviationPercentage;
   }
