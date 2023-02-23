@@ -124,8 +124,10 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
     let currentOffer = offers[i]
 
     // If a price invitation and for the correct feed
-    let invitationType = currentOffer["status"]["invitationSpec"]["invitationMakerName"];
-    let previousOffer = currentOffer["status"]["invitationSpec"]["previousOffer"]
+    let invitationType = currentOffer["status"]["invitationSpec"][
+    "invitationMakerName"];
+    let previousOffer = currentOffer["status"]["invitationSpec"][
+    "previousOffer"];
     if (
         invitationType === "PushPrice" &&
         previousOffer === feedOfferId
