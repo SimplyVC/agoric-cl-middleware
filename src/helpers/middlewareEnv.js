@@ -34,7 +34,10 @@ export class MiddlewareENV {
    * This function validates the env vars
    */
   validate() {
-    assert(Number(this.PORT), "$PORT is required");
+    assert(Number(this.PORT), "$PORT should be a valid number");
+    assert(Number(this.SUBMIT_RETRIES), "$SUBMIT_RETRIES should be a valid number");
+    assert(Number(this.SEND_CHECK_INTERVAL), "$SEND_CHECK_INTERVAL should be a valid number");
+    assert(Number(this.BLOCK_INTERVAL), "$BLOCK_INTERVAL should be a valid number");
     assert(this.FROM && this.FROM != "", "$FROM is required");
     assert(this.validUrl(this.EI_CHAINLINKURL), "$EI_CHAINLINKURL is required");
     assert(this.checkFileExists(this.CREDENTIALS_FILE), "$CREDENTIALS_FILE does not exist")
