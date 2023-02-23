@@ -1,7 +1,7 @@
 {
   "name": "agoric-middleware",
   "version": "0.18.2",
-  "description": "A middleware for the Agoric Oracle network. This is used to as a bridge between the CL node and the Agoric chain",
+  "description": "A middleware for the Agoric Oracle network. This is used as a bridge between the CL node and the Agoric chain",
   "type": "module",
   "main": "src/main.js",
   "bin": {
