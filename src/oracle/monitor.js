@@ -186,7 +186,7 @@ const queryPrice = async (feed) => {
     //parse the value
     let capData = JSON.parse(JSON.parse(capDataStr).value);
     capData = JSON.parse(capData.values[0]);
-    
+
     // Replace any extra characters
     capData = JSON.parse(capData.body.replaceAll("\\", ""));
 
@@ -294,10 +294,10 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
     }
 
     // If a price invitation
-    if (
-      currentOffer["status"]["invitationSpec"]["invitationMakerName"] ==
-      "PushPrice"
-    ) {
+    let invMakerName = currentOffer["status"]["invitationSpec"][
+    "invitationMakerName"]
+    
+    if ( invMakerName === "PushPrice" ) {
       let feed =
         feeds[currentOffer["status"]["invitationSpec"]["previousOffer"]];
       let lastRound = Number(
