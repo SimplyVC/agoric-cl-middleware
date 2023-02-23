@@ -99,7 +99,7 @@ export const getLatestSubmittedRound = async (oracle) => {
 };
 
 /**
- * Function to check if submission was satisfied for a specific round
+ * Function to check if a price submission was successful for a specific round
  * @param {string} oracle oracle address
  * @param {number} feedOfferId the offer id of the feed to check for
  * @param {number} roundId the round Id which is checked
