@@ -212,9 +212,10 @@ Furthermore, it contains the following two files which serve as an entry point t
 This directory contains the following files:
 
 1. <b>chain.js</b> - This file contains helper functions which are needed to interact with the agoric chain
-1. <b>chainlink.js</b> - This file contains helper functions to send job requests to the CL node
-1. <b>db.js</b> - This file contains helper functions related to the database
-2. <b>utils.js</b> - This file contains basic helper functions 
+2. <b>chainlink.js</b> - This file contains helper functions to send job requests to the CL node
+3. <b>db.js</b> - This file contains helper functions related to the database
+4. <b>utils.js</b> - This file contains basic helper functions 
+5. <b>middlewareEnv.js</b> - This file contains a class to represent the middleware's environment variables
 
 ##### oracle
 

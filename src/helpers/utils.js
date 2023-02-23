@@ -6,19 +6,17 @@ import {
   updateTable 
 } from "./db.js";
 import { sendJobRun } from "./chainlink.js";
+import { MiddlewareENV } from './middlewareEnv.js';
 
-// get environment variables
-const { 
-  SEND_CHECK_INTERVAL = "45",
-  FEEDS_FILE = "../config/feeds-config.json",
- } = process.env;
-
-/**
- * Environment variables validation
- */
-if (process.env.NODE_ENV !== "test") {
-  assert(FEEDS_FILE, "$FEEDS_FILE is required");
-  assert(Number(SEND_CHECK_INTERVAL), "$SEND_CHECK_INTERVAL is required");
+// Load environment variables
+let envvars = {};
+try{
+  envvars = new MiddlewareENV();
+} catch (err) {
+  if (process.env.NODE_ENV !== "test") {
+    console.log("ERROR LOADING ENV VARS", err)
+    process.exit(1);
+  }
 }
 
 /**
@@ -101,7 +99,7 @@ export const submitNewJob = async (feed, requestType) => {
  * Function to check if currently in submission
  * @param {string} feed feed to check for (Ex. ATOM-USD)
  * @returns {boolean} whether last submission was made in less than 
- *                    SEND_CHECK_INTERVAL seconds
+ *                    envvars.SEND_CHECK_INTERVAL seconds
  */
 export const checkIfInSubmission = async (feed) => {
   // Get last submission time
@@ -111,7 +109,7 @@ export const checkIfInSubmission = async (feed) => {
   let timePassedSinceSubmission =
     Date.now() / 1000 - query.last_submission_time;
 
-  return timePassedSinceSubmission < Number(SEND_CHECK_INTERVAL);
+  return timePassedSinceSubmission < Number(envvars.SEND_CHECK_INTERVAL);
 };
 
 /**
@@ -131,7 +129,7 @@ export const checkIfInSubmission = async (feed) => {
 export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
   //get feeds
-  let feeds = readJSONFile(FEEDS_FILE);
+  let feeds = readJSONFile(envvars.FEEDS_FILE);
 
   // Get time now 
   let now = Date.now() / 1000;
@@ -141,7 +139,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   let timePassedSinceSubmission = now - query.last_submission_time;
 
   // Check if in submission
-  let inSubmission = timePassedSinceSubmission < Number(SEND_CHECK_INTERVAL);
+  let inSubmission = timePassedSinceSubmission < Number(envvars.SEND_CHECK_INTERVAL);
 
   // If in submission return false
   if (inSubmission) {

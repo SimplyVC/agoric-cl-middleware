@@ -19,13 +19,17 @@ import {
     delay 
 } from "./utils.js";
 import { updateTable } from "./db.js";
+import { MiddlewareENV } from './middlewareEnv.js';
 
-const { FROM, SUBMIT_RETRIES = "3", SEND_CHECK_INTERVAL = "45" } = process.env;
-
-if (process.env.NODE_ENV !== "test") {
-  assert(FROM, "$FROM is required");
-  assert(Number(SUBMIT_RETRIES), "$SUBMIT_RETRIES is required");
-  assert(Number(SEND_CHECK_INTERVAL), "$SEND_CHECK_INTERVAL is required");
+// Load environment variables
+let envvars = {};
+try{
+  envvars = new MiddlewareENV();
+} catch (err) {
+  if (process.env.NODE_ENV !== "test") {
+    console.log("ERROR LOADING ENV VARS", err)
+    process.exit(1);
+  }
 }
 
 const marshaller = boardSlottingMarshaller();
@@ -208,7 +212,7 @@ export const getOraclesInvitations = async () => {
 
   let feedInvs = {};
 
-  const current = await getCurrent(String(FROM), fromBoard, { vstorage });
+  const current = await getCurrent(String(envvars.FROM), fromBoard, { vstorage });
   const invitations = current.offerToUsedInvitation;
 
   // For each invitation
@@ -252,7 +256,7 @@ export const queryRound = async (feed) => {
 
   // Check if there is a submission for round
   let submissionForRound = await checkSubmissionForRound(
-    FROM,
+    envvars.FROM,
     feedOfferId,
     round
   );
@@ -316,7 +320,7 @@ export const pushPrice = async (price, feed, round, from) => {
   let inSubmission = await checkIfInSubmission(feed);
 
   // Loop retries
-  for (let i = 0; i < SUBMIT_RETRIES && !submitted && !inSubmission; i++) {
+  for (let i = 0; i < envvars.SUBMIT_RETRIES && !submitted && !inSubmission; i++) {
     // Query round
     let latestRound = await queryRound(feed);
 
@@ -361,8 +365,8 @@ export const pushPrice = async (price, feed, round, from) => {
       "feed"
     );
 
-    // Sleep 13 seconds to wait 2 blocks and a bit
-    await delay((Number(SEND_CHECK_INTERVAL) + 1) * 1000);
+    // Sleep SEND_CHECK_INTERVAL seconds
+    await delay((Number(envvars.SEND_CHECK_INTERVAL) + 1) * 1000);
 
     // Check submission for round
     submitted = await checkSubmissionForRound(from, previousOffer, round);

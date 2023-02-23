@@ -14,17 +14,17 @@ import {
     pushPrice, 
     queryRound 
 } from "../helpers/chain.js";
+import { MiddlewareENV } from '../helpers/middlewareEnv.js';
 
-const {
-  FEEDS_FILE = "../config/feeds-config.json",
-  SEND_CHECK_INTERVAL = "45",
-  FROM,
-} = process.env;
-
-if (process.env.NODE_ENV !== "test") {
-  assert(FEEDS_FILE, "$FEEDS_FILE is required");
-  assert(FROM, "$FROM is required");
-  assert(Number(SEND_CHECK_INTERVAL), "$SEND_CHECK_INTERVAL is required");
+// Load environment variables
+let envvars = {};
+try{
+  envvars = new MiddlewareENV();
+} catch (err) {
+  if (process.env.NODE_ENV !== "test") {
+    console.log("ERROR LOADING ENV VARS", err)
+    process.exit(1);
+  }
 }
 
 /**
@@ -36,9 +36,6 @@ export const startBridge = (PORT) => {
   console.log("Bridge started");
   const app = express();
   app.use(bodyParser.json());
-
-  // Read feeds config
-  let feeds = readJSONFile(FEEDS_FILE);
 
   /**
    * POST /adapter endpoint
@@ -98,13 +95,15 @@ export const startBridge = (PORT) => {
        *  - Have not submitted yet in the same round
        */
       let firstRound = roundToSubmit === 1;
-      let notConsecutiveNewRound = newRound && latestRound.started_by !== FROM;
+      let notConsecutiveNewRound = 
+      newRound && latestRound.started_by !== envvars.FROM;
       let noSubmissionForRound = !newRound && !latestRound.submission_made
 
       if ( firstRound || notConsecutiveNewRound || noSubmissionForRound ) {
         console.log("Updating price for round", roundToSubmit);
 
-        let submitted = await pushPrice(result, jobName, roundToSubmit, FROM);
+        let submitted = 
+        await pushPrice(result, jobName, roundToSubmit, envvars.FROM);
 
         // Update last reported round
         if (submitted) {

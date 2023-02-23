@@ -6,19 +6,17 @@ import {
 } from '../helpers/utils.js';
 import { startBridge } from './bridge.js'
 import { makeController } from './controller.js'
+import { MiddlewareENV } from '../helpers/middlewareEnv.js';
 
-// Get environment variables
-const {
-  PORT = '3000',
-  AGORIC_RPC = "http://0.0.0.0:26657",
-} = process.env;
-
-/** 
-  * Environment variables validation
-  */
-if (process.env.NODE_ENV !== "test"){
-  assert(Number(PORT), "$PORT is required");
-  assert(validUrl(AGORIC_RPC), '$AGORIC_RPC is required');
+// Load environment variables
+let envvars = {};
+try{
+  envvars = new MiddlewareENV();
+} catch (err) {
+  if (process.env.NODE_ENV !== "test") {
+    console.log("ERROR LOADING ENV VARS", err)
+    process.exit(1);
+  }
 }
 
 /**
@@ -31,7 +29,7 @@ export const middleware = async () => {
   await initialiseState()
 
   // Start the bridge
-  startBridge(PORT);
+  startBridge(envvars.PORT);
 
   // Calculate how many seconds left for a new minute
   let secondsLeft = 60 - (new Date().getSeconds());

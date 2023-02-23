@@ -7,23 +7,17 @@ import {
   queryRound,
   getLatestSubmittedRound,
 } from "../helpers/chain.js";
+import { MiddlewareENV } from '../helpers/middlewareEnv.js';
 
-// Get environment variables
-const {
-  FROM,
-  BLOCK_INTERVAL = "6",
-  SEND_CHECK_INTERVAL = "45",
-  FEEDS_FILE = "../config/feeds-config.json",
-} = process.env;
-
-/**
- * Environment variables validation
- */
-if (process.env.NODE_ENV !== "test") {
-  assert(FROM, "$FROM is required");
-  assert(Number(BLOCK_INTERVAL), "$BLOCK_INTERVAL is required");
-  assert(Number(SEND_CHECK_INTERVAL), "$SEND_CHECK_INTERVAL is required");
-  assert(FEEDS_FILE !== "", "$FEEDS_FILE is required");
+// Load environment variables
+let envvars = {};
+try{
+  envvars = new MiddlewareENV();
+} catch (err) {
+  if (process.env.NODE_ENV !== "test") {
+    console.log("ERROR LOADING ENV VARS", err)
+    process.exit(1);
+  }
 }
 
 /**
@@ -33,7 +27,7 @@ export const makeController = () => {
   const oneSecInterval = 1_000;
 
   // Read feeds config
-  let feeds = readJSONFile(FEEDS_FILE);
+  let feeds = readJSONFile(envvars.FEEDS_FILE);
 
   // Create an interval which creates a job request every second
   setInterval(async () => {
@@ -62,11 +56,11 @@ export const makeController = () => {
     });
   }, oneSecInterval);
 
-  const priceQueryInterval = parseInt(BLOCK_INTERVAL, 10);
+  const priceQueryInterval = parseInt(envvars.BLOCK_INTERVAL, 10);
   //validate polling interval
   assert(
     !isNaN(priceQueryInterval),
-    `$BLOCK_INTERVAL ${BLOCK_INTERVAL} must be a number`
+    `$BLOCK_INTERVAL ${envvars.BLOCK_INTERVAL} must be a number`
   );
 
   /**
@@ -95,7 +89,7 @@ export const makeController = () => {
       let latestRound = await queryRound(jobName);
 
       // Get latest submitted round
-      let latestSubmittedRound = await getLatestSubmittedRound(FROM);
+      let latestSubmittedRound = await getLatestSubmittedRound(envvars.FROM);
 
       // Update jobs table
       await updateTable(
@@ -170,7 +164,8 @@ export const makeController = () => {
          */
         let noPendingRequests =
           query.request_id === query.last_received_request_id;
-        let enoughTimePassed = secondsPassed > Number(SEND_CHECK_INTERVAL);
+        let enoughTimePassed = 
+        secondsPassed > Number(envvars.SEND_CHECK_INTERVAL);
 
         // If a request has not been made yet and we are not waiting
         if (noPendingRequests || enoughTimePassed) {

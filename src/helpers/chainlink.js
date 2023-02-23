@@ -1,16 +1,17 @@
 import { readJSONFile } from "./utils.js";
 import axios from "axios";
 import http from "http";
+import { MiddlewareENV } from './middlewareEnv.js';
 
-const {
-  EI_CHAINLINKURL,
-  SUBMIT_RETRIES = 3,
-  CREDENTIALS_FILE = "config/ei_credentials.json",
-} = process.env;
-
-if (process.env.NODE_ENV !== "test") {
-  assert(EI_CHAINLINKURL, "$EI_CHAINLINKURL is required");
-  assert(CREDENTIALS_FILE !== "", '$CREDENTIALS_FILE is required');
+// Load environment variables
+let envvars = {};
+try{
+  envvars = new MiddlewareENV();
+} catch (err) {
+  if (process.env.NODE_ENV !== "test") {
+    console.log("ERROR LOADING ENV VARS", err)
+    process.exit(1);
+  }
 }
 
 /**
@@ -22,10 +23,10 @@ if (process.env.NODE_ENV !== "test") {
  */
 export const sendJobRun = async (count, jobId, requestType) => {
   // Read initiator credentials
-  const credentials = readJSONFile(CREDENTIALS_FILE);
+  const credentials = readJSONFile(envvars.CREDENTIALS_FILE);
 
   const options = {
-    url: EI_CHAINLINKURL + "/v2/jobs/" + jobId + "/runs",
+    url: envvars.EI_CHAINLINKURL + "/v2/jobs/" + jobId + "/runs",
     body: {
       payment: 0,
       request_id: count,
@@ -40,7 +41,7 @@ export const sendJobRun = async (count, jobId, requestType) => {
   };
 
   //try request with loop retries
-  for (let i = 0; i < SUBMIT_RETRIES; i++) {
+  for (let i = 0; i < envvars.SUBMIT_RETRIES; i++) {
     try {
       await axios.post(options.url, options.body, {
         timeout: 5000,

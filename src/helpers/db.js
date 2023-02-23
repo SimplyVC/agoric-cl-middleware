@@ -1,9 +1,19 @@
 import sqlite3 from "sqlite3";
+import { MiddlewareENV } from './middlewareEnv.js';
 
-const { DB_FILE = "data/database.db" } = process.env;
+// Load environment variables
+let envvars = {};
+try{
+  envvars = new MiddlewareENV();
+} catch (err) {
+  if (process.env.NODE_ENV !== "test") {
+    console.log("ERROR LOADING ENV VARS", err)
+    process.exit(1);
+  }
+}
 
 // Open db
-let db = new sqlite3.Database(DB_FILE);
+let db = new sqlite3.Database(envvars.DB_FILE);
 
 /**
  * Function to create required DBs if they do not exist
