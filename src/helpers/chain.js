@@ -288,7 +288,6 @@ export const pushPrice = async (price, feed, round, from) => {
 
   // Create an offer
   const offer = {
-    id: Number(offerId),
     invitationSpec: {
       source: "continuing",
       previousOffer: Number(previousOffer),
