@@ -78,7 +78,7 @@ Each node operator has to run:
 
 Smart Contract - https://github.com/Agoric/agoric-sdk/tree/8720d22ddf25a005aee25786bfa8ee4bccaf19c9/packages/inter-protocol/src/price
 
-- The smart contract resembles a native Chainlink Solidity Flux-Monitor smart contract on Ethereum.
+- The smart contract resembles a native Chainlink Solidity Flux-Monitor smart contract on Ethereum (Example - https://etherscan.io/address/0x79febf6b9f76853edbcbc913e6aae8232cfb9de9).
 - For each feed, there will be a smart contract on chain and each node operator receives invitations to their smart wallet to be part of the oracle set. Then, oracles can use that invitation to push prices on chain.
 - There is a minimum number of submissions which has to be reached in order for the on-chain price to be updated
 - An oracle cannot initialise multiple consecutive rounds to avoid network congestion
@@ -144,7 +144,7 @@ The monitoring script should contain the following functionalities:
 
 1. A state file which is updated so that whenever the monitoring script is restarted it is able to continue from where it was stopped.
 2. Monitor multiple oracles at once
-3. An endpoint to expose prometheus metrics 
+3. An endpoint to expose prometheus metrics which are a set of time-series data which can be graphed and used to monitor the whole oracle network.
 4. Expose the following metrics
     1. The latest submitted value on chain by an oracle for a feed
     2. The timestamp in which an oracle made an on-chain submission for a feed 
@@ -755,7 +755,7 @@ This file contains all the functions which are used by the middleware.
 
 <b>Environment Variables</b>
 
-This script makes use of the following environment variables and it requires them in order to function. In fact, it contains validation upon entry to make sure they are well defined.
+This script makes use of the following environment variables.
 
 | Variable Name        	| Description                                                                                                                                                          	| Default value              	|
 |----------------------	|----------------------------------------------------------------------------------------------------------------------------------------------------------------------	|----------------------------	|
