@@ -13,7 +13,6 @@ export class MiddlewareENV {
       EI_CHAINLINKURL,
       CREDENTIALS_FILE = "config/ei_credentials.json",
       DB_FILE = "data/database.db",
-      FEEDS_FILE = "../config/feeds-config.json",
     } = process.env;
 
     this.PORT = PORT;
@@ -25,7 +24,6 @@ export class MiddlewareENV {
     this.EI_CHAINLINKURL = EI_CHAINLINKURL;
     this.CREDENTIALS_FILE = CREDENTIALS_FILE;
     this.DB_FILE = DB_FILE;
-    this.FEEDS_FILE = FEEDS_FILE;
 
     this.validate();
   }
@@ -42,7 +40,6 @@ export class MiddlewareENV {
     assert(this.validUrl(this.EI_CHAINLINKURL), "$EI_CHAINLINKURL is required");
     assert(this.checkFileExists(this.CREDENTIALS_FILE), "$CREDENTIALS_FILE does not exist")
     assert(this.checkFileExists(this.DB_FILE), "$DB_FILE does not exist")
-    assert(this.checkFileExists(this.FEEDS_FILE), "$FEEDS_FILE does not exist")
   }
 
   /**

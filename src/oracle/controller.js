@@ -1,6 +1,6 @@
 /* eslint-disable func-names */
 
-import { readJSONFile, submitNewJob } from "../helpers/utils.js";
+import { readJSONFile, submitNewJob, FEEDS_FILE } from "../helpers/utils.js";
 import { getAllJobs, queryTable, updateTable } from "../helpers/db.js";
 import {
   queryPrice,
@@ -27,7 +27,7 @@ export const makeController = () => {
   const oneSecInterval = 1_000;
 
   // Read feeds config
-  let feeds = readJSONFile(envvars.FEEDS_FILE);
+  let feeds = readJSONFile(FEEDS_FILE);
 
   // Create an interval which creates a job request every second
   setInterval(async () => {

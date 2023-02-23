@@ -7,6 +7,7 @@ import {
 } from "./db.js";
 import { sendJobRun } from "./chainlink.js";
 import { MiddlewareENV } from './middlewareEnv.js';
+import { file } from "tmp";
 
 // Load environment variables
 let envvars = {};
@@ -19,14 +20,20 @@ try{
   }
 }
 
+export const FEEDS_FILE = "../config/feeds-config.json"
+
 /**
  * Function to read a json file
  * @param {string} filename  file name or path to read
  * @returns {Object} the JSON data in the file
  */
 export const readJSONFile = (filename) => {
-  let rawdata = fs.readFileSync(filename);
-  return JSON.parse(String(rawdata));
+  try{
+    let rawdata = fs.readFileSync(filename);
+    return JSON.parse(String(rawdata));
+  } catch (err) {
+    console.log("Failed to read JSON file "+filename, err);
+  }
 };
 
 /**
@@ -115,7 +122,7 @@ export const checkIfInSubmission = async (feed) => {
 export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
   //get feeds
-  let feeds = readJSONFile(envvars.FEEDS_FILE);
+  let feeds = readJSONFile(FEEDS_FILE);
 
   // Get time now 
   let now = Date.now() / 1000;
