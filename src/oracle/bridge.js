@@ -159,6 +159,6 @@ export const startBridge = (PORT) => {
   });
 
   listener.on("error", (err) => {
-    console.log("Bridge found error:", err);
+    console.log("Bridge error:", err);
   });
 };
