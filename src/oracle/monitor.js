@@ -248,7 +248,7 @@ const getOffersAndBalances = async (follower, oracle) => {
 };
 
 /**
- * Function to get latest prices for oracle
+ * Function to get the latest prices for an oracle
  * @param {*} oracle oracle address
  * @param {*} oracleDetails oracle details
  * @param {*} state oracle's latest state
