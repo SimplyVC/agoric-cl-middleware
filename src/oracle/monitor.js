@@ -96,11 +96,10 @@ let amountsIn = {};
 
 /**
  * Function to read oracles
- * @returns oracles, their names and their addresses
+ * @returns {Object[]} oracles, their names and their addresses
  */
 const readOracleAddresses = () => {
-  let oracles = readJSONFile(ORACLE_FILE);
-  return oracles;
+  return readJSONFile(ORACLE_FILE);
 };
 
 /**
