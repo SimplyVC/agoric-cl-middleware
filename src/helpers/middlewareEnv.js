@@ -34,7 +34,7 @@ export class MiddlewareENV {
   validate() {
     assert(Number(this.PORT), "$PORT is required");
     assert(this.FROM && this.FROM != "", "$FROM is required");
-    assert(validUrl(this.EI_CHAINLINKURL), "$EI_CHAINLINKURL is required");
+    assert(this.validUrl(this.EI_CHAINLINKURL), "$EI_CHAINLINKURL is required");
     assert(this.checkFileExists(this.CREDENTIALS_FILE), "$CREDENTIALS_FILE does not exist")
     assert(this.checkFileExists(this.DB_FILE), "$DB_FILE does not exist")
     assert(this.checkFileExists(this.FEEDS_FILE), "$FEEDS_FILE does not exist")
