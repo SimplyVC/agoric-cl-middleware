@@ -406,7 +406,6 @@ export const monitor = async () => {
           values: {},
         };
       }
-      console.log("ORACLE STATE", oracle, state[oracle]);
 
       // Get latest prices for oracle
       let latestOracleState = await getLatestPrices(
