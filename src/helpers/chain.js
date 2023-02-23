@@ -32,6 +32,11 @@ const marshaller = boardSlottingMarshaller();
 
 /**
  * Function to read from vstorage
+ * 
+ * In Agoric, vStorage is a virtual storage system used by smart contracts to 
+ * store and manage data in a secure and decentralized way, with isolated 
+ * permissions and standardized APIs for external storage.
+ * 
  * @param {string} feed the feed to read (Ex. ATOM-USD)
  * @param {boolean} roundData whether to read round data or price data
  * @returns {string} CapData of result
