@@ -21,6 +21,7 @@ import {
 import { updateTable } from "./db.js";
 import { MiddlewareENV } from './MiddlewareEnv.js';
 import { logger } from "./logger.js";
+import { RoundDetails } from "./RoundDetails.js";
 
 // Load environment variables
 let envvars = {};
@@ -57,7 +58,7 @@ export const readVStorage = async (feed, roundData) => {
 /**
  * Function to get last 5 offers
  * @param {Promise<import('@agoric/casting/src/follower-cosmjs').ValueFollower<T>>} follower offers and balances
- * @returns {Object[]} a list of offers
+ * @returns {object[]} a list of offers
  */
 export const getOffers = async (follower) => {
   let history = [];
@@ -209,7 +210,7 @@ export const queryPrice = async (feed) => {
 /**
  * Function to get oracles feed invitations
  * @param {string} oracle address of the oracle
- * @returns {Object} an object containing feed invitation IDs. Each field in
+ * @returns {object} an object containing feed invitation IDs. Each field in
  *                   the object represents the feed name (Ex. ATOM-USD) and its
  *                   value is a number which is the invitation ID.
  */
@@ -237,12 +238,7 @@ export const getOraclesInvitations = async (oracle) => {
 /**
  * Function to query round from chain
  * @param {string} feed feed name of the price to query (Ex. ATOM-USD)
- * @returns {Object} the latest round
- * @returns {number} returns.roundId The round id
- * @returns {number} returns.startedAt The timestamp when the round
- *                   was started
- * @returns {string} returns.startedBy The address of who started the round
- * @returns {boolean} returns.submissionMade Whether a submission to this *                    round was made by the oracle
+ * @returns {RoundDetails} the latest round
  */
 export const queryRound = async (feed) => {
   // Read value from vstorage
@@ -284,12 +280,12 @@ export const queryRound = async (feed) => {
   );
 
   // Get the latest round
-  let latestRound = {
-    roundId: round,
-    startedAt: Number(capData.startedAt.digits),
-    startedBy: capData.startedBy,
-    submissionMade: submissionForRound,
-  };
+  let latestRound = new RoundDetails(
+    round,
+    Number(capData.startedAt.digits),
+    capData.startedBy,
+    submissionForRound
+  );
 
   logger.info(feed + " Latest Round: " + latestRound.roundId);
   return latestRound;
@@ -419,9 +415,9 @@ export const pushPrice = async (price, feed, round, from) => {
  * @param {Promise<import('@agoric/casting/src/follower-cosmjs').
  * ValueFollower<T>>} follower offers and balances
  * @param {string} oracle oracle address
- * @returns {Object} an object containing the offers and balances
- * @returns {Object[]} returns.offers Array of offers
- * @returns {Object[]} returns.balances Array of balances
+ * @returns {object} an object containing the offers and balances
+ * @returns {object[]} returns.offers Array of offers
+ * @returns {object[]} returns.balances Array of balances
  */
 export const getOffersAndBalances = async (follower, oracle) => {
     

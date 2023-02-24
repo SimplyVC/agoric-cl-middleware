@@ -23,7 +23,7 @@ try{
 /**
  * Function to read a json file
  * @param {string} filename  file name or path to read
- * @returns {Object} the JSON data in the file
+ * @returns {object} the JSON data in the file
  */
 export const readJSONFile = (filename) => {
   try{
@@ -36,7 +36,7 @@ export const readJSONFile = (filename) => {
 
 /**
  * Function to save JSON data to a file
- * @param {Object} newData new JSON data to save
+ * @param {object} newData new JSON data to save
  * @param {string} filename filename to save data to
  */
 export const saveJSONDataToFile = (newData, filename) => {

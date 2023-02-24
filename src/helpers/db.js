@@ -49,7 +49,7 @@ export const createDBs = async () => {
 
 /**
  * Function to get all jobs from the DB
- * @returns {Object[]} array of jobs in DB
+ * @returns {object[]} array of jobs in DB
  * @returns {string} returns[].id The CL job ID
  * @returns {string} returns[].name The name of the feed
  * @returns {number} returns[].request_id The ID of the last request made to
@@ -104,7 +104,7 @@ export const deleteJob = async (id) => {
  * @param {string} table table name
  * @param {string[]} fields fields to obtain
  * @param {string} name feed name to query
- * @returns {Object} an object containing the state of the job for the given
+ * @returns {object} an object containing the state of the job for the given
  *                   feed and fields
  */
 export const queryTable = async (table, fields, name) => {
@@ -127,7 +127,7 @@ export const queryTable = async (table, fields, name) => {
 /**
  * Function to make an update to a table
  * @param {string} table table name
- * @param {Object} values values to update in a JSON object. The properties
+ * @param {object} values values to update in a JSON object. The properties
  *                        would be the column names and the values would be the
  *                        values to set
  * @param {string} name feed name of the record to update
