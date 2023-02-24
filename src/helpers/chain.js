@@ -27,7 +27,7 @@ let envvars = {};
 try {
   envvars = new MiddlewareENV();
 } catch (err) {
-  if (process.env.NODE_ENV !== "test") {
+  if (process.env.NODE_ENV !== "test" && process.env.SERVICE !== "monitor") {
     logger.error("ERROR LOADING ENV VARS: " + err);
     process.exit(1);
   }
@@ -37,11 +37,11 @@ const marshaller = boardSlottingMarshaller();
 
 /**
  * Function to read from vstorage
- * 
- * In Agoric, vStorage is a virtual storage system used by smart contracts to 
- * store and manage data in a secure and decentralized way, with isolated 
+ *
+ * In Agoric, vStorage is a virtual storage system used by smart contracts to
+ * store and manage data in a secure and decentralized way, with isolated
  * permissions and standardized APIs for external storage.
- * 
+ *
  * @param {string} feed the feed to read (Ex. ATOM-USD)
  * @param {boolean} roundData whether to read round data or price data
  * @returns {string} CapData of result
@@ -157,8 +157,8 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
         return true;
       } else if (
         /**
-         * If the currentOffer has no error and the offerRound is less than the 
-         * roundId, we return false since no new submissions for future rounds 
+         * If the currentOffer has no error and the offerRound is less than the
+         * roundId, we return false since no new submissions for future rounds
          * can be created before completing the current round
          */
         offerRound < roundId &&
@@ -209,8 +209,8 @@ export const queryPrice = async (feed) => {
 /**
  * Function to get oracles feed invitations
  * @param {string} oracle address of the oracle
- * @returns {Object} an object containing feed invitation IDs. Each field in 
- *                   the object represents the feed name (Ex. ATOM-USD) and its 
+ * @returns {Object} an object containing feed invitation IDs. Each field in
+ *                   the object represents the feed name (Ex. ATOM-USD) and its
  *                   value is a number which is the invitation ID.
  */
 export const getOraclesInvitations = async (oracle) => {
@@ -239,7 +239,7 @@ export const getOraclesInvitations = async (oracle) => {
  * @param {string} feed feed name of the price to query (Ex. ATOM-USD)
  * @returns {Object} the latest round
  * @returns {number} returns.round_id The round id
- * @returns {number} returns.started_at The timestamp when the round 
+ * @returns {number} returns.started_at The timestamp when the round
  *                   was started
  * @returns {string} returns.started_by The address of who started the round
  * @returns {boolean} returns.submission_made Whether a submission to this *                    round was made by the oracle
@@ -412,4 +412,175 @@ export const pushPrice = async (price, feed, round, from) => {
   }
 
   return submitted;
+};
+
+/**
+ * Function to get offers and balances
+ * @param {Promise<import('@agoric/casting/src/follower-cosmjs').
+ * ValueFollower<T>>} follower offers and balances
+ * @param {string} oracle oracle address
+ * @returns {Object} an object containing the offers and balances
+ * @returns {Object[]} returns.offers Array of offers
+ * @returns {Object[]} returns.balances Array of balances
+ */
+export const getOffersAndBalances = async (follower, oracle) => {
+    
+  let toReturn = {
+    offers: await getOffers(follower),
+    balances: [],
+  };
+
+  // Get current purses
+  let fromBoard = makeFromBoard();
+  const vstorage = makeVStorage({ fetch });
+  let current = await getCurrent(oracle, fromBoard, { vstorage });
+  for (let i = 0; i < current.purses.length; i++) {
+    let currentPurse = current.purses[i];
+    toReturn["balances"].push(currentPurse.balance);
+  }
+
+  return toReturn;
+};
+
+/**
+ * Function to get the amount in of a feed
+ * @param {string} feed feed name like ATOM-USD
+ * @returns {number} the amount in for the feed
+ */
+export const getAmountsIn = async (feed) => {
+  const capDataStr = await readVStorage(feed, false)
+
+  //parse the value
+  let capData = JSON.parse(JSON.parse(capDataStr).value);
+  capData = JSON.parse(capData.values[0]);
+
+  // Replace any extra characters
+  capData = JSON.parse(capData.body.replaceAll("\\", ""));
+  return Number(capData.amountIn.value.digits);
+};
+
+/**
+ * Function to get the latest info for an oracle
+ * @param {string} oracle oracle address
+ * @param {object} oracleDetails oracle details
+ * @param {object} state oracle's latest state
+ * @param {MonitorMetrics} metrics MonitorMetrics instance
+ * @param {object} amountIn this contains the amountIn for each feed. The feed 
+ *                 name is the field and the value is the amountIn value
+ * @returns {object} last results including the oracle submitted price
+ */
+export const getOracleLatestInfo = async (
+  oracle,
+  oracleDetails,
+  state,
+  metrics,
+  amountsIn
+) => {
+  // Get feeds for oracle
+  let feeds = oracleDetails["feeds"];
+  logger.info("Getting prices for " + oracle + " - " + JSON.stringify(feeds));
+
+  let fromBoard = makeFromBoard();
+  const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
+  const leader = makeLeader(networkConfig.rpcAddrs[0]);
+
+  const follower = await makeFollower(`:published.wallet.${oracle}`, leader, {
+    unserializer,
+  });
+
+  let offersBalances = await getOffersAndBalances(follower, oracle);
+
+  // Get last offer id from offers from state
+  let lastOfferId = isNaN(state["last_offer_id"]) ? 0 : state["last_offer_id"];
+
+  // Initialise variable to hold results
+  let lastResults = {
+    last_offer_id: lastOfferId,
+    values: state["values"] ? state["values"] : {},
+  };
+
+  // Loop through offers starting from last visited index
+  for (let i = 0; i < offersBalances.offers.length; i++) {
+    // Get current offer
+    let currentOffer = offersBalances.offers[i];
+    let id = Number(currentOffer["status"]["id"]);
+
+    // If we found the last visited offer id in previous check, stop looping
+    if (id <= lastOfferId) {
+      break;
+    }
+
+    // If a price invitation
+    let invMakerName =
+      currentOffer["status"]["invitationSpec"]["invitationMakerName"];
+
+    if (invMakerName === "PushPrice") {
+      let feed =
+        feeds[currentOffer["status"]["invitationSpec"]["previousOffer"]];
+      let lastRound = Number(
+        currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
+      );
+
+      // Get feeds' last observed round from state
+      let lastObservedRound = state["values"].hasOwnProperty(feed)
+        ? state["values"][feed]["round"]
+        : 0;
+
+      // If round is bigger than last observed and the offer didn't fail
+      if (
+        lastRound > lastObservedRound &&
+        !currentOffer["status"].hasOwnProperty("error")
+      ) {
+        // If id is bigger than last offer id in state, set it
+        lastResults["last_offer_id"] = id;
+        lastOfferId = id;
+
+        let price =
+          Number(
+            currentOffer["status"]["invitationSpec"]["invitationArgs"][0][
+              "unitPrice"
+            ]
+          ) / amountsIn[feed];
+
+        // Fill results variable
+        lastResults["values"][feed] = {
+          price: price,
+          id: id,
+          round: lastRound,
+        };
+        state = lastResults;
+
+        // Get latest feed price
+        let feedPrice = await queryPrice(feed);
+        // Update metrics
+        metrics.updateMetrics(
+          oracleDetails["oracleName"],
+          oracle,
+          feed,
+          price,
+          id,
+          feedPrice,
+          lastRound
+        );
+      }
+    }
+  }
+
+  // Loop through balances
+  for (let i = 0; i < offersBalances.balances.length; i++) {
+    let currentBalance = offersBalances.balances[i];
+
+    let brand = currentBalance.brand.iface.split(" ")[1];
+    if (brand.includes("BLD") || brand.includes("IST")) {
+      let value = Number(currentBalance.value);
+      metrics.updateBalanceMetrics(
+        oracleDetails["oracleName"],
+        oracle,
+        brand,
+        value
+      );
+    }
+  }
+
+  return lastResults["last_offer_id"] !== lastOfferId ? lastResults : state;
 };

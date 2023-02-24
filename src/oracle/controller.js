@@ -15,7 +15,7 @@ let envvars = {};
 try{
   envvars = new MiddlewareENV();
 } catch (err) {
-  if (process.env.NODE_ENV !== "test") {
+  if (process.env.NODE_ENV !== "test" && process.env.SERVICE !== "monitor") {
     logger.error("ERROR LOADING ENV VARS: " + err)
     process.exit(1);
   }

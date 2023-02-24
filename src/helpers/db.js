@@ -7,14 +7,18 @@ let envvars = {};
 try{
   envvars = new MiddlewareENV();
 } catch (err) {
-  if (process.env.NODE_ENV !== "test") {
+  if (process.env.NODE_ENV !== "test" && process.env.SERVICE !== "monitor") {
     logger.error("ERROR LOADING ENV VARS: " + err)
     process.exit(1);
   }
 }
 
 // Open db
-let db = new sqlite3.Database(envvars.DB_FILE);
+let db;
+
+if (process.env.SERVICE !== "monitor") {
+  db = new sqlite3.Database(envvars.DB_FILE);
+}
 
 /**
  * Function to create required DBs if they do not exist

@@ -210,13 +210,17 @@ Furthermore, it contains the following two files which serve as an entry point t
 
 This directory contains the following files:
 
-1. <b>chain.js</b> - This file contains helper functions which are needed to interact with the agoric chain
+1. <b>chain.js</b> - This file contains helper functions which are needed to interact with the Agoric chain
 2. <b>chainlink.js</b> - This file contains helper functions to send job requests to the CL node
 3. <b>db.js</b> - This file contains helper functions related to the database
 4. <b>utils.js</b> - This file contains basic helper functions 
 5. <b>MiddlewareEnv.js</b> - This file contains a class to represent the middleware's environment variables
 6. <b>MonitorEnv.js</b> - This file contains a class to represent the monitoring script's environment variables
-6. <b>logger.js</b> - This file exports a logger
+7. <b>logger.js</b> - This file exports a logger
+8. <b>MonitoringState.js</b> - This file contains a class to represent the monitoring script's state and to interact with it
+8. <b>MonitorMetrics.js</b> - This file contains a class to represent the monitoring script's metrics
+8. <b>OracleMonitorConfig.js</b> - This file contains a class to represent the monitoring script's config 
+
 
 ##### oracle
 
