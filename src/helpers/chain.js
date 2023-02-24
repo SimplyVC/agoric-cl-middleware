@@ -24,11 +24,11 @@ import { logger } from "./logger.js";
 
 // Load environment variables
 let envvars = {};
-try{
+try {
   envvars = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    logger.error("ERROR LOADING ENV VARS: " + err)
+    logger.error("ERROR LOADING ENV VARS: " + err);
     process.exit(1);
   }
 }
@@ -167,7 +167,7 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
         return false;
       }
     }
-  };
+  }
   return false;
 };
 
@@ -201,7 +201,7 @@ export const queryPrice = async (feed) => {
     logger.info(feed + " Price Query: " + String(latestPrice));
     return latestPrice;
   } catch (err) {
-    logger.error("ERROR querying price: "+ err);
+    logger.error("ERROR querying price: " + err);
     return -1;
   }
 };
