@@ -276,8 +276,7 @@ export const queryRound = async (feed) => {
 
 /** @param {import('../lib/psm.js').BridgeAction} bridgeAction */
 export const outputAction = (bridgeAction) => {
-  const capData = marshaller.serialize(bridgeAction);
-  return JSON.stringify(capData);
+  return marshaller.serialize(bridgeAction);
 };
 
 /**
@@ -346,9 +345,6 @@ export const pushPrice = async (price, feed, round, from) => {
       method: "executeOffer",
       offer,
     });
-
-    // Change data to JSON
-    data = JSON.parse(data);
 
     // Execute
     await execSwingsetTransaction(
