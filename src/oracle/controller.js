@@ -41,7 +41,7 @@ export const makeController = () => {
       jobs.forEach(async (job) => {
         // Get interval for feed
         let feedName = job.name;
-        let pollInterval = Number(feeds[feedName].pollInterval);
+        let pollInterval = Number(feeds.feeds[feedName].pollInterval);
 
         // Check whether poll interval expired
         let now = Date.now() / 1000;
@@ -149,7 +149,7 @@ export const makeController = () => {
 
         // Get feed deviation percentage threshold
         let priceDeviationPercentage = Number(
-          feeds[jobName].priceDeviationPerc
+          feeds.feeds[jobName].priceDeviationPerc
         );
         if (priceDev > priceDeviationPercentage) {
           sendRequest = 2;

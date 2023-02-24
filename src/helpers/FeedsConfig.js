@@ -1,6 +1,5 @@
 import { logger } from "./logger.js";
 import { readJSONFile } from "./utils.js";
-import { getAmountsIn, getOraclesInvitations } from "./chain.js";
 
 export const FEEDS_FILE = "../config/feeds-config.json";
 
@@ -13,7 +12,7 @@ export class FeedsConfig {
       this.feeds = readJSONFile(FEEDS_FILE);
       this.validate();
     } catch (err) {
-      logger.error("Cannot load feeds config from " + filePath + ": " + err);
+      logger.error("Cannot load feeds config from " + FEEDS_FILE + ": " + err);
     }
   }
 

@@ -20,9 +20,6 @@ try{
   }
 }
 
-//get feeds
-let feeds = new FeedsConfig();
-
 /**
  * Function to read a json file
  * @param {string} filename  file name or path to read
@@ -122,7 +119,10 @@ export const checkIfInSubmission = async (feed) => {
  */
 export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
-  if (!(jobName in feeds)) {
+  //get feeds
+  let feeds = new FeedsConfig();
+
+  if (!(jobName in feeds.feeds)) {
     throw new Error(
       jobName + " not found in list of feeds"
     );
@@ -148,7 +148,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   let lastPrice = query.last_result;
 
   // Get push interval for feed
-  let pushInterval = Number(feeds[jobName].pushInterval);
+  let pushInterval = Number(feeds.feeds[jobName].pushInterval);
 
   // Check if time for update
   query = await queryTable("rounds", ["started_at"], jobName);
@@ -175,7 +175,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   if (!noLastPrice && priceDeviationRequest) {
 
     // Get decimal places for feed
-    let decimalPlaces = Number(feeds[jobName].decimalPlaces);
+    let decimalPlaces = Number(feeds.feeds[jobName].decimalPlaces);
     // Calculate percentage change
     lastPrice = lastPrice * Math.pow(10, decimalPlaces);
 
@@ -190,7 +190,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
     );
 
     // Get price deviation threshold for feed
-    let priceDeviationPercentage = Number(feeds[jobName].priceDeviationPerc);
+    let priceDeviationPercentage = Number(feeds.feeds[jobName].priceDeviationPerc);
 
     // Update price if result is greater than price deviation threshold
     toUpdate = percChange >= priceDeviationPercentage;
