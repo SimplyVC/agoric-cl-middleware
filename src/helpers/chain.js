@@ -181,11 +181,17 @@ export const queryPrice = async (feed) => {
     // Read value from vstorage
     const capDataStr = await readVStorage(feed, false);
 
-    //parse the value
-    let capData = JSON.parse(JSON.parse(capDataStr).value);
-    capData = JSON.parse(capData.values[0]);
-    // Replace any extra characters
-    capData = JSON.parse(capData.body.replaceAll("\\", ""));
+    let capData;
+
+    try {
+      //parse the value
+      capData = JSON.parse(JSON.parse(capDataStr).value);
+      capData = JSON.parse(capData.values[0]);
+      // Replace any extra characters
+      capData = JSON.parse(capData.body.replaceAll("\\", ""));
+    } catch (err) {
+      throw new Error("Failed to parse CapData for queryPrice");
+    }
 
     // Get the latest price by dividing amountOut by amountIn
     let latestPrice =
@@ -241,11 +247,17 @@ export const queryRound = async (feed) => {
   // Read value from vstorage
   const capDataStr = await readVStorage(feed, true);
 
-  //parse the value
-  let capData = JSON.parse(JSON.parse(capDataStr).value);
-  capData = JSON.parse(capData.values[capData.values.length - 1]);
-  // Replace any extra characters
-  capData = JSON.parse(capData.body.replaceAll("\\", ""));
+  let capData;
+
+  try {
+    //parse the value
+    capData = JSON.parse(JSON.parse(capDataStr).value);
+    capData = JSON.parse(capData.values[capData.values.length - 1]);
+    // Replace any extra characters
+    capData = JSON.parse(capData.body.replaceAll("\\", ""));
+  } catch (err) {
+    throw new Error("Failed to parse CapData for queryRound");
+  }
 
   // Get round from result
   let round = Number(capData.roundId.digits);
