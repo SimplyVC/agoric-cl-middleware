@@ -20,6 +20,9 @@ try{
   }
 }
 
+//get feeds
+let feeds = new FeedsConfig();
+
 /**
  * Function to read a json file
  * @param {string} filename  file name or path to read
@@ -118,9 +121,6 @@ export const checkIfInSubmission = async (feed) => {
  * @returns {boolean} whether a price should be updated on chain
  */
 export const checkForPriceUpdate = async (jobName, requestType, result) => {
-
-  //get feeds
-  let feeds = new FeedsConfig();
 
   if (!(jobName in feeds)) {
     throw new Error(
