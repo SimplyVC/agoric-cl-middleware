@@ -8,7 +8,6 @@ import {
 } from "../helpers/db.js";
 import { 
     checkForPriceUpdate, 
-    readJSONFile 
 } from "../helpers/utils.js";
 import { 
     pushPrice, 
