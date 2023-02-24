@@ -9,6 +9,7 @@ import {
 } from "../helpers/chain.js";
 import { MiddlewareENV } from '../helpers/MiddlewareEnv.js';
 import { logger } from "../helpers/logger.js";
+import { FeedsConfig } from "../helpers/FeedsConfig.js";
 
 // Load environment variables
 let envvars = {};
