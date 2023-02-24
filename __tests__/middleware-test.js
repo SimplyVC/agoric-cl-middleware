@@ -183,7 +183,7 @@ test("calls queryPrice to query the latest price", async () => {
  * Test for get oracle invitations
  */
 test("calls getOraclesInvitations to get the invitation IDs", async () => {
-  const invitations = await getOraclesInvitations("ATOM-USD");
+  const invitations = await getOraclesInvitations("agoricadd1");
 
   expect(invitations).toStrictEqual({
     "ATOM-USD": 1675687989744,
