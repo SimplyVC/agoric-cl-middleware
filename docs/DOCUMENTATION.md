@@ -127,10 +127,10 @@ The middleware should contain the following functionalities:
 | Table Name 	| Field Name      	| Description                                        	| Type    	|
 |------------	|-----------------	|----------------------------------------------------	|---------	|
 | rounds     	| feed            	| The name of the feed                               	| String  	|
-| rounds     	| round_id        	| Latest round id                                    	| Number  	|
-| rounds     	| started_at      	| The timestamp when the round was started           	| Number  	|
-| rounds 	    | started_by      	| The address who started the latest round           	| String  	|
-| rounds 	    | submission_made 	| Whether a submission was made for the latest round 	| Boolean 	|
+| rounds     	| roundId        	| Latest round id                                    	| Number  	|
+| rounds     	| startedAt      	| The timestamp when the round was started           	| Number  	|
+| rounds 	    | startedBy      	| The address who started the latest round           	| String  	|
+| rounds 	    | submissionMade 	| Whether a submission was made for the latest round 	| Boolean 	|
 
 #### Monitoring
 
@@ -387,10 +387,10 @@ Use: This function is used to query the latest on-chain round for a feed
 Returns: The latest round in an object containing the round ID, the timestamp when it was started, who started it and whether a submission was made by the oracle running this middleware using the FROM environment variable. The result object has the following structure
 ```json
 {
-  "round_id": 1,
-  "started_at": 1612345678,
-  "started_by": "agoric123456789",
-  "submission_made": false
+  "roundId": 1,
+  "startedAt": 1612345678,
+  "startedBy": "agoric123456789",
+  "submissionMade": false
 }
 ```
 

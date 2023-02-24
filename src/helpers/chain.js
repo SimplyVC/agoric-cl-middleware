@@ -238,11 +238,11 @@ export const getOraclesInvitations = async (oracle) => {
  * Function to query round from chain
  * @param {string} feed feed name of the price to query (Ex. ATOM-USD)
  * @returns {Object} the latest round
- * @returns {number} returns.round_id The round id
- * @returns {number} returns.started_at The timestamp when the round
+ * @returns {number} returns.roundId The round id
+ * @returns {number} returns.startedAt The timestamp when the round
  *                   was started
- * @returns {string} returns.started_by The address of who started the round
- * @returns {boolean} returns.submission_made Whether a submission to this *                    round was made by the oracle
+ * @returns {string} returns.startedBy The address of who started the round
+ * @returns {boolean} returns.submissionMade Whether a submission to this *                    round was made by the oracle
  */
 export const queryRound = async (feed) => {
   // Read value from vstorage
@@ -285,13 +285,13 @@ export const queryRound = async (feed) => {
 
   // Get the latest round
   let latestRound = {
-    round_id: round,
-    started_at: Number(capData.startedAt.digits),
-    started_by: capData.startedBy,
-    submission_made: submissionForRound,
+    roundId: round,
+    startedAt: Number(capData.startedAt.digits),
+    startedBy: capData.startedBy,
+    submissionMade: submissionForRound,
   };
 
-  logger.info(feed + " Latest Round: " + latestRound.round_id);
+  logger.info(feed + " Latest Round: " + latestRound.roundId);
   return latestRound;
 };
 
@@ -361,9 +361,9 @@ export const pushPrice = async (price, feed, round, from) => {
      * If latestRound is greater than round being pushed or submission to the
      * round is already made, abort
      */
-    let latestRoundGreater = latestRound.round_id > round;
+    let latestRoundGreater = latestRound.roundId > round;
     let submissionAlreadyMade =
-      latestRound.round_id === round && latestRound.submission_made;
+      latestRound.roundId === round && latestRound.submissionMade;
     if (latestRoundGreater || submissionAlreadyMade) {
       logger.info("Price failed to be submitted for old round: " + round);
       return false;

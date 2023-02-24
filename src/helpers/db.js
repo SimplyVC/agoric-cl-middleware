@@ -1,14 +1,15 @@
-import sqlite3 from "sqlite3";
-import { MiddlewareENV } from './MiddlewareEnv.js';
+import { open } from "sqlite";
+import sqlite3 from 'sqlite3'
+import { MiddlewareENV } from "./MiddlewareEnv.js";
 import { logger } from "./logger.js";
 
 // Load environment variables
 let envvars = {};
-try{
+try {
   envvars = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test" && process.env.SERVICE !== "monitor") {
-    logger.error("ERROR LOADING ENV VARS: " + err)
+    logger.error("ERROR LOADING ENV VARS: " + err);
     process.exit(1);
   }
 }
@@ -16,8 +17,16 @@ try{
 // Open db
 let db;
 
-if (process.env.SERVICE !== "monitor") {
-  db = new sqlite3.Database(envvars.DB_FILE);
+/**
+ * Function to load DB
+ */
+const loadDB = async () => {
+  if(!db){
+    db = await open({
+      filename: envvars.DB_FILE,
+      driver: sqlite3.Database
+    })
+  }
 }
 
 /**
@@ -25,28 +34,16 @@ if (process.env.SERVICE !== "monitor") {
  */
 export const createDBs = async () => {
   try {
-    await db.exec("PRAGMA foreign_keys=ON");
-    await db.exec(`
-    CREATE TABLE IF NOT EXISTS jobs (
-      id TEXT,
-      name TEXT PRIMARY KEY,
-      request_id INTEGER DEFAULT 0,
-      last_reported_round INTEGER DEFAULT 0,
-      last_request_sent REAL DEFAULT 0,
-      last_submission_time REAL DEFAULT 0,
-      last_result REAL DEFAULT -1,
-      last_received_request_id INTEGER DEFAULT 0
-    );
 
-    CREATE TABLE IF NOT EXISTS rounds (
-      feed TEXT,
-      round_id INTEGER DEFAULT 0,
-      started_at REAL DEFAULT 0,
-      started_by TEXT,
-      submission_made INTEGER DEFAULT 0,
-      FOREIGN KEY (feed) REFERENCES jobs(name) ON DELETE CASCADE
-    );
-  `);
+    await loadDB();
+
+    await db.migrate({    
+      migrationsPath: "../migrations",
+      table: "migrations"
+    }) 
+
+    await db.exec("PRAGMA foreign_keys=ON");
+
   } catch (err) {
     throw new Error("DB ERROR when creating DBs: " + err);
   }
@@ -57,18 +54,20 @@ export const createDBs = async () => {
  * @returns {Object[]} array of jobs in DB
  * @returns {string} returns[].id The CL job ID
  * @returns {string} returns[].name The name of the feed
- * @returns {number} returns[].request_id The ID of the last request made to  
+ * @returns {number} returns[].request_id The ID of the last request made to
  *                   the CL node
  * @returns {number} returns[].last_reported_round The latest submitted round
- * @returns {number} returns[].last_request_sent The timestamp when the last CL 
+ * @returns {number} returns[].last_request_sent The timestamp when the last CL
  *                   job request was sent
- * @returns {number} returns[].last_submission_time The timestamp when the last 
+ * @returns {number} returns[].last_submission_time The timestamp when the last
  *                   on-chain price submission was made
  * @returns {number} returns[].last_result The last on-chain price
- * @returns {number} returns[].last_received_request_id The ID of the last 
+ * @returns {number} returns[].last_received_request_id The ID of the last
  *                   request whose response was received from the CL node
  */
 export const getAllJobs = async () => {
+  await loadDB();
+
   return new Promise((resolve, reject) => {
     db.all("SELECT * FROM jobs", (err, rows) => {
       if (err) {
@@ -88,10 +87,12 @@ export const getAllJobs = async () => {
  */
 export const createJob = async (id, name) => {
   try {
+    await loadDB();
+
     await db.run("INSERT INTO jobs (id, name) VALUES (?, ?)", [id, name]);
     await db.run("INSERT INTO rounds (feed) VALUES (?)", [name]);
   } catch (err) {
-    throw new Error("DB ERROR when creating job: " + err)
+    throw new Error("DB ERROR when creating job: " + err);
   }
 };
 
@@ -101,9 +102,11 @@ export const createJob = async (id, name) => {
  */
 export const deleteJob = async (id) => {
   try {
+    await loadDB();
+
     await db.run("DELETE from jobs where id = '" + id + "';");
   } catch (err) {
-    throw new Error("DB ERROR when deleting job: " + err)
+    throw new Error("DB ERROR when deleting job: " + err);
   }
 };
 
@@ -112,15 +115,24 @@ export const deleteJob = async (id) => {
  * @param {string} table table name
  * @param {string[]} fields fields to obtain
  * @param {string} name feed name to query
- * @returns {Object} an object containing the state of the job for the given 
+ * @returns {Object} an object containing the state of the job for the given
  *                   feed and fields
  */
 export const queryTable = async (table, fields, name) => {
+  await loadDB();
+
   let keyName = table === "jobs" ? "name" : "feed";
   return new Promise((resolve, reject) => {
     db.get(
-      "SELECT " + fields.join(", ") + " from " + table + " where " +
-      keyName + " = '" + name + "';",
+      "SELECT " +
+        fields.join(", ") +
+        " from " +
+        table +
+        " where " +
+        keyName +
+        " = '" +
+        name +
+        "';",
       (err, rows) => {
         if (err) {
           logger.error("DB ERROR when querying table: " + err);
@@ -136,12 +148,13 @@ export const queryTable = async (table, fields, name) => {
 /**
  * Function to make an update to a table
  * @param {string} table table name
- * @param {Object} values values to update in a JSON object. The properties 
- *                        would be the column names and the values would be the 
+ * @param {Object} values values to update in a JSON object. The properties
+ *                        would be the column names and the values would be the
  *                        values to set
  * @param {string} name feed name of the record to update
  */
 export const updateTable = async (table, values, name) => {
+  await loadDB();
   let actualFields = Object.keys(values);
   let actualValues = Object.values(values);
 
@@ -160,10 +173,18 @@ export const updateTable = async (table, values, name) => {
 
   try {
     await db.run(
-      "UPDATE " + table + " SET " + update + " WHERE " + keyName + " = '" +
-      name + "';", actualValues
+      "UPDATE " +
+        table +
+        " SET " +
+        update +
+        " WHERE " +
+        keyName +
+        " = '" +
+        name +
+        "';",
+      actualValues
     );
   } catch (err) {
-    throw new Error("DB ERROR when updating table: " + err)
+    throw new Error("DB ERROR when updating table: " + err);
   }
 };

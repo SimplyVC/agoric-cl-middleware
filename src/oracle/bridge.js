@@ -82,9 +82,9 @@ export const startBridge = (PORT) => {
         let query = await queryTable("jobs", ["last_reported_round"], jobName);
 
         let lastReportedRound = query.last_reported_round;
-        let lastRoundId = isNaN(latestRound.round_id)
+        let lastRoundId = isNaN(latestRound.roundId)
           ? lastReportedRound
-          : latestRound.round_id;
+          : latestRound.roundId;
         let roundToSubmit =
           lastReportedRound < lastRoundId ? lastRoundId : lastRoundId + 1;
 
@@ -99,8 +99,8 @@ export const startBridge = (PORT) => {
          */
         let firstRound = roundToSubmit === 1;
         let notConsecutiveNewRound = 
-        newRound && latestRound.started_by !== envvars.FROM;
-        let noSubmissionForRound = !newRound && !latestRound.submission_made
+        newRound && latestRound.startedBy !== envvars.FROM;
+        let noSubmissionForRound = !newRound && !latestRound.submissionMade
 
         if ( firstRound || notConsecutiveNewRound || noSubmissionForRound ) {
           logger.info("Updating price for round " + roundToSubmit);

@@ -151,10 +151,10 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   let pushInterval = Number(feeds.feeds[jobName].pushInterval);
 
   // Check if time for update
-  query = await queryTable("rounds", ["started_at"], jobName);
+  query = await queryTable("rounds", ["startedAt"], jobName);
 
   // Check if it is time for an update
-  let timeForUpdate = now >= query.started_at + pushInterval;
+  let timeForUpdate = now >= query.startedAt + pushInterval;
 
   // Check if there was a last price
   let noLastPrice = lastPrice === -1 || lastPrice === 0;

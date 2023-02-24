@@ -205,9 +205,9 @@ test("calls queryRound to query the latest round", async () => {
   const latestPrice = await queryRound("ATOM-USD");
 
   expect(latestPrice).toStrictEqual({
-    round_id: 802,
-    started_at: 1676499365,
-    started_by: "agoric1lw4e4aas9q84tq0q92j85rwjjjapf8dmnllnft",
-    submission_made: false,
+    roundId: 802,
+    startedAt: 1676499365,
+    startedBy: "agoric1lw4e4aas9q84tq0q92j85rwjjjapf8dmnllnft",
+    submissionMade: false,
   });
 });

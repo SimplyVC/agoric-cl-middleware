@@ -115,9 +115,9 @@ export const makeController = () => {
         await updateTable("rounds", latestRound, jobName);
 
         // If latest round is bigger than last reported round
-        if (latestRound.round_id > latestSubmittedRound) {
+        if (latestRound.roundId > latestSubmittedRound) {
           // If submitted, update last_reported_round
-          if (latestRound.submission_made) {
+          if (latestRound.submissionMade) {
             await updateTable(
               "jobs",
               { last_reported_round: latestSubmittedRound },
