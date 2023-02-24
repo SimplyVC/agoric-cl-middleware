@@ -7,6 +7,7 @@ import {
 import { sendJobRun } from "./chainlink.js";
 import { MiddlewareENV } from './MiddlewareEnv.js';
 import { logger } from "./logger.js";
+import { FeedsConfig } from "./FeedsConfig.js";
 
 // Load environment variables
 let envvars = {};
@@ -18,8 +19,6 @@ try{
     process.exit(1);
   }
 }
-
-export const FEEDS_FILE = "../config/feeds-config.json"
 
 /**
  * Function to read a json file
@@ -121,7 +120,7 @@ export const checkIfInSubmission = async (feed) => {
 export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
   //get feeds
-  let feeds = readJSONFile(FEEDS_FILE);
+  let feeds = new FeedsConfig();
 
   if (!(jobName in feeds)) {
     throw new Error(

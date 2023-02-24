@@ -218,8 +218,10 @@ This directory contains the following files:
 6. <b>MonitorEnv.js</b> - This file contains a class to represent the monitoring script's environment variables
 7. <b>logger.js</b> - This file exports a logger
 8. <b>MonitoringState.js</b> - This file contains a class to represent the monitoring script's state and to interact with it
-8. <b>MonitorMetrics.js</b> - This file contains a class to represent the monitoring script's metrics
-8. <b>OracleMonitorConfig.js</b> - This file contains a class to represent the monitoring script's config 
+9. <b>MonitorMetrics.js</b> - This file contains a class to represent the monitoring script's metrics
+10. <b>OracleMonitorConfig.js</b> - This file contains a class to represent the monitoring script's config 
+11. <b>Credentials.js</b> - This file contains a class to represent the EI credentials
+12. <b>FeedsConfig.js</b> - This file contains a class to represent the feeds configuration
 
 
 ##### oracle

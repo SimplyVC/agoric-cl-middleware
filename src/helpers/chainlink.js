@@ -3,6 +3,7 @@ import axios from "axios";
 import http from "http";
 import { MiddlewareENV } from './MiddlewareEnv.js';
 import { logger } from "./logger.js";
+import { Credentials } from "./credentials.js";
 
 // Load environment variables
 let envvars = {};
@@ -24,7 +25,7 @@ try{
  */
 export const sendJobRun = async (count, jobId, requestType) => {
   // Read initiator credentials
-  const credentials = readJSONFile(envvars.CREDENTIALS_FILE);
+  const credentials = new Credentials(envvars.CREDENTIALS_FILE);
 
   const options = {
     url: envvars.EI_CHAINLINKURL + "/v2/jobs/" + jobId + "/runs",
@@ -35,8 +36,8 @@ export const sendJobRun = async (count, jobId, requestType) => {
     },
     headers: {
       "Content-Type": "application/json",
-      "X-Chainlink-EA-AccessKey": credentials["EI_IC_ACCESSKEY"],
-      "X-Chainlink-EA-Secret": credentials["EI_IC_SECRET"],
+      "X-Chainlink-EA-AccessKey": credentials.credentials["EI_IC_ACCESSKEY"],
+      "X-Chainlink-EA-Secret": credentials.credentials["EI_IC_SECRET"],
     },
     method: "POST",
   };
