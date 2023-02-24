@@ -15,6 +15,7 @@ import {
     queryRound 
 } from "../helpers/chain.js";
 import { MiddlewareENV } from '../helpers/middlewareEnv.js';
+import { logger } from "../helpers/logger.js";
 
 // Load environment variables
 let envvars = {};
@@ -22,7 +23,7 @@ try{
   envvars = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    console.log("ERROR LOADING ENV VARS", err)
+    logger.error("ERROR LOADING ENV VARS", err)
     process.exit(1);
   }
 }
@@ -33,7 +34,7 @@ try{
  * @param {number} PORT the port to listen on
  */
 export const startBridge = (PORT) => {
-  console.log("Bridge started");
+  logger.info("Bridge started");
   const app = express();
   app.use(bodyParser.json());
 
@@ -50,7 +51,7 @@ export const startBridge = (PORT) => {
       let requestId = String(req.body.data.request_id);
       let requestType = Number(req.body.data.request_type);
       let jobName = req.body.data.name;
-      console.log(
+      logger.info(
         "Bridge received " +
           String(result) +
           " for " +
@@ -101,7 +102,7 @@ export const startBridge = (PORT) => {
         let noSubmissionForRound = !newRound && !latestRound.submission_made
 
         if ( firstRound || notConsecutiveNewRound || noSubmissionForRound ) {
-          console.log("Updating price for round", roundToSubmit);
+          logger.info("Updating price for round", roundToSubmit);
 
           let submitted = 
           await pushPrice(result, jobName, roundToSubmit, envvars.FROM);
@@ -115,7 +116,7 @@ export const startBridge = (PORT) => {
             );
           }
         } else {
-          console.log("Already started last round or submitted to this round");
+          logger.info("Already started last round or submitted to this round");
         }
       }
 
@@ -126,7 +127,7 @@ export const startBridge = (PORT) => {
         jobName
       );
     } catch (err) {
-      console.log("SERVER ERROR", err);
+      logger.error("SERVER ERROR", err);
       res.status(500).send({ success: false });
     }
     
@@ -140,13 +141,13 @@ export const startBridge = (PORT) => {
     try {
       let newJob = req.body.jobId;
       let newJobName = req.body.params.name;
-      console.log("new job", newJobName, newJob);
+      logger.info("new job", newJobName, newJob);
   
       await createJob(newJob, newJobName);
   
       res.status(200).send({ success: true });
     } catch (err) {
-      console.log("SERVER ERROR", err);
+      logger.error("SERVER ERROR", err);
       res.status(500).send({ success: false });
     }
   });
@@ -158,22 +159,22 @@ export const startBridge = (PORT) => {
   app.delete("/jobs/:id", async (req, res) => {
     try {
       let jobId = req.params.id;
-      console.log("Removing job", jobId);
+      logger.info("Removing job", jobId);
   
       await deleteJob(jobId);
   
       res.status(200).send({ success: true });
     } catch (err) {
-      console.log("SERVER ERROR", err);
+      logger.error("SERVER ERROR", err);
       res.status(500).send({ success: false });
     }
   });
 
   const listener = app.listen(PORT, "0.0.0.0", () => {
-    console.log(`External adapter listening on port`, PORT);
+    logger.info(`External adapter listening on port`, PORT);
   });
 
   listener.on("error", (err) => {
-    console.log("Bridge error:", err);
+    logger.error("Bridge error:", err);
   });
 };

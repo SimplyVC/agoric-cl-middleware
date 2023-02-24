@@ -4,6 +4,7 @@ import { initialiseState, } from '../helpers/utils.js';
 import { startBridge } from './bridge.js'
 import { makeController } from './controller.js'
 import { MiddlewareENV } from '../helpers/middlewareEnv.js';
+import { logger } from '../helpers/logger.js';
 
 // Load environment variables
 let envvars = {};
@@ -11,7 +12,7 @@ try{
   envvars = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    console.log("ERROR LOADING ENV VARS", err)
+    logger.error("ERROR LOADING ENV VARS", err)
     process.exit(1);
   }
 }
@@ -20,7 +21,7 @@ try{
   * This is the function which runs the middleware
   */
 export const middleware = async () => {
-  console.log('Starting oracle bridge');
+  logger.info('Starting oracle bridge');
 
   // Init
   await initialiseState()

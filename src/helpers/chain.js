@@ -20,6 +20,7 @@ import {
 } from "./utils.js";
 import { updateTable } from "./db.js";
 import { MiddlewareENV } from './middlewareEnv.js';
+import { logger } from "./logger.js";
 
 // Load environment variables
 let envvars = {};
@@ -27,7 +28,7 @@ try{
   envvars = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    console.log("ERROR LOADING ENV VARS", err)
+    logger.error("ERROR LOADING ENV VARS", err)
     process.exit(1);
   }
 }
@@ -191,10 +192,10 @@ export const queryPrice = async (feed) => {
       Number(capData.amountOut.value.digits) /
       Number(capData.amountIn.value.digits);
 
-    console.log(feed + " Price Query: " + String(latestPrice));
+    logger.info(feed + " Price Query: " + String(latestPrice));
     return latestPrice;
   } catch (err) {
-    console.log("ERROR querying price", err);
+    logger.error("ERROR querying price", err);
     return -1;
   }
 };
@@ -269,7 +270,7 @@ export const queryRound = async (feed) => {
     submission_made: submissionForRound,
   };
 
-  console.log(feed + " Latest Round: ", latestRound.round_id);
+  logger.info(feed + " Latest Round: ", latestRound.round_id);
   return latestRound;
 };
 
@@ -332,11 +333,11 @@ export const pushPrice = async (price, feed, round, from) => {
     let submissionAlreadyMade =
       latestRound.round_id === round && latestRound.submission_made;
     if (latestRoundGreater || submissionAlreadyMade) {
-      console.log("Price failed to be submitted for old round", round);
+      logger.info("Price failed to be submitted for old round", round);
       return false;
     }
 
-    console.log("Submitting price for round", round, "attempt", i + 1);
+    logger.info("Submitting price for round", round, "attempt", i + 1);
 
     offer.id = Number(Date.now());
 
@@ -376,9 +377,9 @@ export const pushPrice = async (price, feed, round, from) => {
   }
 
   if (submitted) {
-    console.log("Price submitted successfully for round", round);
+    logger.info("Price submitted successfully for round", round);
   } else {
-    console.log("Price failed to be submitted for round", round);
+    logger.error("Price failed to be submitted for round", round);
   }
 
   return submitted;

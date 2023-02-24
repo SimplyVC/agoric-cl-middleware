@@ -1,5 +1,6 @@
 import sqlite3 from "sqlite3";
 import { MiddlewareENV } from './middlewareEnv.js';
+import { logger } from "./logger.js";
 
 // Load environment variables
 let envvars = {};
@@ -7,7 +8,7 @@ try{
   envvars = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    console.log("ERROR LOADING ENV VARS", err)
+    logger.error("ERROR LOADING ENV VARS", err)
     process.exit(1);
   }
 }
@@ -63,7 +64,7 @@ export const getAllJobs = async () => {
   return new Promise((resolve, reject) => {
     db.all("SELECT * FROM jobs", (err, rows) => {
       if (err) {
-        console.log("DB ERROR:", err);
+        logger.error("DB ERROR:", err);
         reject([]);
       } else {
         resolve(rows);
@@ -82,7 +83,7 @@ export const createJob = async (id, name) => {
     await db.run("INSERT INTO jobs (id, name) VALUES (?, ?)", [id, name]);
     await db.run("INSERT INTO rounds (feed) VALUES (?)", [name]);
   } catch (err) {
-    console.log("DB ERROR:", err);
+    logger.error("DB ERROR:", err);
   }
 };
 
@@ -94,7 +95,7 @@ export const deleteJob = async (id) => {
   try {
     await db.run("DELETE from jobs where id = '" + id + "';");
   } catch (err) {
-    console.log("DB ERROR:", err);
+    logger.error("DB ERROR:", err);
   }
 };
 
@@ -114,7 +115,7 @@ export const queryTable = async (table, fields, name) => {
       keyName + " = '" + name + "';",
       (err, rows) => {
         if (err) {
-          console.log("DB ERROR:", err);
+          logger.error("DB ERROR:", err);
           reject({});
         } else {
           resolve(rows);
@@ -155,6 +156,6 @@ export const updateTable = async (table, values, name) => {
       name + "';", actualValues
     );
   } catch (err) {
-    console.log("DB ERROR:", err);
+    logger.error("DB ERROR:", err);
   }
 };

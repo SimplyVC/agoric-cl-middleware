@@ -1,5 +1,4 @@
 import fs from "fs";
-import { URL } from "url";
 import { 
   createDBs, 
   queryTable, 
@@ -7,7 +6,7 @@ import {
 } from "./db.js";
 import { sendJobRun } from "./chainlink.js";
 import { MiddlewareENV } from './middlewareEnv.js';
-import { file } from "tmp";
+import { logger } from "./logger.js";
 
 // Load environment variables
 let envvars = {};
@@ -15,7 +14,7 @@ try{
   envvars = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    console.log("ERROR LOADING ENV VARS", err)
+    logger.error("ERROR LOADING ENV VARS", err)
     process.exit(1);
   }
 }
@@ -32,7 +31,7 @@ export const readJSONFile = (filename) => {
     let rawdata = fs.readFileSync(filename);
     return JSON.parse(String(rawdata));
   } catch (err) {
-    console.log("Failed to read JSON file "+filename, err);
+    logger.error("Failed to read JSON file "+filename, err);
   }
 };
 
@@ -82,7 +81,7 @@ export const submitNewJob = async (feed, requestType) => {
     feed
   );
 
-  console.log("Sending job spec", feed, "request", newRequestId);
+  logger.info("Sending job spec", feed, "request", newRequestId);
 
   // Send job run
   await sendJobRun(newRequestId, query.id, requestType);
@@ -176,7 +175,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
     lastPrice = lastPrice * Math.pow(10, decimalPlaces);
 
     let percChange = Math.abs((result - lastPrice) / lastPrice) * 100;
-    console.log(
+    logger.info(
       "Price change is " +
         percChange +
         "%. Last Price: " +

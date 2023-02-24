@@ -13,6 +13,7 @@ import { Registry, Gauge } from "prom-client";
 import { createServer } from "http";
 import { parse } from "url";
 import { iterateReverse } from "@agoric/casting";
+import { logger } from "../helpers/logger.js";
 
 
 let envvars = {};
@@ -20,7 +21,7 @@ try{
   envvars = new MonitorENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    console.log("ERROR LOADING ENV VARS", err)
+    logger.error("ERROR LOADING ENV VARS", err)
     process.exit(1);
   }
 }
@@ -192,11 +193,11 @@ const queryPrice = async (feed) => {
       Number(capData.amountIn.value.digits);
     amountsIn[feed] = Number(capData.amountIn.value.digits);
 
-    console.log(feed + " Price Query: " + String(latestPrice));
+    logger.info(feed + " Price Query: " + String(latestPrice));
     actualPriceGauge.labels(feed).set(latestPrice);
     return latestPrice;
   } catch (err) {
-    console.log("Price could not be obtained");
+    logger.error("Price could not be obtained");
     return 0;
   }
 };
@@ -257,7 +258,7 @@ const getOffersAndBalances = async (follower, oracle) => {
 export const getLatestPrices = async (oracle, oracleDetails, state) => {
   // Get feeds for oracle
   let feeds = oracleDetails["feeds"];
-  console.log("Getting prices for", oracle, feeds);
+  logger.info("Getting prices for", oracle, feeds);
 
   const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
   const leader = makeLeader(networkConfig.rpcAddrs[0]);
@@ -284,7 +285,7 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
     let id = Number(currentOffer["status"]["id"]);
 
     // If we found the last visited offer id in previous check, stop looping
-    console.log("lastOfferId", lastOfferId, "currentId", id);
+    logger.info("lastOfferId", lastOfferId, "currentId", id);
     if (id <= lastOfferId) {
       break;
     }

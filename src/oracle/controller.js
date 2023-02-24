@@ -8,6 +8,7 @@ import {
   getLatestSubmittedRound,
 } from "../helpers/chain.js";
 import { MiddlewareENV } from '../helpers/middlewareEnv.js';
+import { logger } from "../helpers/logger.js";
 
 // Load environment variables
 let envvars = {};
@@ -15,7 +16,7 @@ try{
   envvars = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    console.log("ERROR LOADING ENV VARS", err)
+    logger.error("ERROR LOADING ENV VARS", err)
     process.exit(1);
   }
 }
@@ -112,7 +113,7 @@ export const makeController = () => {
           );
         } else {
           // If not found, send job request
-          console.log("Found new round.");
+          logger.info("Found new round.");
           sendRequest = 3;
         }
       }
@@ -122,7 +123,7 @@ export const makeController = () => {
         Math.abs((latestPrice - currentPrice) / currentPrice) * 100;
 
       if (priceDev > 0) {
-        console.log(
+        logger.info(
           "Found a price deviation for",
           jobName,
           "of",
@@ -170,10 +171,10 @@ export const makeController = () => {
         // If a request has not been made yet and we are not waiting
         if (noPendingRequests || enoughTimePassed) {
           // Submit job
-          console.log("Initialising new CL job request");
+          logger.info("Initialising new CL job request");
           submitNewJob(jobName, sendRequest);
         } else {
-          console.log(
+          logger.warn(
             "Will not be initialising new job request - Still waiting for request",
             query.request_id,
             "to finish. Last finished request is",

@@ -2,6 +2,7 @@ import { readJSONFile } from "./utils.js";
 import axios from "axios";
 import http from "http";
 import { MiddlewareENV } from './middlewareEnv.js';
+import { logger } from "./logger.js";
 
 // Load environment variables
 let envvars = {};
@@ -9,7 +10,7 @@ try{
   envvars = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    console.log("ERROR LOADING ENV VARS", err)
+    logger.error("ERROR LOADING ENV VARS", err)
     process.exit(1);
   }
 }
@@ -51,7 +52,7 @@ export const sendJobRun = async (count, jobId, requestType) => {
       });
       return;
     } catch (err) {
-      console.error("JOB Request for " + jobId + " failed", err);
+      logger.error("JOB Request for " + jobId + " failed", err);
     }
   }
 };
