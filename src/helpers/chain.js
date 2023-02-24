@@ -208,18 +208,19 @@ export const queryPrice = async (feed) => {
 
 /**
  * Function to get oracles feed invitations
+ * @param {string} oracle address of the oracle
  * @returns {Object} an object containing feed invitation IDs. Each field in 
  *                   the object represents the feed name (Ex. ATOM-USD) and its 
  *                   value is a number which is the invitation ID.
  */
-export const getOraclesInvitations = async () => {
+export const getOraclesInvitations = async (oracle) => {
   let { agoricNames, fromBoard, vstorage } = await makeRpcUtils({ fetch });
 
   let feedBoards = agoricNames.reverse;
 
   let feedInvs = {};
 
-  const current = await getCurrent(String(envvars.FROM), fromBoard, { vstorage });
+  const current = await getCurrent(String(oracle), fromBoard, { vstorage });
   const invitations = current.offerToUsedInvitation;
 
   // For each invitation
@@ -312,7 +313,7 @@ export const pushPrice = async (price, feed, round, from) => {
   let offerId = Date.now();
 
   // Get offers
-  let offers = await getOraclesInvitations();
+  let offers = await getOraclesInvitations(from);
 
   // Check if invitation for feed exists
   if (!(feed in offers)) {

@@ -13,7 +13,7 @@
     - [getLatestSubmittedRound(oracle)](#getLatestSubmittedRound)
     - [checkSubmissionForRound(oracle, feedOfferId, roundId)](#checkSubmissionForRound)
     - [queryPrice(feed)](#queryPrice)
-    - [getOraclesInvitations()](#getOraclesInvitationsMiddleware)
+    - [getOraclesInvitations(oracle)](#getOraclesInvitationsMiddleware)
     - [queryRound(feed)](#queryRound)
     - [pushPrice(price, feed, round, from)](#pushPrice)
   - [helpers/chainlink.js](#chainlinkjs)
@@ -347,7 +347,10 @@ What it does:
 <br>
 <div id='getOraclesInvitationsMiddleware'></div>
 
-<b>getOraclesInvitations()</b>
+<b>getOraclesInvitations(oracle)</b>
+
+Inputs:
+* oracle - Oracle address to get invitations for
 
 Use: This function is used to get the oracle invitation IDs for price feeds 
 
