@@ -14,7 +14,7 @@ try{
   envvars = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    logger.error("ERROR LOADING ENV VARS", err)
+    logger.error("ERROR LOADING ENV VARS: " + err)
     process.exit(1);
   }
 }
@@ -31,7 +31,7 @@ export const readJSONFile = (filename) => {
     let rawdata = fs.readFileSync(filename);
     return JSON.parse(String(rawdata));
   } catch (err) {
-    logger.error("Failed to read JSON file "+filename, err);
+    logger.error("Failed to read JSON file " + filename + ": " + err);
   }
 };
 
@@ -81,7 +81,7 @@ export const submitNewJob = async (feed, requestType) => {
     feed
   );
 
-  logger.info("Sending job spec", feed, "request", newRequestId);
+  logger.info("Sending job spec " + feed + " request " + newRequestId);
 
   // Send job run
   await sendJobRun(newRequestId, query.id, requestType);

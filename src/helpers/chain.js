@@ -28,7 +28,7 @@ try{
   envvars = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    logger.error("ERROR LOADING ENV VARS", err)
+    logger.error("ERROR LOADING ENV VARS: " + err)
     process.exit(1);
   }
 }
@@ -195,7 +195,7 @@ export const queryPrice = async (feed) => {
     logger.info(feed + " Price Query: " + String(latestPrice));
     return latestPrice;
   } catch (err) {
-    logger.error("ERROR querying price", err);
+    logger.error("ERROR querying price: "+ err);
     return -1;
   }
 };
@@ -270,7 +270,7 @@ export const queryRound = async (feed) => {
     submission_made: submissionForRound,
   };
 
-  logger.info(feed + " Latest Round: ", latestRound.round_id);
+  logger.info(feed + " Latest Round: "+ latestRound.round_id);
   return latestRound;
 };
 
@@ -333,11 +333,11 @@ export const pushPrice = async (price, feed, round, from) => {
     let submissionAlreadyMade =
       latestRound.round_id === round && latestRound.submission_made;
     if (latestRoundGreater || submissionAlreadyMade) {
-      logger.info("Price failed to be submitted for old round", round);
+      logger.info("Price failed to be submitted for old round: "+ round);
       return false;
     }
 
-    logger.info("Submitting price for round", round, "attempt", i + 1);
+    logger.info("Submitting price for round " + round + " attempt "+ (i + 1));
 
     offer.id = Number(Date.now());
 
@@ -377,9 +377,9 @@ export const pushPrice = async (price, feed, round, from) => {
   }
 
   if (submitted) {
-    logger.info("Price submitted successfully for round", round);
+    logger.info("Price submitted successfully for round " + round);
   } else {
-    logger.error("Price failed to be submitted for round", round);
+    logger.error("Price failed to be submitted for round " + round);
   }
 
   return submitted;

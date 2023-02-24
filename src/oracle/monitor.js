@@ -21,7 +21,7 @@ try{
   envvars = new MonitorENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    logger.error("ERROR LOADING ENV VARS", err)
+    logger.error("ERROR LOADING ENV VARS: " + err)
     process.exit(1);
   }
 }
@@ -258,7 +258,7 @@ const getOffersAndBalances = async (follower, oracle) => {
 export const getLatestPrices = async (oracle, oracleDetails, state) => {
   // Get feeds for oracle
   let feeds = oracleDetails["feeds"];
-  logger.info("Getting prices for", oracle, feeds);
+  logger.info("Getting prices for "+ oracle + " - " + JSON.stringify(feeds));
 
   const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
   const leader = makeLeader(networkConfig.rpcAddrs[0]);
@@ -285,7 +285,6 @@ export const getLatestPrices = async (oracle, oracleDetails, state) => {
     let id = Number(currentOffer["status"]["id"]);
 
     // If we found the last visited offer id in previous check, stop looping
-    logger.info("lastOfferId", lastOfferId, "currentId", id);
     if (id <= lastOfferId) {
       break;
     }

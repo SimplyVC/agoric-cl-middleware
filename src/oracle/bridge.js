@@ -23,7 +23,7 @@ try{
   envvars = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    logger.error("ERROR LOADING ENV VARS", err)
+    logger.error("ERROR LOADING ENV VARS: " + err)
     process.exit(1);
   }
 }
@@ -102,7 +102,7 @@ export const startBridge = (PORT) => {
         let noSubmissionForRound = !newRound && !latestRound.submission_made
 
         if ( firstRound || notConsecutiveNewRound || noSubmissionForRound ) {
-          logger.info("Updating price for round", roundToSubmit);
+          logger.info("Updating price for round " + roundToSubmit);
 
           let submitted = 
           await pushPrice(result, jobName, roundToSubmit, envvars.FROM);
@@ -127,7 +127,7 @@ export const startBridge = (PORT) => {
         jobName
       );
     } catch (err) {
-      logger.error("SERVER ERROR", err);
+      logger.error("SERVER ERROR: " + err);
       res.status(500).send({ success: false });
     }
     
@@ -141,13 +141,13 @@ export const startBridge = (PORT) => {
     try {
       let newJob = req.body.jobId;
       let newJobName = req.body.params.name;
-      logger.info("new job", newJobName, newJob);
+      logger.info("new job " + newJobName + " " + newJob);
   
       await createJob(newJob, newJobName);
   
       res.status(200).send({ success: true });
     } catch (err) {
-      logger.error("SERVER ERROR", err);
+      logger.error("SERVER ERROR: " + err);
       res.status(500).send({ success: false });
     }
   });
@@ -159,22 +159,22 @@ export const startBridge = (PORT) => {
   app.delete("/jobs/:id", async (req, res) => {
     try {
       let jobId = req.params.id;
-      logger.info("Removing job", jobId);
+      logger.info("Removing job " + jobId);
   
       await deleteJob(jobId);
   
       res.status(200).send({ success: true });
     } catch (err) {
-      logger.error("SERVER ERROR", err);
+      logger.error("SERVER ERROR: " + err);
       res.status(500).send({ success: false });
     }
   });
 
   const listener = app.listen(PORT, "0.0.0.0", () => {
-    logger.info(`External adapter listening on port`, PORT);
+    logger.info("External adapter listening on port " + PORT);
   });
 
   listener.on("error", (err) => {
-    logger.error("Bridge error:", err);
+    logger.error("Bridge error: " + err);
   });
 };

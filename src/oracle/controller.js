@@ -16,7 +16,7 @@ try{
   envvars = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test") {
-    logger.error("ERROR LOADING ENV VARS", err)
+    logger.error("ERROR LOADING ENV VARS: " + err)
     process.exit(1);
   }
 }
@@ -124,13 +124,13 @@ export const makeController = () => {
 
       if (priceDev > 0) {
         logger.info(
-          "Found a price deviation for",
-          jobName,
-          "of",
-          priceDev,
-          "%. Latest price:",
-          latestPrice,
-          " Current Price:",
+          "Found a price deviation for " +
+          jobName +
+          " of " +
+          priceDev +
+          " %. Latest price: " +
+          latestPrice +
+          " Current Price: " +
           currentPrice
         );
       }
@@ -175,9 +175,9 @@ export const makeController = () => {
           submitNewJob(jobName, sendRequest);
         } else {
           logger.warn(
-            "Will not be initialising new job request - Still waiting for request",
-            query.request_id,
-            "to finish. Last finished request is",
+            "Will not be initialising new job request - Still waiting for request " +
+            query.request_id +
+            " to finish. Last finished request is " +
             query.last_received_request_id
           );
         }
