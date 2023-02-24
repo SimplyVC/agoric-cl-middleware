@@ -3,7 +3,7 @@ import axios from "axios";
 import http from "http";
 import { MiddlewareENV } from './MiddlewareEnv.js';
 import { logger } from "./logger.js";
-import { Credentials } from "./credentials.js";
+import { Credentials } from "./Credentials.js";
 
 // Load environment variables
 let envvars = {};
