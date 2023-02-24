@@ -86,7 +86,6 @@ export const startBridge = (PORT) => {
               " in /adapter"
           );
         }
-        
 
         // Get the round for submission
         let query;

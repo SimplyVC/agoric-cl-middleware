@@ -150,6 +150,12 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   //get feeds
   let feeds = readJSONFile(FEEDS_FILE);
 
+  if (!(jobName in feeds)) {
+    throw new Error(
+      jobName + " not found in list of feeds"
+    );
+  }
+
   // Get time now 
   let now = Date.now() / 1000;
 
