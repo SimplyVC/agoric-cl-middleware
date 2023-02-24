@@ -57,7 +57,7 @@ export const readVStorage = async (feed, roundData) => {
 /**
  * Function to get last 5 offers
  * @param {Promise<import('@agoric/casting/src/follower-cosmjs').ValueFollower<T>>} follower offers and balances
- * @returns {string} a list of offers
+ * @returns {Object[]} a list of offers
  */
 export const getOffers = async (follower) => {
   let history = [];
@@ -264,7 +264,7 @@ export const queryRound = async (feed) => {
   let round = Number(capData.roundId.digits);
 
   // Get offers
-  let offers = await getOraclesInvitations();
+  let offers = await getOraclesInvitations(envvars.FROM);
 
   // Check if invitation for feed exists
   if (!(feed in offers)) {
