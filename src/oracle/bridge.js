@@ -42,88 +42,94 @@ export const startBridge = (PORT) => {
    * This is used to listen for job run results
    */
   app.post("/adapter", async (req, res) => {
-    // Get result
-    let result = Math.round(req.body.data.result);
+    try {
+      // Get result
+      let result = Math.round(req.body.data.result);
 
-    // Get run id and type
-    let requestId = String(req.body.data.request_id);
-    let requestType = Number(req.body.data.request_type);
-    let jobName = req.body.data.name;
-    console.log(
-      "Bridge received " +
-        String(result) +
-        " for " +
-        jobName +
-        " (Request: " +
-        requestId +
-        ", Type: " +
-        requestType +
-        ")"
-    );
+      // Get run id and type
+      let requestId = String(req.body.data.request_id);
+      let requestType = Number(req.body.data.request_type);
+      let jobName = req.body.data.name;
+      console.log(
+        "Bridge received " +
+          String(result) +
+          " for " +
+          jobName +
+          " (Request: " +
+          requestId +
+          ", Type: " +
+          requestType +
+          ")"
+      );
 
-    // Return a 200 code to the Chainlink node if a successful price is received
-    if (isNaN(result)) {
-      res.status(500).send({ success: false });
-    } else {
-      res.status(200).send({ success: true });
-    }
-
-    // Check if a price update should be made
-    let toUpdate = await checkForPriceUpdate(jobName, requestType, result)
-
-    if (toUpdate) {
-      // Get latest round
-      let latestRound = await queryRound(jobName);
-      await updateTable("rounds", latestRound, jobName);
-
-      // Get the round for submission
-      let query = await queryTable("jobs", ["last_reported_round"], jobName);
-      let lastReportedRound = query.last_reported_round;
-      let lastRoundId = isNaN(latestRound.round_id)
-        ? lastReportedRound
-        : latestRound.round_id;
-      let roundToSubmit =
-        lastReportedRound < lastRoundId ? lastRoundId : lastRoundId + 1;
-
-      // Check if new round
-      let newRound = roundToSubmit !== lastRoundId;
-
-      /**
-       * Push price on chain if:
-       *  - First round
-       *  - Have not started previous round 
-       *  - Have not submitted yet in the same round
-       */
-      let firstRound = roundToSubmit === 1;
-      let notConsecutiveNewRound = 
-      newRound && latestRound.started_by !== envvars.FROM;
-      let noSubmissionForRound = !newRound && !latestRound.submission_made
-
-      if ( firstRound || notConsecutiveNewRound || noSubmissionForRound ) {
-        console.log("Updating price for round", roundToSubmit);
-
-        let submitted = 
-        await pushPrice(result, jobName, roundToSubmit, envvars.FROM);
-
-        // Update last reported round
-        if (submitted) {
-          await updateTable(
-            "jobs",
-            { last_reported_round: roundToSubmit },
-            jobName
-          );
-        }
+      // Return a 200 code to the Chainlink node if a successful price is received
+      if (isNaN(result)) {
+        res.status(500).send({ success: false });
       } else {
-        console.log("Already started last round or submitted to this round");
+        res.status(200).send({ success: true });
       }
-    }
 
-    // Update state
-    await updateTable(
-      "jobs",
-      { last_received_request_id: Number(requestId) },
-      jobName
-    );
+      // Check if a price update should be made
+      let toUpdate = await checkForPriceUpdate(jobName, requestType, result)
+
+      if (toUpdate) {
+        // Get latest round
+        let latestRound = await queryRound(jobName);
+        await updateTable("rounds", latestRound, jobName);
+
+        // Get the round for submission
+        let query = await queryTable("jobs", ["last_reported_round"], jobName);
+        let lastReportedRound = query.last_reported_round;
+        let lastRoundId = isNaN(latestRound.round_id)
+          ? lastReportedRound
+          : latestRound.round_id;
+        let roundToSubmit =
+          lastReportedRound < lastRoundId ? lastRoundId : lastRoundId + 1;
+
+        // Check if new round
+        let newRound = roundToSubmit !== lastRoundId;
+
+        /**
+         * Push price on chain if:
+         *  - First round
+         *  - Have not started previous round 
+         *  - Have not submitted yet in the same round
+         */
+        let firstRound = roundToSubmit === 1;
+        let notConsecutiveNewRound = 
+        newRound && latestRound.started_by !== envvars.FROM;
+        let noSubmissionForRound = !newRound && !latestRound.submission_made
+
+        if ( firstRound || notConsecutiveNewRound || noSubmissionForRound ) {
+          console.log("Updating price for round", roundToSubmit);
+
+          let submitted = 
+          await pushPrice(result, jobName, roundToSubmit, envvars.FROM);
+
+          // Update last reported round
+          if (submitted) {
+            await updateTable(
+              "jobs",
+              { last_reported_round: roundToSubmit },
+              jobName
+            );
+          }
+        } else {
+          console.log("Already started last round or submitted to this round");
+        }
+      }
+
+      // Update state
+      await updateTable(
+        "jobs",
+        { last_received_request_id: Number(requestId) },
+        jobName
+      );
+    } catch (err) {
+      console.log("SERVER ERROR", err);
+      res.status(500).send({ success: false });
+    }
+    
   });
 
   /**
@@ -131,13 +137,18 @@ export const startBridge = (PORT) => {
    * This is used to listen for new jobs added from UI and to update state
    */
   app.post("/jobs", async (req, res) => {
-    let newJob = req.body.jobId;
-    let newJobName = req.body.params.name;
-    console.log("new job", newJobName, newJob);
-
-    await createJob(newJob, newJobName);
-
-    res.status(200).send({ success: true });
+    try {
+      let newJob = req.body.jobId;
+      let newJobName = req.body.params.name;
+      console.log("new job", newJobName, newJob);
+  
+      await createJob(newJob, newJobName);
+  
+      res.status(200).send({ success: true });
+    } catch (err) {
+      console.log("SERVER ERROR", err);
+      res.status(500).send({ success: false });
+    }
   });
 
   /**
@@ -145,12 +156,17 @@ export const startBridge = (PORT) => {
    * This is used to listen for jobs deleted from UI and to update state
    */
   app.delete("/jobs/:id", async (req, res) => {
-    let jobId = req.params.id;
-    console.log("Removing job", jobId);
-
-    await deleteJob(jobId);
-
-    res.status(200).send({ success: true });
+    try {
+      let jobId = req.params.id;
+      console.log("Removing job", jobId);
+  
+      await deleteJob(jobId);
+  
+      res.status(200).send({ success: true });
+    } catch (err) {
+      console.log("SERVER ERROR", err);
+      res.status(500).send({ success: false });
+    }
   });
 
   const listener = app.listen(PORT, "0.0.0.0", () => {
