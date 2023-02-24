@@ -118,47 +118,27 @@ export const makeController = () => {
         let latestSubmittedRound = await getLatestSubmittedRound(envvars.FROM);
 
         // Update jobs table
-        try {
-          await updateTable(
-            "jobs",
-            {
-              last_result: latestPrice,
-              last_reported_round: latestSubmittedRound,
-            },
-            jobName
-          );
-        } catch (err) {
-          throw new Error(
-            "Error when updating table jobs for " + jobName + " in controller"
-          );
-        }
+        await updateTable(
+          "jobs",
+          {
+            last_result: latestPrice,
+            last_reported_round: latestSubmittedRound,
+          },
+          jobName
+        );
 
         // Update rounds table
-        try {
-          await updateTable("rounds", latestRound, jobName);
-        } catch (err) {
-          throw new Error(
-            "Error when updating table jobs for " + jobName + " in controller"
-          );
-        }
+        await updateTable("rounds", latestRound, jobName);
 
         // If latest round is bigger than last reported round
         if (latestRound.round_id > latestSubmittedRound) {
           // If submitted, update last_reported_round
           if (latestRound.submission_made) {
-            try {
-              await updateTable(
-                "jobs",
-                { last_reported_round: latestSubmittedRound },
-                jobName
-              );
-            } catch (err) {
-              throw new Error(
-                "Error when updating table jobs for " +
-                  jobName +
-                  " in controller"
-              );
-            }
+            await updateTable(
+              "jobs",
+              { last_reported_round: latestSubmittedRound },
+              jobName
+            );
           } else {
             // If not found, send job request
             logger.info("Found new round.");

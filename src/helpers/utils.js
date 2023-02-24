@@ -85,19 +85,11 @@ export const submitNewJob = async (feed, requestType) => {
   let newRequestId = query.request_id + 1;
 
   // Update table
-  try {
-    await updateTable(
-      "jobs",
-      { request_id: newRequestId, last_request_sent: Date.now() / 1000 },
-      feed
-    );
-  } catch (err) {
-    throw new Error(
-      "Error when updating table jobs for " +
-        feed +
-        " in submitNewJob"
-    );
-  }
+  await updateTable(
+    "jobs",
+    { request_id: newRequestId, last_request_sent: Date.now() / 1000 },
+    feed
+  );
 
   logger.info("Sending job spec " + feed + " request " + newRequestId);
 

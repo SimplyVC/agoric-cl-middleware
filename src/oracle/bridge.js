@@ -77,15 +77,7 @@ export const startBridge = (PORT) => {
         // Get latest round
         let latestRound = await queryRound(jobName);
 
-        try {
-          await updateTable("rounds", latestRound, jobName);
-        } catch (err) {
-          throw new Error(
-            "Error when updating table rounds for " +
-            jobName +
-              " in /adapter"
-          );
-        }
+        await updateTable("rounds", latestRound, jobName);
 
         // Get the round for submission
         let query;
@@ -128,19 +120,11 @@ export const startBridge = (PORT) => {
 
           // Update last reported round
           if (submitted) {
-            try {
-              await updateTable(
-                "jobs",
-                { last_reported_round: roundToSubmit },
-                jobName
-              );
-            } catch (err) {
-              throw new Error(
-                "Error when updating table jobs for " +
-                jobName +
-                  " in /adapter"
-              );
-            }
+            await updateTable(
+              "jobs",
+              { last_reported_round: roundToSubmit },
+              jobName
+            );
           }
         } else {
           logger.info("Already started last round or submitted to this round");
@@ -148,19 +132,11 @@ export const startBridge = (PORT) => {
       }
 
       // Update state
-      try {
-        await updateTable(
-          "jobs",
-          { last_received_request_id: Number(requestId) },
-          jobName
-        );
-      } catch (err) {
-        throw new Error(
-          "Error when updating table jobs for " +
-          jobName +
-            " in /adapter"
-        );
-      }
+      await updateTable(
+        "jobs",
+        { last_received_request_id: Number(requestId) },
+        jobName
+      );
       
     } catch (err) {
       logger.error("SERVER ERROR: " + err);

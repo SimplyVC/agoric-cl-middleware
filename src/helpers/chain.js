@@ -388,19 +388,11 @@ export const pushPrice = async (price, feed, round, from) => {
     );
 
     // Update last submission time
-    try {
-      await updateTable(
-        "jobs",
-        { last_submission_time: Date.now() / 1000 },
-        feed
-      );
-    } catch (err) {
-      throw new Error(
-        "Error when updating table jobs for " +
-          feed +
-          " in pushPrice"
-      );
-    }
+    await updateTable(
+      "jobs",
+      { last_submission_time: Date.now() / 1000 },
+      feed
+    );
 
     // Sleep SEND_CHECK_INTERVAL seconds
     await delay((Number(envvars.SEND_CHECK_INTERVAL) + 1) * 1000);
