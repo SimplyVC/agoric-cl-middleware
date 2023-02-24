@@ -1,5 +1,5 @@
 import { open } from "sqlite";
-import sqlite3 from 'sqlite3'
+import sqlite3 from "sqlite3";
 import { MiddlewareENV } from "./MiddlewareEnv.js";
 import { logger } from "./logger.js";
 
@@ -21,29 +21,27 @@ let db;
  * Function to load DB
  */
 const loadDB = async () => {
-  if(!db){
+  if (!db) {
     db = await open({
       filename: envvars.DB_FILE,
-      driver: sqlite3.Database
-    })
+      driver: sqlite3.Database,
+    });
   }
-}
+};
 
 /**
  * Function to create required DBs if they do not exist
  */
 export const createDBs = async () => {
   try {
-
     await loadDB();
 
-    await db.migrate({    
+    await db.migrate({
       migrationsPath: "../migrations",
-      table: "migrations"
-    }) 
+      table: "migrations",
+    });
 
     await db.exec("PRAGMA foreign_keys=ON");
-
   } catch (err) {
     throw new Error("DB ERROR when creating DBs: " + err);
   }
@@ -68,16 +66,7 @@ export const createDBs = async () => {
 export const getAllJobs = async () => {
   await loadDB();
 
-  return new Promise((resolve, reject) => {
-    db.all("SELECT * FROM jobs", (err, rows) => {
-      if (err) {
-        logger.error("DB ERROR when getting all jobs: " + err);
-        reject([]);
-      } else {
-        resolve(rows);
-      }
-    });
-  });
+  return await db.all("SELECT * FROM jobs");
 };
 
 /**
@@ -122,27 +111,17 @@ export const queryTable = async (table, fields, name) => {
   await loadDB();
 
   let keyName = table === "jobs" ? "name" : "feed";
-  return new Promise((resolve, reject) => {
-    db.get(
-      "SELECT " +
-        fields.join(", ") +
-        " from " +
-        table +
-        " where " +
-        keyName +
-        " = '" +
-        name +
-        "';",
-      (err, rows) => {
-        if (err) {
-          logger.error("DB ERROR when querying table: " + err);
-          reject({});
-        } else {
-          resolve(rows);
-        }
-      }
-    );
-  });
+  return await db.get(
+    "SELECT " +
+      fields.join(", ") +
+      " from " +
+      table +
+      " where " +
+      keyName +
+      " = '" +
+      name +
+      "';"
+  );
 };
 
 /**
