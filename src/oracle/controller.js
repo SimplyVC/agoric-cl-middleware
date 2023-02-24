@@ -32,29 +32,44 @@ export const makeController = () => {
 
   // Create an interval which creates a job request every second
   setInterval(async () => {
-    // Get all jobs
-    let jobs = await getAllJobs();
+    try {
+      // Get all jobs
+      let jobs = await getAllJobs();
 
-    // For each job in state, send a job run
-    jobs.forEach(async (job) => {
-      // Get interval for feed
-      let feedName = job.name;
-      let pollInterval = Number(feeds[feedName].pollInterval);
+      // For each job in state, send a job run
+      jobs.forEach(async (job) => {
+        // Get interval for feed
+        let feedName = job.name;
+        let pollInterval = Number(feeds[feedName].pollInterval);
 
-      // Check whether poll interval expired
-      let now = Date.now() / 1000;
-      let query = await queryTable("jobs", ["last_request_sent"], feedName);
-      let timeForPoll = query.last_request_sent + pollInterval <= now;
+        // Check whether poll interval expired
+        let now = Date.now() / 1000;
 
-      // If interval expired
-      if (timeForPoll) {
-        /**
-         * Send a job run with type 1, indicating a job run triggered from the
-         * polling interval
-         */
-        await submitNewJob(feedName, 1);
-      }
-    });
+        let query;
+        try {
+          query = await queryTable("jobs", ["last_request_sent"], feedName);
+        } catch (err) {
+          throw new Error(
+            "Error when querying jobs for last_request_sent for " +
+            feedName +
+              " in controller"
+          );
+        }
+        let timeForPoll = query.last_request_sent + pollInterval <= now;
+
+        // If interval expired
+        if (timeForPoll) {
+          /**
+           * Send a job run with type 1, indicating a job run triggered from the
+           * polling interval
+           */
+          await submitNewJob(feedName, 1);
+        }
+      });
+    } catch (err) {
+        logger.error("CONTROLLER ERROR: " + err);
+    }
+    
   }, oneSecInterval);
 
   const priceQueryInterval = parseInt(envvars.BLOCK_INTERVAL, 10);
@@ -69,12 +84,12 @@ export const makeController = () => {
    * request if the price deviates more than a specific threshold
    */
   setInterval(async () => {
-    // Get all jobs
-    let jobs = await getAllJobs();
+    try {
+      // Get all jobs
+      let jobs = await getAllJobs();
 
-    // For each job
-    jobs.forEach(async (job) => {
-      try {
+      // For each job
+      jobs.forEach(async (job) => {
         // Get the job name
         let jobName = job.name;
 
@@ -84,7 +99,16 @@ export const makeController = () => {
         let latestPrice = await queryPrice(jobName);
 
         // Get latest price
-        let query = await queryTable("jobs", ["last_result"], jobName);
+        let query;
+        try {
+          query = await queryTable("jobs", ["last_result"], jobName);
+        } catch (err) {
+          throw new Error(
+            "Error when querying jobs for last_result for " +
+              jobName +
+              " in controller"
+          );
+        }
         let currentPrice = query.last_result;
 
         // Query latest round
@@ -94,27 +118,47 @@ export const makeController = () => {
         let latestSubmittedRound = await getLatestSubmittedRound(envvars.FROM);
 
         // Update jobs table
-        await updateTable(
-          "jobs",
-          {
-            last_result: latestPrice,
-            last_reported_round: latestSubmittedRound,
-          },
-          jobName
-        );
+        try {
+          await updateTable(
+            "jobs",
+            {
+              last_result: latestPrice,
+              last_reported_round: latestSubmittedRound,
+            },
+            jobName
+          );
+        } catch (err) {
+          throw new Error(
+            "Error when updating table jobs for " + jobName + " in controller"
+          );
+        }
 
         // Update rounds table
-        await updateTable("rounds", latestRound, jobName);
+        try {
+          await updateTable("rounds", latestRound, jobName);
+        } catch (err) {
+          throw new Error(
+            "Error when updating table jobs for " + jobName + " in controller"
+          );
+        }
 
         // If latest round is bigger than last reported round
         if (latestRound.round_id > latestSubmittedRound) {
           // If submitted, update last_reported_round
           if (latestRound.submission_made) {
-            await updateTable(
-              "jobs",
-              { last_reported_round: latestSubmittedRound },
-              jobName
-            );
+            try {
+              await updateTable(
+                "jobs",
+                { last_reported_round: latestSubmittedRound },
+                jobName
+              );
+            } catch (err) {
+              throw new Error(
+                "Error when updating table jobs for " +
+                  jobName +
+                  " in controller"
+              );
+            }
           } else {
             // If not found, send job request
             logger.info("Found new round.");
@@ -151,19 +195,24 @@ export const makeController = () => {
         if (sendRequest !== 0) {
           // Get seconds now
           let secondsNow = Date.now() / 1000;
-          // Check seconds passed from last request
-          let query = await queryTable("jobs", ["last_request_sent"], jobName);
-          let secondsPassed = secondsNow - query.last_request_sent;
 
-          /**
-           * Check if allowed to send - 45 seconds passed or a request has not
-           * been made.
-           */
-          query = await queryTable(
-            "jobs",
-            ["last_received_request_id", "request_id"],
-            jobName
-          );
+          let query;
+          try {
+            query = await queryTable(
+              "jobs",
+              ["last_request_sent", "last_received_request_id", "request_id"],
+              jobName
+            );
+          } catch (err) {
+            throw new Error(
+              "Error when querying jobs for last_request_sent, last_received_request_id and request_id for " +
+                jobName +
+                " in controller"
+            );
+          }
+
+          // Check seconds passed from last request
+          let secondsPassed = secondsNow - query.last_request_sent;
 
           /**
            * Checks if there are any pending CL job requests for which we are
@@ -188,9 +237,9 @@ export const makeController = () => {
             );
           }
         }
-      } catch (err) {
-        logger.error("CONTROLLER ERROR: " + err);
-      }
-    });
+      });
+    } catch (err) {
+      logger.error("CONTROLLER ERROR: " + err);
+    }
   }, priceQueryInterval * 1_000);
 };

@@ -20,8 +20,9 @@ let db = new sqlite3.Database(envvars.DB_FILE);
  * Function to create required DBs if they do not exist
  */
 export const createDBs = async () => {
-  await db.exec("PRAGMA foreign_keys=ON");
-  await db.exec(`
+  try {
+    await db.exec("PRAGMA foreign_keys=ON");
+    await db.exec(`
     CREATE TABLE IF NOT EXISTS jobs (
       id TEXT,
       name TEXT PRIMARY KEY,
@@ -42,6 +43,9 @@ export const createDBs = async () => {
       FOREIGN KEY (feed) REFERENCES jobs(name) ON DELETE CASCADE
     );
   `);
+  } catch (err) {
+    throw new Error("DB ERROR when creating DBs: " + err);
+  }
 };
 
 /**
@@ -64,7 +68,7 @@ export const getAllJobs = async () => {
   return new Promise((resolve, reject) => {
     db.all("SELECT * FROM jobs", (err, rows) => {
       if (err) {
-        logger.error("DB ERROR: " + err);
+        logger.error("DB ERROR when getting all jobs: " + err);
         reject([]);
       } else {
         resolve(rows);
@@ -83,7 +87,7 @@ export const createJob = async (id, name) => {
     await db.run("INSERT INTO jobs (id, name) VALUES (?, ?)", [id, name]);
     await db.run("INSERT INTO rounds (feed) VALUES (?)", [name]);
   } catch (err) {
-    logger.error("DB ERROR: " + err);
+    throw new Error("DB ERROR when creating job: " + err)
   }
 };
 
@@ -95,7 +99,7 @@ export const deleteJob = async (id) => {
   try {
     await db.run("DELETE from jobs where id = '" + id + "';");
   } catch (err) {
-    logger.error("DB ERROR: " + err);
+    throw new Error("DB ERROR when deleting job: " + err)
   }
 };
 
@@ -115,7 +119,7 @@ export const queryTable = async (table, fields, name) => {
       keyName + " = '" + name + "';",
       (err, rows) => {
         if (err) {
-          logger.error("DB ERROR: " + err);
+          logger.error("DB ERROR when querying table: " + err);
           reject({});
         } else {
           resolve(rows);
@@ -156,6 +160,6 @@ export const updateTable = async (table, values, name) => {
       name + "';", actualValues
     );
   } catch (err) {
-    logger.error("DB ERROR: " + err);
+    throw new Error("DB ERROR when updating table: " + err)
   }
 };

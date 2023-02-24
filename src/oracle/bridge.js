@@ -76,10 +76,30 @@ export const startBridge = (PORT) => {
       if (toUpdate) {
         // Get latest round
         let latestRound = await queryRound(jobName);
-        await updateTable("rounds", latestRound, jobName);
+
+        try {
+          await updateTable("rounds", latestRound, jobName);
+        } catch (err) {
+          throw new Error(
+            "Error when updating table rounds for " +
+            jobName +
+              " in /adapter"
+          );
+        }
+        
 
         // Get the round for submission
-        let query = await queryTable("jobs", ["last_reported_round"], jobName);
+        let query;
+        try {
+          query = await queryTable("jobs", ["last_reported_round"], jobName);
+        } catch (err) {
+          throw new Error(
+            "Error when querying jobs for last_reported_round for " +
+              jobName +
+              " in /adapter"
+          );
+        }
+
         let lastReportedRound = query.last_reported_round;
         let lastRoundId = isNaN(latestRound.round_id)
           ? lastReportedRound
@@ -109,11 +129,19 @@ export const startBridge = (PORT) => {
 
           // Update last reported round
           if (submitted) {
-            await updateTable(
-              "jobs",
-              { last_reported_round: roundToSubmit },
-              jobName
-            );
+            try {
+              await updateTable(
+                "jobs",
+                { last_reported_round: roundToSubmit },
+                jobName
+              );
+            } catch (err) {
+              throw new Error(
+                "Error when updating table jobs for " +
+                jobName +
+                  " in /adapter"
+              );
+            }
           }
         } else {
           logger.info("Already started last round or submitted to this round");
@@ -121,11 +149,20 @@ export const startBridge = (PORT) => {
       }
 
       // Update state
-      await updateTable(
-        "jobs",
-        { last_received_request_id: Number(requestId) },
-        jobName
-      );
+      try {
+        await updateTable(
+          "jobs",
+          { last_received_request_id: Number(requestId) },
+          jobName
+        );
+      } catch (err) {
+        throw new Error(
+          "Error when updating table jobs for " +
+          jobName +
+            " in /adapter"
+        );
+      }
+      
     } catch (err) {
       logger.error("SERVER ERROR: " + err);
       res.status(500).send({ success: false });

@@ -71,15 +71,33 @@ export const initialiseState = async () => {
  */
 export const submitNewJob = async (feed, requestType) => {
   // Get latest request id
-  let query = await queryTable("jobs", ["request_id", "id"], feed);
+  let query;
+
+  try {
+    query = await queryTable("jobs", ["request_id", "id"], feed);
+  } catch (err) {
+    throw new Error(
+      "Error when querying jobs for request_id and id for " +
+        feed +
+        " in submitNewJob"
+    );
+  }
   let newRequestId = query.request_id + 1;
 
   // Update table
-  await updateTable(
-    "jobs",
-    { request_id: newRequestId, last_request_sent: Date.now() / 1000 },
-    feed
-  );
+  try {
+    await updateTable(
+      "jobs",
+      { request_id: newRequestId, last_request_sent: Date.now() / 1000 },
+      feed
+    );
+  } catch (err) {
+    throw new Error(
+      "Error when updating table jobs for " +
+        feed +
+        " in submitNewJob"
+    );
+  }
 
   logger.info("Sending job spec " + feed + " request " + newRequestId);
 
@@ -95,7 +113,16 @@ export const submitNewJob = async (feed, requestType) => {
  */
 export const checkIfInSubmission = async (feed) => {
   // Get last submission time
-  let query = await queryTable("jobs", ["last_submission_time"], feed);
+  let query;
+  try {
+    query = await queryTable("jobs", ["last_submission_time"], feed);
+  } catch (err) {
+    throw new Error(
+      "Error when querying jobs for last_submission_time for " +
+        feed +
+        " in checkIfInSubmission"
+    );
+  }
 
   // Get seconds since last price submission
   let timePassedSinceSubmission =
@@ -127,7 +154,17 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   let now = Date.now() / 1000;
 
   // Get seconds since last price submission
-  let query = await queryTable("jobs", ["last_submission_time"], jobName);
+  let query;
+  try {
+    query = await queryTable("jobs", ["last_submission_time", "last_result"], jobName);
+  } catch (err) {
+    throw new Error(
+      "Error when querying jobs for last_submission_time and last_result for " +
+        jobName +
+        " in checkIfInSubmission"
+    );
+  }
+  
   let timePassedSinceSubmission = now - query.last_submission_time;
 
   // Check if in submission
@@ -139,14 +176,21 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   }
 
   // Get last price from state
-  query = await queryTable("jobs", ["last_result"], jobName);
   let lastPrice = query.last_result;
 
   // Get push interval for feed
   let pushInterval = Number(feeds[jobName].pushInterval);
 
   // Check if time for update
-  query = await queryTable("rounds", ["started_at"], jobName);
+  try {
+    query = await queryTable("rounds", ["started_at"], jobName);
+  } catch (err) {
+    throw new Error(
+      "Error when querying rounds for started_at for " +
+        jobName +
+        " in checkIfInSubmission"
+    );
+  }
 
   // Check if it is time for an update
   let timeForUpdate = now >= query.started_at + pushInterval;
