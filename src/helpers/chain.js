@@ -252,6 +252,14 @@ export const queryRound = async (feed) => {
 
   // Get offers
   let offers = await getOraclesInvitations();
+
+  // Check if invitation for feed exists
+  if (!(feed in offers)) {
+    throw new Error(
+      "Invitation for " + feed + " not found in oracle invitations"
+    );
+  }
+
   // Get feed offer id
   let feedOfferId = offers[feed];
 
@@ -270,7 +278,7 @@ export const queryRound = async (feed) => {
     submission_made: submissionForRound,
   };
 
-  logger.info(feed + " Latest Round: "+ latestRound.round_id);
+  logger.info(feed + " Latest Round: " + latestRound.round_id);
   return latestRound;
 };
 
@@ -293,6 +301,14 @@ export const pushPrice = async (price, feed, round, from) => {
 
   // Get offers
   let offers = await getOraclesInvitations();
+
+  // Check if invitation for feed exists
+  if (!(feed in offers)) {
+    throw new Error(
+      "Invitation for " + feed + " not found in oracle invitations"
+    );
+  }
+
   // Get previous offer for feed
   let previousOffer = offers[feed];
 
@@ -320,7 +336,11 @@ export const pushPrice = async (price, feed, round, from) => {
   let inSubmission = await checkIfInSubmission(feed);
 
   // Loop retries
-  for (let i = 0; i < envvars.SUBMIT_RETRIES && !submitted && !inSubmission; i++) {
+  for (
+    let i = 0;
+    i < envvars.SUBMIT_RETRIES && !submitted && !inSubmission;
+    i++
+  ) {
     // Query round
     let latestRound = await queryRound(feed);
 
@@ -332,11 +352,11 @@ export const pushPrice = async (price, feed, round, from) => {
     let submissionAlreadyMade =
       latestRound.round_id === round && latestRound.submission_made;
     if (latestRoundGreater || submissionAlreadyMade) {
-      logger.info("Price failed to be submitted for old round: "+ round);
+      logger.info("Price failed to be submitted for old round: " + round);
       return false;
     }
 
-    logger.info("Submitting price for round " + round + " attempt "+ (i + 1));
+    logger.info("Submitting price for round " + round + " attempt " + (i + 1));
 
     offer.id = Number(Date.now());
 
