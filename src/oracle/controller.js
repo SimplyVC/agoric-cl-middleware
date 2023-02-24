@@ -45,16 +45,7 @@ export const makeController = () => {
         // Check whether poll interval expired
         let now = Date.now() / 1000;
 
-        let query;
-        try {
-          query = await queryTable("jobs", ["last_request_sent"], feedName);
-        } catch (err) {
-          throw new Error(
-            "Error when querying jobs for last_request_sent for " +
-            feedName +
-              " in controller"
-          );
-        }
+        let query = await queryTable("jobs", ["last_request_sent"], feedName);
         let timeForPoll = query.last_request_sent + pollInterval <= now;
 
         // If interval expired
@@ -99,16 +90,8 @@ export const makeController = () => {
         let latestPrice = await queryPrice(jobName);
 
         // Get latest price
-        let query;
-        try {
-          query = await queryTable("jobs", ["last_result"], jobName);
-        } catch (err) {
-          throw new Error(
-            "Error when querying jobs for last_result for " +
-              jobName +
-              " in controller"
-          );
-        }
+        let query = await queryTable("jobs", ["last_result"], jobName);
+
         let currentPrice = query.last_result;
 
         // Query latest round
@@ -176,20 +159,11 @@ export const makeController = () => {
           // Get seconds now
           let secondsNow = Date.now() / 1000;
 
-          let query;
-          try {
-            query = await queryTable(
-              "jobs",
-              ["last_request_sent", "last_received_request_id", "request_id"],
-              jobName
-            );
-          } catch (err) {
-            throw new Error(
-              "Error when querying jobs for last_request_sent, last_received_request_id and request_id for " +
-                jobName +
-                " in controller"
-            );
-          }
+          let query = await queryTable(
+            "jobs",
+            ["last_request_sent", "last_received_request_id", "request_id"],
+            jobName
+          );
 
           // Check seconds passed from last request
           let secondsPassed = secondsNow - query.last_request_sent;

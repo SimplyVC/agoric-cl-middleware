@@ -80,16 +80,7 @@ export const startBridge = (PORT) => {
         await updateTable("rounds", latestRound, jobName);
 
         // Get the round for submission
-        let query;
-        try {
-          query = await queryTable("jobs", ["last_reported_round"], jobName);
-        } catch (err) {
-          throw new Error(
-            "Error when querying jobs for last_reported_round for " +
-              jobName +
-              " in /adapter"
-          );
-        }
+        let query = await queryTable("jobs", ["last_reported_round"], jobName);
 
         let lastReportedRound = query.last_reported_round;
         let lastRoundId = isNaN(latestRound.round_id)

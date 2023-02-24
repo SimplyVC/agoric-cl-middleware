@@ -71,17 +71,7 @@ export const initialiseState = async () => {
  */
 export const submitNewJob = async (feed, requestType) => {
   // Get latest request id
-  let query;
-
-  try {
-    query = await queryTable("jobs", ["request_id", "id"], feed);
-  } catch (err) {
-    throw new Error(
-      "Error when querying jobs for request_id and id for " +
-        feed +
-        " in submitNewJob"
-    );
-  }
+  let query = await queryTable("jobs", ["request_id", "id"], feed);
   let newRequestId = query.request_id + 1;
 
   // Update table
@@ -105,16 +95,7 @@ export const submitNewJob = async (feed, requestType) => {
  */
 export const checkIfInSubmission = async (feed) => {
   // Get last submission time
-  let query;
-  try {
-    query = await queryTable("jobs", ["last_submission_time"], feed);
-  } catch (err) {
-    throw new Error(
-      "Error when querying jobs for last_submission_time for " +
-        feed +
-        " in checkIfInSubmission"
-    );
-  }
+  let query = await queryTable("jobs", ["last_submission_time"], feed);
 
   // Get seconds since last price submission
   let timePassedSinceSubmission =
@@ -152,16 +133,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   let now = Date.now() / 1000;
 
   // Get seconds since last price submission
-  let query;
-  try {
-    query = await queryTable("jobs", ["last_submission_time", "last_result"], jobName);
-  } catch (err) {
-    throw new Error(
-      "Error when querying jobs for last_submission_time and last_result for " +
-        jobName +
-        " in checkIfInSubmission"
-    );
-  }
+  let query = await queryTable("jobs", ["last_submission_time", "last_result"], jobName);
   
   let timePassedSinceSubmission = now - query.last_submission_time;
 
@@ -180,15 +152,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   let pushInterval = Number(feeds[jobName].pushInterval);
 
   // Check if time for update
-  try {
-    query = await queryTable("rounds", ["started_at"], jobName);
-  } catch (err) {
-    throw new Error(
-      "Error when querying rounds for started_at for " +
-        jobName +
-        " in checkIfInSubmission"
-    );
-  }
+  query = await queryTable("rounds", ["started_at"], jobName);
 
   // Check if it is time for an update
   let timeForUpdate = now >= query.started_at + pushInterval;
