@@ -1,5 +1,5 @@
 import sqlite3 from "sqlite3";
-import { MiddlewareENV } from './middlewareEnv.js';
+import { MiddlewareENV } from './MiddlewareEnv.js';
 import { logger } from "./logger.js";
 
 // Load environment variables

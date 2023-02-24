@@ -5,7 +5,7 @@ import {
   updateTable 
 } from "./db.js";
 import { sendJobRun } from "./chainlink.js";
-import { MiddlewareENV } from './middlewareEnv.js';
+import { MiddlewareENV } from './MiddlewareEnv.js';
 import { logger } from "./logger.js";
 
 // Load environment variables

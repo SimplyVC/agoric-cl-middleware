@@ -3,7 +3,7 @@
 import { initialiseState, } from '../helpers/utils.js';
 import { startBridge } from './bridge.js'
 import { makeController } from './controller.js'
-import { MiddlewareENV } from '../helpers/middlewareEnv.js';
+import { MiddlewareENV } from '../helpers/MiddlewareEnv.js';
 import { logger } from '../helpers/logger.js';
 
 // Load environment variables

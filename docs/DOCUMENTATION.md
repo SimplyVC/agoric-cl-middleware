@@ -214,8 +214,8 @@ This directory contains the following files:
 2. <b>chainlink.js</b> - This file contains helper functions to send job requests to the CL node
 3. <b>db.js</b> - This file contains helper functions related to the database
 4. <b>utils.js</b> - This file contains basic helper functions 
-5. <b>middlewareEnv.js</b> - This file contains a class to represent the middleware's environment variables
-6. <b>monitorEnv.js</b> - This file contains a class to represent the monitoring script's environment variables
+5. <b>MiddlewareEnv.js</b> - This file contains a class to represent the middleware's environment variables
+6. <b>MonitorEnv.js</b> - This file contains a class to represent the monitoring script's environment variables
 6. <b>logger.js</b> - This file exports a logger
 
 ##### oracle

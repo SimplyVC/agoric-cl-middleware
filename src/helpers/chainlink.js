@@ -1,7 +1,7 @@
 import { readJSONFile } from "./utils.js";
 import axios from "axios";
 import http from "http";
-import { MiddlewareENV } from './middlewareEnv.js';
+import { MiddlewareENV } from './MiddlewareEnv.js';
 import { logger } from "./logger.js";
 
 // Load environment variables

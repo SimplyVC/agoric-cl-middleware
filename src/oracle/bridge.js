@@ -14,7 +14,7 @@ import {
     pushPrice, 
     queryRound 
 } from "../helpers/chain.js";
-import { MiddlewareENV } from '../helpers/middlewareEnv.js';
+import { MiddlewareENV } from '../helpers/MiddlewareEnv.js';
 import { logger } from "../helpers/logger.js";
 
 // Load environment variables

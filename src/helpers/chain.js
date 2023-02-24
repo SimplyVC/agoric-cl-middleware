@@ -19,7 +19,7 @@ import {
     delay 
 } from "./utils.js";
 import { updateTable } from "./db.js";
-import { MiddlewareENV } from './middlewareEnv.js';
+import { MiddlewareENV } from './MiddlewareEnv.js';
 import { logger } from "./logger.js";
 
 // Load environment variables
