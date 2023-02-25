@@ -1,7 +1,7 @@
 {
   "name": "agoric-middleware",
   "version": "0.18.2",
-  "description": "A middleware for the Agoric Oracle network. This is used to as a bridge between the CL node and the Agoric chain",
+  "description": "A middleware for the Agoric Oracle network. This is used as a bridge between the CL node and the Agoric chain",
   "type": "module",
   "main": "src/main.js",
   "bin": {
@@ -12,7 +12,6 @@
     "exported.js"
   ],
   "scripts": {
-    "build": "node ./scripts/get-sdk-package-names.js > src/sdk-package-names.js",
     "test": "jest --config ./jest.config.cjs",
     "test:c8": "c8 $C8_OPTIONS ava --config=ava-nesm.config.js",
     "test:xs": "exit 0",
@@ -61,6 +60,7 @@
     "body-parser": "^1.20.1",
     "chalk": "^2.4.2",
     "commander": "^5.0.0",
+    "db-migrate": "^0.11.13",
     "dd-trace": "^3.3.0",
     "deterministic-json": "^1.0.5",
     "esm": "agoric-labs/esm#Agoric-built",
@@ -68,8 +68,10 @@
     "inquirer": "^8.2.2",
     "opener": "^1.5.2",
     "prom-client": "^14.1.0",
+    "sqlite": "^4.1.2",
     "sqlite3": "^5.1.4",
     "tmp": "^0.2.1",
+    "winston": "^3.8.2",
     "ws": "^7.2.0"
   },
   "keywords": [],

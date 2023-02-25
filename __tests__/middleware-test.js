@@ -6,7 +6,11 @@ import {
   queryRound,
   getOraclesInvitations,
 } from "../src/helpers/chain.js";
-import { iterateReverse, makeLeader, makeFollower } from "@agoric/casting";
+import { 
+  iterateReverse, 
+  makeLeader, 
+  makeFollower 
+} from "@agoric/casting";
 import {
   boardSlottingMarshaller,
   makeAgoricNames,
@@ -104,7 +108,10 @@ sqlite3.Database.mockReturnValue({});
 test("calls getOffers to get latest successful submissions", async () => {
   const offers = await getOffers({});
 
-  //notice how only the first offer should be calculated because for every offer there will be 3 entries
+  /**
+   * Notice how only the first offer should be calculated because for every 
+   * offer there will be 3 entries
+   */
   expect(offers).toStrictEqual([
     {
       status: {
@@ -176,7 +183,7 @@ test("calls queryPrice to query the latest price", async () => {
  * Test for get oracle invitations
  */
 test("calls getOraclesInvitations to get the invitation IDs", async () => {
-  const invitations = await getOraclesInvitations("ATOM-USD");
+  const invitations = await getOraclesInvitations("agoricadd1");
 
   expect(invitations).toStrictEqual({
     "ATOM-USD": 1675687989744,
@@ -195,12 +202,12 @@ test("calls queryRound to query the latest round", async () => {
       }),
   });
 
-  const latestPrice = await queryRound("ATOM-USD");
+  const latestRound = await queryRound("ATOM-USD");
 
-  expect(latestPrice).toStrictEqual({
-    round_id: 802,
-    started_at: 1676499365,
-    started_by: "agoric1lw4e4aas9q84tq0q92j85rwjjjapf8dmnllnft",
-    submission_made: false,
+  expect(latestRound.toObject()).toStrictEqual({
+    roundId: 802,
+    startedAt: 1676499365,
+    startedBy: "agoric1lw4e4aas9q84tq0q92j85rwjjjapf8dmnllnft",
+    submissionMade: false,
   });
 });

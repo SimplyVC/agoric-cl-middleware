@@ -1,4 +1,3 @@
-// @ts-check
 /* global process */
 import { normalizeBech32 } from '@cosmjs/encoding';
 import { execSync } from 'child_process';
