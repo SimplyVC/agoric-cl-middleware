@@ -5,6 +5,7 @@ import { getOracleLatestInfo } from "../helpers/chain.js";
 import { MonitorMetrics } from "../helpers/MonitorMetrics.js";
 import { OracleMonitorConfig } from "../helpers/OracleMonitorConfig.js";
 import { MonitoringState } from "../helpers/MonitoringState.js";
+import monitorEnvInstance from "../helpers/MonitorEnv.js";
 
 let metrics = new MonitorMetrics();
 let oracleConfig = new OracleMonitorConfig(monitorEnvInstance.ORACLE_FILE);
