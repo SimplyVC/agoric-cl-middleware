@@ -19,6 +19,7 @@ export const monitor = async () => {
   setInterval(async () => {
     try {
       oracleConfig.getInvsForOracles();
+      
       // Read monitoring state
       state.readMonitoringState(oracleConfig);
 

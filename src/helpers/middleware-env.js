@@ -3,7 +3,6 @@ import { logger } from "./logger.js";
 
 class MiddlewareENV {
   constructor() {
-    
     const {
       PORT = "3000",
       AGORIC_RPC = "http://0.0.0.0:26657",
@@ -58,11 +57,11 @@ class MiddlewareENV {
 
 // Load environment variables
 let middlewareEnvInstance = {};
-try{
+try {
   middlewareEnvInstance = new MiddlewareENV();
 } catch (err) {
   if (process.env.NODE_ENV !== "test" && process.env.SERVICE !== "monitor") {
-    logger.error("ERROR LOADING ENV VARS: " + err)
+    logger.error("ERROR LOADING ENV VARS: " + err);
     process.exit(1);
   }
 }

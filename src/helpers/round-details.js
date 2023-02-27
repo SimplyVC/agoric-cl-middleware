@@ -20,7 +20,8 @@ export class RoundDetails {
    * @returns {number} returns.startedAt The timestamp when the round
    *                   was started
    * @returns {string} returns.startedBy The address of who started the round
-   * @returns {boolean} returns.submissionMade Whether a submission to this *                    round was made by the oracle
+   * @returns {boolean} returns.submissionMade Whether a submission to this  
+   *                    round was made by the oracle
    */
   toObject() {
     return {

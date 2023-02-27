@@ -51,7 +51,10 @@ export const startBridge = (PORT) => {
           ")"
       );
 
-      // Return a 200 code to the Chainlink node if a successful price is received
+      /**
+       * Return a 200 code to the Chainlink node if a successful price is 
+       * received
+       */
       if (isNaN(result)) {
         res.status(500).send({ success: false });
       } else {

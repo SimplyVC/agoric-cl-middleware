@@ -38,7 +38,7 @@ export const delay = async (ms) => {
 /**
    * Function to check if a file exists
    * @param {string} path filepath
-   * @returns {boolean} if it exists
+   * @returns {boolean} true if file exists, false otherwise
    */
 export const checkFileExists = (path) => {
   try {

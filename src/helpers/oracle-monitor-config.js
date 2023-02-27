@@ -12,6 +12,7 @@ export class OracleMonitorConfig {
       this.oracles = readJSONFile(filePath);
       this.amountsIn = {};
       this.validate();
+
       //get invitations
       this.getInvsForOracles();
     } catch (err) {
@@ -27,6 +28,7 @@ export class OracleMonitorConfig {
   validate() {
     for (let oracle in this.oracles) {
       let currentOracle = this.oracles[oracle];
+      
       // If no oracle name
       if (!("oracleName" in currentOracle)) {
         throw new Error("No oracleName in oracle details");

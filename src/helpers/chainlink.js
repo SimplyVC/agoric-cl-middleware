@@ -30,7 +30,7 @@ export const sendJobRun = async (count, jobId, requestType) => {
     method: "POST",
   };
 
-  //try request with loop retries
+  // Try request with loop retries
   for (let i = 0; i < middlewareEnvInstance.SUBMIT_RETRIES; i++) {
     try {
       await axios.post(options.url, options.body, {

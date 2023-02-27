@@ -54,6 +54,7 @@ export const makeController = () => {
   }, oneSecInterval);
 
   const priceQueryInterval = parseInt(middlewareEnvInstance.BLOCK_INTERVAL, 10);
+  
   //validate polling interval
   assert(
     !isNaN(priceQueryInterval),

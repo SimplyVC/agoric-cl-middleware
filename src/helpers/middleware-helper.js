@@ -51,7 +51,10 @@ export const checkIfInSubmission = async (feed) => {
   let timePassedSinceSubmission =
     Date.now() / 1000 - query.last_submission_time;
 
-  return timePassedSinceSubmission < Number(middlewareEnvInstance.SEND_CHECK_INTERVAL);
+  return (
+    timePassedSinceSubmission <
+    Number(middlewareEnvInstance.SEND_CHECK_INTERVAL)
+  );
 };
 
 /**
@@ -90,7 +93,8 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
   // Check if in submission
   let inSubmission =
-    timePassedSinceSubmission < Number(middlewareEnvInstance.SEND_CHECK_INTERVAL);
+    timePassedSinceSubmission <
+    Number(middlewareEnvInstance.SEND_CHECK_INTERVAL);
 
   // If in submission return false
   if (inSubmission) {
