@@ -19,9 +19,9 @@ import {
 } from "./utils.js";
 import { checkIfInSubmission } from "./middleware-helper.js"
 import { updateTable } from "./db.js";
-import middlewareEnvInstance from './MiddlewareEnv.js';
+import middlewareEnvInstance from './middleware-env.js';
 import { logger } from "./logger.js";
-import { RoundDetails } from "./RoundDetails.js";
+import { RoundDetails } from "./round-details.js";
 
 const marshaller = boardSlottingMarshaller();
 

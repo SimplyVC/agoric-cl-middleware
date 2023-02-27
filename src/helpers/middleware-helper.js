@@ -1,8 +1,8 @@
 import { createDBs, queryTable, updateTable } from "./db.js";
 import { sendJobRun } from "./chainlink.js";
-import { FeedsConfig } from "./FeedsConfig.js";
+import { FeedsConfig } from "./feeds-config.js";
 import { logger } from "./logger.js";
-import middlewareEnvInstance from "./MiddlewareEnv.js";
+import middlewareEnvInstance from "./middleware-env.js";
 
 /**
  * Function to initialise state

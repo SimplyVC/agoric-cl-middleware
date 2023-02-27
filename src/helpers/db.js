@@ -1,6 +1,6 @@
 import { open } from "sqlite";
 import sqlite3 from "sqlite3";
-import middlewareEnvInstance from "./MiddlewareEnv.js";
+import middlewareEnvInstance from "./middleware-env.js";
 
 // Open db
 let db;

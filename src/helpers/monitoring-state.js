@@ -1,5 +1,5 @@
 import { logger } from "./logger.js";
-import { OracleMonitorConfig } from "./OracleMonitorConfig.js";
+import { OracleMonitorConfig } from "./oracle-monitor-config.js";
 import { saveJSONDataToFile } from "./utils.js";
 
 export class MonitoringState {

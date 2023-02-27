@@ -13,7 +13,7 @@ import {
     pushPrice, 
     queryRound 
 } from "../helpers/chain.js";
-import middlewareEnvInstance from '../helpers/MiddlewareEnv.js';
+import middlewareEnvInstance from '../helpers/middleware-env.js';
 import { logger } from "../helpers/logger.js";
 
 /**

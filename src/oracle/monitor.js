@@ -2,10 +2,10 @@ import { createServer } from "http";
 import { parse } from "url";
 import { logger } from "../helpers/logger.js";
 import { getOracleLatestInfo } from "../helpers/chain.js";
-import { MonitorMetrics } from "../helpers/MonitorMetrics.js";
-import { OracleMonitorConfig } from "../helpers/OracleMonitorConfig.js";
-import { MonitoringState } from "../helpers/MonitoringState.js";
-import monitorEnvInstance from "../helpers/MonitorEnv.js";
+import { MonitorMetrics } from "../helpers/monitor-metrics.js";
+import { OracleMonitorConfig } from "../helpers/oracle-monitor-config.js";
+import { MonitoringState } from "../helpers/monitoring-state.js";
+import monitorEnvInstance from "../helpers/monitor-env.js";
 
 let metrics = new MonitorMetrics();
 let oracleConfig = new OracleMonitorConfig(monitorEnvInstance.ORACLE_FILE);
