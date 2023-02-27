@@ -2,7 +2,7 @@ import axios from "axios";
 import http from "http";
 import middlewareEnvInstance from './middleware-env.js';
 import { logger } from "./logger.js";
-import { Credentials } from "./credentials-temp.js";
+import { Credentials } from "./credentials.js";
 
 /**
  * Function to send a job run to the CL node
