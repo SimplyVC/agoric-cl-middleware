@@ -12,6 +12,7 @@ services:
     environment:
       AGORIC_NET: agoriclocal 
       AGORIC_RPC: http://$THIS_VM_IP:26657 
+      MONITORING_POLL_INTERVAL: 10
       SERVICE: monitor
     restart: always
   middleware:

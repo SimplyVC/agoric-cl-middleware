@@ -216,10 +216,14 @@ export const getOraclesInvitations = async (oracle) => {
 
   // Loop through invitations and store the IDs in feedInvs
   for (let inv in invitations) {
-    let boardId = invitations[inv].value[0].instance.boardId;
-    let feed = feedBoards[boardId].split(" price feed")[0];
 
-    feedInvs[feed] = Number(inv);
+    //if there is a value
+    if(invitations[inv].value.length > 0){
+      let boardId = invitations[inv].value[0].instance.boardId;
+      let feed = feedBoards[boardId].split(" price feed")[0];
+  
+      feedInvs[feed] = Number(inv);
+    }
   }
 
   return feedInvs;
@@ -296,7 +300,7 @@ export const outputAction = (bridgeAction) => {
  * @returns {boolean} whether successful
  */
 export const pushPrice = async (price, feed, round, from) => {
-  
+
   // Get offers
   let offers = await getOraclesInvitations(from);
 
@@ -551,7 +555,10 @@ export const getOracleLatestInfo = async (
     }
   }
 
-  // Loop through balances
+  /**
+   * Loop through balances and add only IST and BLD balances for monitoring
+   * because we are only interested in those for the oracle network
+   */
   for (let i = 0; i < offersBalances.balances.length; i++) {
     let currentBalance = offersBalances.balances[i];
 
