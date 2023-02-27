@@ -8,24 +8,13 @@ import {
 } from "../helpers/db.js";
 import { 
     checkForPriceUpdate, 
-} from "../helpers/utils.js";
+} from "../helpers/middleware-helper.js";
 import { 
     pushPrice, 
     queryRound 
 } from "../helpers/chain.js";
-import { MiddlewareENV } from '../helpers/MiddlewareEnv.js';
+import middlewareEnvInstance from '../helpers/MiddlewareEnv.js';
 import { logger } from "../helpers/logger.js";
-
-// Load environment variables
-let envvars = {};
-try{
-  envvars = new MiddlewareENV();
-} catch (err) {
-  if (process.env.NODE_ENV !== "test" && process.env.SERVICE !== "monitor") {
-    logger.error("ERROR LOADING ENV VARS: " + err)
-    process.exit(1);
-  }
-}
 
 /**
  * Function to create a bridge which listens from the Chainlink node for
@@ -99,14 +88,14 @@ export const startBridge = (PORT) => {
          */
         let firstRound = roundToSubmit === 1;
         let notConsecutiveNewRound = 
-        newRound && latestRound.startedBy !== envvars.FROM;
+        newRound && latestRound.startedBy !== middlewareEnvInstance.FROM;
         let noSubmissionForRound = !newRound && !latestRound.submissionMade
 
         if ( firstRound || notConsecutiveNewRound || noSubmissionForRound ) {
           logger.info("Updating price for round " + roundToSubmit);
 
           let submitted = 
-          await pushPrice(result, jobName, roundToSubmit, envvars.FROM);
+          await pushPrice(result, jobName, roundToSubmit, middlewareEnvInstance.FROM);
 
           // Update last reported round
           if (submitted) {

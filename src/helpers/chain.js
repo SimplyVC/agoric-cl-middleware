@@ -15,24 +15,13 @@ import {
 import { getCurrent } from "../lib/wallet.js";
 import { execSwingsetTransaction } from "../lib/chain.js";
 import { 
-    checkIfInSubmission, 
     delay 
 } from "./utils.js";
+import { checkIfInSubmission } from "./middleware-helper.js"
 import { updateTable } from "./db.js";
-import { MiddlewareENV } from './MiddlewareEnv.js';
+import middlewareEnvInstance from './MiddlewareEnv.js';
 import { logger } from "./logger.js";
 import { RoundDetails } from "./RoundDetails.js";
-
-// Load environment variables
-let envvars = {};
-try {
-  envvars = new MiddlewareENV();
-} catch (err) {
-  if (process.env.NODE_ENV !== "test" && process.env.SERVICE !== "monitor") {
-    logger.error("ERROR LOADING ENV VARS: " + err);
-    process.exit(1);
-  }
-}
 
 const marshaller = boardSlottingMarshaller();
 
@@ -50,8 +39,8 @@ const marshaller = boardSlottingMarshaller();
 export const readVStorage = async (feed, roundData) => {
   const vstorage = makeVStorage({ fetch });
   let key = roundData
-    ? "published.priceFeed." + feed + "_price_feed.latestRound"
-    : "published.priceFeed." + feed + "_price_feed";
+    ? `published.priceFeed.${feed}_price_feed.latestRound`
+    : `published.priceFeed.${feed}_price_feed`;
   return await vstorage.readLatest(key);
 };
 
@@ -199,10 +188,10 @@ export const queryPrice = async (feed) => {
       Number(capData.amountOut.value.digits) /
       Number(capData.amountIn.value.digits);
 
-    logger.info(feed + " Price Query: " + String(latestPrice));
+    logger.info(`${feed} Price Query: ${String(latestPrice)}`);
     return latestPrice;
   } catch (err) {
-    logger.error("ERROR querying price: " + err);
+    logger.error(`ERROR querying price:  ${feed}`);
     return -1;
   }
 };
@@ -260,7 +249,7 @@ export const queryRound = async (feed) => {
   let round = Number(capData.roundId.digits);
 
   // Get offers
-  let offers = await getOraclesInvitations(envvars.FROM);
+  let offers = await getOraclesInvitations(middlewareEnvInstance.FROM);
 
   // Check if invitation for feed exists
   if (!(feed in offers)) {
@@ -274,7 +263,7 @@ export const queryRound = async (feed) => {
 
   // Check if there is a submission for round
   let submissionForRound = await checkSubmissionForRound(
-    envvars.FROM,
+    middlewareEnvInstance.FROM,
     feedOfferId,
     round
   );
@@ -341,13 +330,13 @@ export const pushPrice = async (price, feed, round, from) => {
   // Check if submitted for round
   let submitted = await checkSubmissionForRound(from, previousOffer, round);
 
-  // Check if in submission
+  // Check if in submissiona
   let inSubmission = await checkIfInSubmission(feed);
 
   // Loop retries
   for (
     let i = 0;
-    i < envvars.SUBMIT_RETRIES && !submitted && !inSubmission;
+    i < middlewareEnvInstance.SUBMIT_RETRIES && !submitted && !inSubmission;
     i++
   ) {
     // Query round
@@ -392,7 +381,7 @@ export const pushPrice = async (price, feed, round, from) => {
     );
 
     // Sleep SEND_CHECK_INTERVAL seconds
-    await delay((Number(envvars.SEND_CHECK_INTERVAL) + 1) * 1000);
+    await delay((Number(middlewareEnvInstance.SEND_CHECK_INTERVAL) + 1) * 1000);
 
     // Check submission for round
     submitted = await checkSubmissionForRound(from, previousOffer, round);

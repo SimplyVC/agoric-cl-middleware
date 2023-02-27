@@ -1,6 +1,5 @@
 import { logger } from "./logger.js";
 import { readJSONFile } from "./utils.js";
-import { getAmountsIn, getOraclesInvitations } from "./chain.js";
 
 export class Credentials {
   /**
@@ -23,7 +22,7 @@ export class Credentials {
     if (!("EI_IC_ACCESSKEY" in this.credentials)) {
       throw new Error("No EI_IC_ACCESSKEY in credentials");
     }
-    if (!("EI_IC_ACCESSKEY" in this.credentials)) {
+    if (!("EI_IC_SECRET" in this.credentials)) {
       throw new Error("No EI_IC_SECRET in credentials");
     }
   }

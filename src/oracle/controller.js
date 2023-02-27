@@ -1,26 +1,15 @@
 /* eslint-disable func-names */
 
-import { submitNewJob } from "../helpers/utils.js";
+import { submitNewJob } from "../helpers/middleware-helper.js";
 import { getAllJobs, queryTable, updateTable } from "../helpers/db.js";
 import {
   queryPrice,
   queryRound,
   getLatestSubmittedRound,
 } from "../helpers/chain.js";
-import { MiddlewareENV } from '../helpers/MiddlewareEnv.js';
+import middlewareEnvInstance from '../helpers/MiddlewareEnv.js';
 import { logger } from "../helpers/logger.js";
 import { FeedsConfig } from "../helpers/FeedsConfig.js";
-
-// Load environment variables
-let envvars = {};
-try{
-  envvars = new MiddlewareENV();
-} catch (err) {
-  if (process.env.NODE_ENV !== "test" && process.env.SERVICE !== "monitor") {
-    logger.error("ERROR LOADING ENV VARS: " + err)
-    process.exit(1);
-  }
-}
 
 /**
  * Controller for the middleware
@@ -64,11 +53,11 @@ export const makeController = () => {
     
   }, oneSecInterval);
 
-  const priceQueryInterval = parseInt(envvars.BLOCK_INTERVAL, 10);
+  const priceQueryInterval = parseInt(middlewareEnvInstance.BLOCK_INTERVAL, 10);
   //validate polling interval
   assert(
     !isNaN(priceQueryInterval),
-    `$BLOCK_INTERVAL ${envvars.BLOCK_INTERVAL} must be a number`
+    `$BLOCK_INTERVAL ${middlewareEnvInstance.BLOCK_INTERVAL} must be a number`
   );
 
   /**
@@ -99,7 +88,7 @@ export const makeController = () => {
         let latestRound = await queryRound(jobName);
 
         // Get latest submitted round
-        let latestSubmittedRound = await getLatestSubmittedRound(envvars.FROM);
+        let latestSubmittedRound = await getLatestSubmittedRound(middlewareEnvInstance.FROM);
 
         // Update jobs table
         await updateTable(
@@ -176,7 +165,7 @@ export const makeController = () => {
           let noPendingRequests =
             query.request_id === query.last_received_request_id;
           let enoughTimePassed =
-            secondsPassed > Number(envvars.SEND_CHECK_INTERVAL);
+            secondsPassed > Number(middlewareEnvInstance.SEND_CHECK_INTERVAL);
 
           // If a request has not been made yet and we are not waiting
           if (noPendingRequests || enoughTimePassed) {

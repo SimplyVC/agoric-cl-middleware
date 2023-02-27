@@ -1,26 +1,14 @@
 import { createServer } from "http";
 import { parse } from "url";
 import { logger } from "../helpers/logger.js";
-import { MonitorENV } from "../helpers/MonitorEnv.js";
 import { getOracleLatestInfo } from "../helpers/chain.js";
 import { MonitorMetrics } from "../helpers/MonitorMetrics.js";
 import { OracleMonitorConfig } from "../helpers/OracleMonitorConfig.js";
-import { MonitoringState } from "../helpers/MonitoringState.js";
-
-
-let envvars = {};
-try {
-  envvars = new MonitorENV();
-} catch (err) {
-  if (process.env.NODE_ENV !== "test" && process.env.SERVICE !== "monitor") {
-    logger.error("ERROR LOADING ENV VARS: " + err);
-    process.exit(1);
-  }
-}
+import { MonitoringState } from "../helpers/monitoringState.js";
 
 let metrics = new MonitorMetrics();
-let oracleConfig = new OracleMonitorConfig(envvars.ORACLE_FILE);
-let state = new MonitoringState(envvars.STATE_FILE, oracleConfig);
+let oracleConfig = new OracleMonitorConfig(monitorEnvInstance.ORACLE_FILE);
+let state = new MonitoringState(monitorEnvInstance.MONITOR_STATE_FILE, oracleConfig);
 
 /**
  * Main function to monitor
@@ -54,7 +42,7 @@ export const monitor = async () => {
     } catch (err) {
       logger.error("MONITOR ERROR: " + err);
     }
-  }, envvars.POLL_INTERVAL * 1000);
+  }, monitorEnvInstance.MONITOR_POLL_INTERVAL * 1000);
 };
 
 /**
@@ -73,7 +61,7 @@ const startServer = () => {
     }
   });
 
-  server.listen(envvars.PORT);
+  server.listen(monitorEnvInstance.PORT);
 };
 
 startServer();

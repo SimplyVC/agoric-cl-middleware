@@ -1,18 +1,6 @@
 import { open } from "sqlite";
 import sqlite3 from "sqlite3";
-import { MiddlewareENV } from "./MiddlewareEnv.js";
-import { logger } from "./logger.js";
-
-// Load environment variables
-let envvars = {};
-try {
-  envvars = new MiddlewareENV();
-} catch (err) {
-  if (process.env.NODE_ENV !== "test" && process.env.SERVICE !== "monitor") {
-    logger.error("ERROR LOADING ENV VARS: " + err);
-    process.exit(1);
-  }
-}
+import middlewareEnvInstance from "./MiddlewareEnv.js";
 
 // Open db
 let db;
@@ -23,7 +11,7 @@ let db;
 const loadDB = async () => {
   if (!db) {
     db = await open({
-      filename: envvars.DB_FILE,
+      filename: middlewareEnvInstance.DB_FILE,
       driver: sqlite3.Database,
     });
   }
