@@ -16,7 +16,7 @@ export const sendJobRun = async (count, jobId, requestType) => {
   const credentials = new Credentials(middlewareEnvInstance.CREDENTIALS_FILE);
 
   const options = {
-    url: `${middlewareEnvInstance.EI_CHAINLINKURL$}/v2/jobs/${jobId}/runs`,
+    url: `${middlewareEnvInstance.EI_CHAINLINKURL}/v2/jobs/${jobId}/runs`,
     body: {
       payment: 0,
       request_id: count,
