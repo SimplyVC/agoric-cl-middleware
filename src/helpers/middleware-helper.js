@@ -31,7 +31,7 @@ export const submitNewJob = async (feed, requestType) => {
     feed
   );
 
-  logger.info("Sending job spec " + feed + " request " + newRequestId);
+  logger.info(`Sending job spec ${feed} request ${newRequestId}`);
 
   // Send job run
   await sendJobRun(newRequestId, query.id, requestType);
@@ -76,7 +76,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   let feeds = new FeedsConfig();
 
   if (!(jobName in feeds.feeds)) {
-    throw new Error(jobName + " not found in list of feeds");
+    throw new Error(`${jobName} not found in list of feeds`);
   }
 
   // Get time now

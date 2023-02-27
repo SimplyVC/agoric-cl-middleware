@@ -11,7 +11,7 @@ export class Credentials {
       this.credentials = readJSONFile(filePath);
       this.validate();
     } catch (err) {
-      logger.error("Cannot load credentials from " + filePath + ": " + err);
+      logger.error(`Cannot load credentials from ${filePath}: ${err}`);
     }
   }
 

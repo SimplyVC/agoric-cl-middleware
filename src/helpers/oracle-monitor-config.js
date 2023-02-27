@@ -16,9 +16,7 @@ export class OracleMonitorConfig {
       //get invitations
       this.getInvsForOracles();
     } catch (err) {
-      logger.error(
-        "Cannot load OracleMonitorConfig from " + filePath + ": " + err
-      );
+      logger.error(`Cannot load OracleMonitorConfig from ${filePath}: ${err}`);
     }
   }
 
