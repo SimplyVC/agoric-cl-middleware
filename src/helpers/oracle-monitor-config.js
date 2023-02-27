@@ -28,7 +28,7 @@ export class OracleMonitorConfig {
   validate() {
     for (let oracle in this.oracles) {
       let currentOracle = this.oracles[oracle];
-      
+
       // If no oracle name
       if (!("oracleName" in currentOracle)) {
         throw new Error("No oracleName in oracle details");
@@ -40,11 +40,12 @@ export class OracleMonitorConfig {
    * Function to get feed invitations for multiple oracles
    */
   async getInvsForOracles() {
-    // For each oracle
+
+    // Loop through oracles
     for (let oracle in this.oracles) {
       let invitations = await getOraclesInvitations(oracle);
 
-      // For each invitation
+      // Loop through invitations
       for (let feed in invitations) {
         if (!("feeds" in this.oracles[oracle])) {
           this.oracles[oracle]["feeds"] = {};

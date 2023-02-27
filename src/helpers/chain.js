@@ -174,7 +174,7 @@ export const queryPrice = async (feed) => {
     let capData;
 
     try {
-      //parse the value
+      // Parse the value
       capData = JSON.parse(JSON.parse(capDataStr).value);
       capData = JSON.parse(capData.values[0]);
 
@@ -214,7 +214,7 @@ export const getOraclesInvitations = async (oracle) => {
   const current = await getCurrent(String(oracle), fromBoard, { vstorage });
   const invitations = current.offerToUsedInvitation;
 
-  // For each invitation
+  // Loop through invitations and store the IDs in feedInvs
   for (let inv in invitations) {
     let boardId = invitations[inv].value[0].instance.boardId;
     let feed = feedBoards[boardId].split(" price feed")[0];
@@ -237,10 +237,10 @@ export const queryRound = async (feed) => {
   let capData;
 
   try {
-    //parse the value
+    // Parse the value
     capData = JSON.parse(JSON.parse(capDataStr).value);
     capData = JSON.parse(capData.values[capData.values.length - 1]);
-    
+
     // Replace any extra characters
     capData = JSON.parse(capData.body.replaceAll("\\", ""));
   } catch (err) {
@@ -296,9 +296,7 @@ export const outputAction = (bridgeAction) => {
  * @returns {boolean} whether successful
  */
 export const pushPrice = async (price, feed, round, from) => {
-  // Create an offerId with the Date number
-  let offerId = Date.now();
-
+  
   // Get offers
   let offers = await getOraclesInvitations(from);
 
@@ -437,7 +435,7 @@ export const getOffersAndBalances = async (follower, oracle) => {
 export const getAmountsIn = async (feed) => {
   const capDataStr = await readVStorage(feed, false)
 
-  //parse the value
+  // Parse the value
   let capData = JSON.parse(JSON.parse(capDataStr).value);
   capData = JSON.parse(capData.values[0]);
 
