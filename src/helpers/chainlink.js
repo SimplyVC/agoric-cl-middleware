@@ -1,20 +1,8 @@
-import { readJSONFile } from "./utils.js";
 import axios from "axios";
 import http from "http";
-import { MiddlewareENV } from './MiddlewareEnv.js';
+import middlewareEnvInstance from './middleware-env.js';
 import { logger } from "./logger.js";
-import { Credentials } from "./Credentials.js";
-
-// Load environment variables
-let envvars = {};
-try{
-  envvars = new MiddlewareENV();
-} catch (err) {
-  if (process.env.NODE_ENV !== "test" && process.env.SERVICE !== "monitor") {
-    logger.error("ERROR LOADING ENV VARS: " + err)
-    process.exit(1);
-  }
-}
+import { Credentials } from "./credentials.js";
 
 /**
  * Function to send a job run to the CL node
@@ -25,10 +13,10 @@ try{
  */
 export const sendJobRun = async (count, jobId, requestType) => {
   // Read initiator credentials
-  const credentials = new Credentials(envvars.CREDENTIALS_FILE);
+  const credentials = new Credentials(middlewareEnvInstance.CREDENTIALS_FILE);
 
   const options = {
-    url: envvars.EI_CHAINLINKURL + "/v2/jobs/" + jobId + "/runs",
+    url: middlewareEnvInstance.EI_CHAINLINKURL + "/v2/jobs/" + jobId + "/runs",
     body: {
       payment: 0,
       request_id: count,
@@ -42,8 +30,8 @@ export const sendJobRun = async (count, jobId, requestType) => {
     method: "POST",
   };
 
-  //try request with loop retries
-  for (let i = 0; i < envvars.SUBMIT_RETRIES; i++) {
+  // Try request with loop retries
+  for (let i = 0; i < middlewareEnvInstance.SUBMIT_RETRIES; i++) {
     try {
       await axios.post(options.url, options.body, {
         timeout: 5000,

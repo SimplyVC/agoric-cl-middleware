@@ -1,21 +1,10 @@
 /* eslint-disable func-names */
 
-import { initialiseState } from '../helpers/utils.js';
+import { initialiseState } from '../helpers/middleware-helper.js';
 import { startBridge } from './bridge.js'
 import { makeController } from './controller.js'
-import { MiddlewareENV } from '../helpers/MiddlewareEnv.js';
+import middlewareEnvInstance from '../helpers/middleware-env.js';
 import { logger } from '../helpers/logger.js';
-
-// Load environment variables
-let envvars = {};
-try{
-  envvars = new MiddlewareENV();
-} catch (err) {
-  if (process.env.NODE_ENV !== "test" && process.env.SERVICE !== "monitor") {
-    logger.error("ERROR LOADING ENV VARS: " + err)
-    process.exit(1);
-  }
-}
 
 /**
   * This is the function which runs the middleware
@@ -27,7 +16,7 @@ export const middleware = async () => {
   await initialiseState()
 
   // Start the bridge
-  startBridge(envvars.PORT);
+  startBridge(middlewareEnvInstance.PORT);
 
   // Calculate how many seconds left for a new minute
   let secondsLeft = 60 - (new Date().getSeconds());

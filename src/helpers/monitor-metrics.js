@@ -63,13 +63,13 @@ export class MonitorMetrics {
 
   /**
    * Function to update metrics
-   * @param {*} oracleName oracle name
-   * @param {*} oracle oracle address
-   * @param {*} feed feed name
-   * @param {*} value new feed value
-   * @param {*} id submission id which is a timestamp
-   * @param {*} actualPrice feed actual aggregated price
-   * @param {*} lastRound latest round id for which there was a submission
+   * @param {string} oracleName oracle name
+   * @param {string} oracle oracle address
+   * @param {string} feed feed name (Ex. ATOM-USD)
+   * @param {number} value new feed value
+   * @param {number} id submission id which is a timestamp
+   * @param {number} actualPrice feed actual aggregated price
+   * @param {number} lastRound latest round id for which there was a submission
    */
   updateMetrics(oracleName, oracle, feed, value, id, actualPrice, lastRound) {
     // Calculate price deviation from actual value
@@ -84,10 +84,10 @@ export class MonitorMetrics {
 
   /**
    * Function to update balance metrics
-   * @param {*} oracleName oracle name
-   * @param {*} oracle oracle address
-   * @param {*} brand brand
-   * @param {*} value balance value to set
+   * @param {string} oracleName oracle name
+   * @param {string} oracle oracle address
+   * @param {string} brand brand
+   * @param {number} value balance value to set
    */
   updateBalanceMetrics(oracleName, oracle, brand, value) {
     this.oracleBalance.labels(oracleName, oracle, brand).set(value);

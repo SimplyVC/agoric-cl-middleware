@@ -1,5 +1,5 @@
 import { logger } from "./logger.js";
-import { OracleMonitorConfig } from "./OracleMonitorConfig.js";
+import { OracleMonitorConfig } from "./oracle-monitor-config.js";
 import { saveJSONDataToFile } from "./utils.js";
 
 export class MonitoringState {
@@ -11,7 +11,7 @@ export class MonitoringState {
   constructor(filePath, oracleConfig) {
     try {
       this.stateFile = filePath;
-      this.state = this.readMonitoringState(oracleConfig);
+      this.readMonitoringState(oracleConfig);
       this.validate();
     } catch (err) {
       logger.error("Cannot load MonitoringState from " + filePath + ": " + err);
@@ -72,16 +72,17 @@ export class MonitoringState {
   validate() {
     for (let oracle in this.state) {
       let currentOracle = this.state[oracle];
+
       // If no last_index
       if (!("last_index" in currentOracle)) {
         throw new Error("No last_index in " + oracle + "'s state");
       }
       if (!("values" in currentOracle)) {
-        throw new Error("No last_index in " + oracle + "'s state");
+        throw new Error("No values in " + oracle + "'s state");
       }
 
       //if there is a last_index there should be values
-      if (currentOracle.last_index != 0) {
+      if (currentOracle.last_index !== 0) {
         //loop through feeds and confirm they have all fields
         for (let feed in currentOracle.value) {
           if (!("price" in currentOracle.values[feed])) {

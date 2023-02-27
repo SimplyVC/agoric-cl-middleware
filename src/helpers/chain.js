@@ -15,24 +15,13 @@ import {
 import { getCurrent } from "../lib/wallet.js";
 import { execSwingsetTransaction } from "../lib/chain.js";
 import { 
-    checkIfInSubmission, 
     delay 
 } from "./utils.js";
+import { checkIfInSubmission } from "./middleware-helper.js"
 import { updateTable } from "./db.js";
-import { MiddlewareENV } from './MiddlewareEnv.js';
+import middlewareEnvInstance from './middleware-env.js';
 import { logger } from "./logger.js";
-import { RoundDetails } from "./RoundDetails.js";
-
-// Load environment variables
-let envvars = {};
-try {
-  envvars = new MiddlewareENV();
-} catch (err) {
-  if (process.env.NODE_ENV !== "test" && process.env.SERVICE !== "monitor") {
-    logger.error("ERROR LOADING ENV VARS: " + err);
-    process.exit(1);
-  }
-}
+import { RoundDetails } from "./round-details.js";
 
 const marshaller = boardSlottingMarshaller();
 
@@ -50,8 +39,8 @@ const marshaller = boardSlottingMarshaller();
 export const readVStorage = async (feed, roundData) => {
   const vstorage = makeVStorage({ fetch });
   let key = roundData
-    ? "published.priceFeed." + feed + "_price_feed.latestRound"
-    : "published.priceFeed." + feed + "_price_feed";
+    ? `published.priceFeed.${feed}_price_feed.latestRound`
+    : `published.priceFeed.${feed}_price_feed`;
   return await vstorage.readLatest(key);
 };
 
@@ -185,9 +174,10 @@ export const queryPrice = async (feed) => {
     let capData;
 
     try {
-      //parse the value
+      // Parse the value
       capData = JSON.parse(JSON.parse(capDataStr).value);
       capData = JSON.parse(capData.values[0]);
+
       // Replace any extra characters
       capData = JSON.parse(capData.body.replaceAll("\\", ""));
     } catch (err) {
@@ -199,10 +189,10 @@ export const queryPrice = async (feed) => {
       Number(capData.amountOut.value.digits) /
       Number(capData.amountIn.value.digits);
 
-    logger.info(feed + " Price Query: " + String(latestPrice));
+    logger.info(`${feed} Price Query: ${String(latestPrice)}`);
     return latestPrice;
   } catch (err) {
-    logger.error("ERROR querying price: " + err);
+    logger.error(`ERROR querying price:  ${feed}`);
     return -1;
   }
 };
@@ -224,12 +214,16 @@ export const getOraclesInvitations = async (oracle) => {
   const current = await getCurrent(String(oracle), fromBoard, { vstorage });
   const invitations = current.offerToUsedInvitation;
 
-  // For each invitation
+  // Loop through invitations and store the IDs in feedInvs
   for (let inv in invitations) {
-    let boardId = invitations[inv].value[0].instance.boardId;
-    let feed = feedBoards[boardId].split(" price feed")[0];
 
-    feedInvs[feed] = Number(inv);
+    //if there is a value
+    if(invitations[inv].value.length > 0){
+      let boardId = invitations[inv].value[0].instance.boardId;
+      let feed = feedBoards[boardId].split(" price feed")[0];
+  
+      feedInvs[feed] = Number(inv);
+    }
   }
 
   return feedInvs;
@@ -247,9 +241,10 @@ export const queryRound = async (feed) => {
   let capData;
 
   try {
-    //parse the value
+    // Parse the value
     capData = JSON.parse(JSON.parse(capDataStr).value);
     capData = JSON.parse(capData.values[capData.values.length - 1]);
+
     // Replace any extra characters
     capData = JSON.parse(capData.body.replaceAll("\\", ""));
   } catch (err) {
@@ -260,7 +255,7 @@ export const queryRound = async (feed) => {
   let round = Number(capData.roundId.digits);
 
   // Get offers
-  let offers = await getOraclesInvitations(envvars.FROM);
+  let offers = await getOraclesInvitations(middlewareEnvInstance.FROM);
 
   // Check if invitation for feed exists
   if (!(feed in offers)) {
@@ -274,7 +269,7 @@ export const queryRound = async (feed) => {
 
   // Check if there is a submission for round
   let submissionForRound = await checkSubmissionForRound(
-    envvars.FROM,
+    middlewareEnvInstance.FROM,
     feedOfferId,
     round
   );
@@ -305,8 +300,6 @@ export const outputAction = (bridgeAction) => {
  * @returns {boolean} whether successful
  */
 export const pushPrice = async (price, feed, round, from) => {
-  // Create an offerId with the Date number
-  let offerId = Date.now();
 
   // Get offers
   let offers = await getOraclesInvitations(from);
@@ -341,13 +334,13 @@ export const pushPrice = async (price, feed, round, from) => {
   // Check if submitted for round
   let submitted = await checkSubmissionForRound(from, previousOffer, round);
 
-  // Check if in submission
+  // Check if in submissiona
   let inSubmission = await checkIfInSubmission(feed);
 
   // Loop retries
   for (
     let i = 0;
-    i < envvars.SUBMIT_RETRIES && !submitted && !inSubmission;
+    i < middlewareEnvInstance.SUBMIT_RETRIES && !submitted && !inSubmission;
     i++
   ) {
     // Query round
@@ -392,7 +385,7 @@ export const pushPrice = async (price, feed, round, from) => {
     );
 
     // Sleep SEND_CHECK_INTERVAL seconds
-    await delay((Number(envvars.SEND_CHECK_INTERVAL) + 1) * 1000);
+    await delay((Number(middlewareEnvInstance.SEND_CHECK_INTERVAL) + 1) * 1000);
 
     // Check submission for round
     submitted = await checkSubmissionForRound(from, previousOffer, round);
@@ -446,7 +439,7 @@ export const getOffersAndBalances = async (follower, oracle) => {
 export const getAmountsIn = async (feed) => {
   const capDataStr = await readVStorage(feed, false)
 
-  //parse the value
+  // Parse the value
   let capData = JSON.parse(JSON.parse(capDataStr).value);
   capData = JSON.parse(capData.values[0]);
 
@@ -562,7 +555,10 @@ export const getOracleLatestInfo = async (
     }
   }
 
-  // Loop through balances
+  /**
+   * Loop through balances and add only IST and BLD balances for monitoring
+   * because we are only interested in those for the oracle network
+   */
   for (let i = 0; i < offersBalances.balances.length; i++) {
     let currentBalance = offersBalances.balances[i];
 
