@@ -12,7 +12,7 @@ export const readJSONFile = (filename) => {
     let rawData = fs.readFileSync(filename);
     return JSON.parse(String(rawData));
   } catch (err) {
-    logger.error("Failed to read JSON file " + filename + ": " + err);
+    logger.error(`Failed to read JSON file ${filename}: ${err}`);
     process.exit(1)
   }
 };

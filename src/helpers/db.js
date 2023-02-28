@@ -81,7 +81,7 @@ export const deleteJob = async (id) => {
   try {
     await loadDB();
 
-    await db.run("DELETE from jobs where id = '" + id + "';");
+    await db.run(`DELETE from jobs where id = '${id}';`);
   } catch (err) {
     throw new Error("DB ERROR when deleting job: " + err);
   }
@@ -140,16 +140,7 @@ export const updateTable = async (table, values, name) => {
 
   try {
     await db.run(
-      "UPDATE " +
-        table +
-        " SET " +
-        update +
-        " WHERE " +
-        keyName +
-        " = '" +
-        name +
-        "';",
-      actualValues
+      `UPDATE ${table} SET ${update} WHERE ${keyName} = '${name}';`, actualValues
     );
   } catch (err) {
     throw new Error("DB ERROR when updating table: " + err);

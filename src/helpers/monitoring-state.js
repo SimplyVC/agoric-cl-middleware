@@ -14,7 +14,7 @@ export class MonitoringState {
       this.readMonitoringState(oracleConfig);
       this.validate();
     } catch (err) {
-      logger.error("Cannot load MonitoringState from " + filePath + ": " + err);
+      logger.error(`Cannot load MonitoringState from ${filePath}: ${err}`);
     }
   }
 
@@ -75,10 +75,10 @@ export class MonitoringState {
 
       // If no last_index
       if (!("last_index" in currentOracle)) {
-        throw new Error("No last_index in " + oracle + "'s state");
+        throw new Error(`No last_index in ${oracle}'s state`);
       }
       if (!("values" in currentOracle)) {
-        throw new Error("No values in " + oracle + "'s state");
+        throw new Error(`No values in ${oracle}'s state`);
       }
 
       //if there is a last_index there should be values
@@ -86,17 +86,13 @@ export class MonitoringState {
         //loop through feeds and confirm they have all fields
         for (let feed in currentOracle.value) {
           if (!("price" in currentOracle.values[feed])) {
-            throw new Error(
-              "No price for " + feed + " in " + oracle + "'s state"
-            );
+            throw new Error(`No price for ${feed} in ${oracle}'s state`);
           }
           if (!("id" in currentOracle.values[feed])) {
-            throw new Error("No id for " + feed + " in " + oracle + "'s state");
+            throw new Error(`No id for ${feed} in ${oracle}'s state`);
           }
           if (!("round" in currentOracle.values[feed])) {
-            throw new Error(
-              "No round for " + feed + " in " + oracle + "'s state"
-            );
+            throw new Error(`No round for ${feed} in ${oracle}'s state`);
           }
         }
       }

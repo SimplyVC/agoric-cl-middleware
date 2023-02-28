@@ -260,7 +260,7 @@ export const queryRound = async (feed) => {
   // Check if invitation for feed exists
   if (!(feed in offers)) {
     throw new Error(
-      "Invitation for " + feed + " not found in oracle invitations"
+      `Invitation for ${feed} not found in oracle invitations`
     );
   }
 
@@ -282,7 +282,7 @@ export const queryRound = async (feed) => {
     submissionForRound
   );
 
-  logger.info(feed + " Latest Round: " + latestRound.roundId);
+  logger.info(`${feed} Latest Round: ${latestRound.roundId}`);
   return latestRound;
 };
 
@@ -307,7 +307,7 @@ export const pushPrice = async (price, feed, round, from) => {
   // Check if invitation for feed exists
   if (!(feed in offers)) {
     throw new Error(
-      "Invitation for " + feed + " not found in oracle invitations"
+      `Invitation for ${feed} not found in oracle invitations`
     );
   }
 
@@ -358,7 +358,7 @@ export const pushPrice = async (price, feed, round, from) => {
       return false;
     }
 
-    logger.info("Submitting price for round " + round + " attempt " + (i + 1));
+    logger.info(`Submitting price for round ${round} attempt ${(i + 1)}`);
 
     offer.id = Number(Date.now());
 
@@ -467,7 +467,7 @@ export const getOracleLatestInfo = async (
 ) => {
   // Get feeds for oracle
   let feeds = oracleDetails["feeds"];
-  logger.info("Getting prices for " + oracle + " - " + JSON.stringify(feeds));
+  logger.info(`Getting prices for ${oracle} - ${JSON.stringify(feeds)}`);
 
   let fromBoard = makeFromBoard();
   const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
