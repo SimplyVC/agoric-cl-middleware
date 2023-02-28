@@ -6,6 +6,11 @@
   - [Middleware](#middleware)
   - [Monitoring](#monitoring)
 - [File structure](#file-structure)
+- [Considerations](#considerations)
+  - [Why not use a Chainlink cron job?](#consid1)
+  - [Why does the middleware consist of an exposed API and two intervalled functions?](#consid2)
+  - [Why does the middleware only consider the last few offers when making checks?](#consid3)
+  - [Intervals](#consid4)
 - [Technical Documentation](#technical-documentation)
 - [How to run](#htr)
 
@@ -39,7 +44,7 @@ Smart Contract - https://github.com/Agoric/agoric-sdk/tree/8720d22ddf25a005aee25
 
 The middleware is needed to:
 1. Create CL jobs. CL jobs are created every minute. A cron job is not used in order to be able to pass in particular inputs to the job run so that the progress of the request can be stored and monitored.
-2. Get price responses back from the CL node after Job requests are made from the middleware.
+2. Get price responses back from the CL node after job requests are made from the middleware.
 3. Query smart contract to see if submission period for a new round is open.
 4. Submit a transaction to update prices on-chain.
 
@@ -206,9 +211,50 @@ This is a docker file to build the monitoring script
 
 This is a Grafana template to monitor an oracle node or the whole oracle network
 
+## Considerations
+
+<div id='consid1'></div>
+
+##### Why not use a Chainlink cron job?
+
+Instead of having a middleware which sends Chainlink job requests to the Chainlink node, we could have used a cron job type when specifying the job specification. However, we opted to use the middleware to initiate jobs for the following reasons:
+
+1. We can send a request ID and keep track of which requests we got responses for. This can be useful when implementing an efficient strategy which does not send unneeded and extra job requests to the node, resulting in extra subscription costs for node operators.
+2. We need to send CL job requests in other cases, such as when there is a new round on chain or when a price deviation is found. If we use a cron job we would not be able to initiate extra job requests without having a duplicate job just for this, making the whole setup messy and unsustainable.
+
+<div id='consid2'></div>
+
+##### Why does the middleware consist of an exposed API and two intervalled functions?
+
+The middleware works in the following way:
+
+- It constantly listens to requests to its web server. These requests can either be that a new job was added or an existing job was removed. It can be a request indicating that a job run finished and the CL node sends the result to our server. The middleware needs this webserver to be able to constantly listen for updates from the CL node without interrupting the main thread of the execution described below.
+- In addition, it has two intervalled functions created using the native JS <b>setInterval()</b> function. 
+  - One of these functions depends on POLL_INTERVAL, and it is used to create a job request on the Chainlink node every X seconds to get the latest price off-chain.
+  - The other function depends on BLOCK_INTERVAL and it is used to query the latest aggregated price and round details on chain. This is needed in order to create an extra CL job request if there is a price deviation or a new round on chain
+
+<div id='consid3'></div>
+
+### Why does the middleware only consider the last few offers when making checks?
+
+As time goes by, oracles will have sent multiple offers and it is inefficient to go through all of the offers whenever we need to check whether an oracle made a submission to a recent round. Therefore, in order to tackle this, we do the following:
+- Store the latest observed ID (IDs are timestamps of when the offer was created so they are incremental) in the state
+- When obtaining offers, we reverse the offers to start from the latest and only loop till the last observed ID.
+
+<div id='consid4'></div>
+
+##### Intervals
+
+In this subsection, we will be describing the various intervals in the middleware and why the reasons behind their default values.
+
+- pollInterval (for each feed) - This is the interval at which new CL job requests are created. This is set to 1 minute in order to query the off-chain price every minute. This is useful so that the price is checked every minute and if the results deviates more than the <b>priceDeviationPerc</b>(for that feed) value, a submission is made on chain, instructing all other oracles to check the price and submit to the new round.
+- pushInterval (for each feed) - This is the interval at which prices need to be pushed on chain. This is set to 1 hour as the on-chain price does not need to be updated more frequently than every hour. Since the POLL_INTERVAL is set to 1 minute, the off-chain price will be checked every 1 minute and if a deviation occurs, a new price update will still be pushed on-chain before the 1 hour threshold. This will save transaction fees for useless updates if the price remains stable for an hour.
+- BLOCK_INTERVAL - This is the interval at which new blocks are created on chain. This is set to 6 seconds to match the block time on the Agoric chain. This is used to query the aggregated price and the round details on chain. It is useless to set this value lower than 6 seconds as the price and rounds will only be updated maximum every block.
+- SEND_CHECK_INTERVAL - This is the interval which needs to pass before retrying a price submission. We wait this interval before checking whether a price push was successful or not. We set this to 45 seconds to give enough time for the submission to be inserted in a block.
+
 ## Technical Documentation
 
-Technical documentation can be found [here](docs/otherfile.md)
+Technical documentation can be found [here](docs/DOCUMENTATION.md)
 
 ## How to run 
 #### Create oracles.json file
