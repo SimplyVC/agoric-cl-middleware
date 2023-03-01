@@ -29,38 +29,46 @@
     - [delay(ms)](#delay)
     - [checkFileExists(path)](#checkFileExists)
     - [validUrl(url)](#validUrl)
-  - [helpers/credentials.js](#credentialsjs)
-    - [constructor(filePath)](#constructorCredentials)
-    - [validate()](#validateCredentials)
-  - [helpers/feeds-config.js](#feedsconfigjs)
-    - [constructor()](#constructorFeedsconfig)
-    - [validate()](#validateFeedsconfig)
   - [helpers/middleware-helper.js](#middlewarehelperjs)
     - [initialiseState()](#initialiseState)
     - [submitNewJob(feed, requestType)](#submitNewJob)
     - [checkIfInSubmission(feed)](#checkIfInSubmission)
     - [checkForPriceUpdate(jobName, requestType)](#checkForPriceUpdate)
+  - [helpers/credentials.js](#credentialsjs)
+    - [Properties](#credentialsproperties)
+    - [constructor(filePath)](#constructorCredentials)
+    - [validate()](#validateCredentials)
+  - [helpers/feeds-config.js](#feedsconfigjs)
+    - [Properties](#feedsconfigproperties)
+    - [constructor()](#constructorFeedsconfig)
+    - [validate()](#validateFeedsconfig)
   - [helpers/middleware-env.js](#middlewareenvjs)
+    - [Properties](#middlewareenvproperties)
     - [constructor()](#constructorMiddlewareenv)
+    - [validate()](#validateMiddlewareenv)
   - [helpers/monitor-env.js](#monitorenvjs)
+    - [Properties](#monitorenvproperties)
     - [constructor()](#constructorMonitorenv)
     - [validate()](#validateMonitorenv)
-  - [helpers/monitoring-state.js](#monitoringstatejs)
-    - [constructor(filePath, oracleConfig)](#constructorMonitoringstate)
-    - [validate()](#validateMonitoringstate)
-    - [readMonitoringState(oracleConfig)](#readMonitoringState)
-    - [initialiseStateForOracle(oracle)](#initialiseStateForOracle)
-    - [updateOracleState(oracle, newState)](#updateOracleState)
   - [helpers/monitor-metrics.js](#monitormetricsjs)
     - [Metrics](#metrics)
     - [constructor()](#constructorMonitormetrics)
     - [updateMetrics(oracleName, oracle, feed, value, id, actualPrice, lastRound)](#updateMetrics)
     - [updateBalanceMetrics(oracleName, oracle, feed, value)](#updateBalanceMetrics)
+  - [helpers/monitoring-state.js](#monitoringstatejs)
+    - [Properties](#monitoringstateproperties)
+    - [constructor(filePath, oracleConfig)](#constructorMonitoringstate)
+    - [validate()](#validateMonitoringstate)
+    - [readMonitoringState(oracleConfig)](#readMonitoringState)
+    - [initialiseStateForOracle(oracle)](#initialiseStateForOracle)
+    - [updateOracleState(oracle, newState)](#updateOracleState)
   - [helpers/oracle-monitor-config.js](#oraclemonitorconfigjs)
+    - [Properties](#omcproperties)
     - [constructor(filePath)](#constructorOraclemonitorconfig)
     - [validate()](#validateOraclemonitorconfig)
     - [getInvsForOracles()](#getInvsForOracles)
   - [helpers/round-details.js](#rounddetailsjs)
+    - [Properties](#rounddetailsproporties)
     - [constructor(roundId, startedAt, startedBy, submissionMade)](#constructorRoundDetails)
     - [toObject()](#toObject)
   - [oracle/controller.js](#controllerjs)
@@ -366,6 +374,16 @@ This file contains helper functions which are used to update state in the DB.
 The file contains the following functions:
 
 <br>
+<div id='loadDB'></div>
+
+<b>loadDB()</b>
+
+Use: This function is used to load the DB so that it can be used by the other functions
+
+What it does:
+  1. Opens the DB using the sqlite3.Database driver
+
+<br>
 <div id='createDBs'></div>
 
 <b>createDBs()</b>
@@ -373,7 +391,8 @@ The file contains the following functions:
 Use: This function is used to initialise the required tables in the DB
 
 What it does:
-  1. Creates the required tables if they do not exist using db.exec()
+  1. Loads the DB using loadDB
+  2. Creates the required tables if they do not exist using db.exec()
 
 <br>
 <div id='getAllJobs'></div>
@@ -385,7 +404,8 @@ Use: This function is used to get all the jobs in the DB
 Returns: An array of jobs
 
 What it does:
-  1. Uses db.all() to return all the jobs in the jobs table
+  1. Loads the DB using loadDB
+  2. Uses db.all() to return all the jobs in the jobs table
 
 <br>
 <div id='createJob'></div>
@@ -399,8 +419,9 @@ Inputs:
 Use: This function is used to add a new job to the DB and initialise its state.
 
 What it does:
-  1. Creates a record in the jobs table using db.exec()
-  2. Creates a record in the rounds table using db.exec()
+  1. Loads the DB using loadDB
+  2. Creates a record in the jobs table using db.exec()
+  3. Creates a record in the rounds table using db.exec()
 
 <br>
 <div id='deleteJob'></div>
@@ -413,7 +434,8 @@ Inputs:
 Use: This function is used to delete a job from the DB
 
 What it does:
-  1. Removes the job from the jobs and rounds table using db.exec()
+  1. Loads the DB using loadDB
+  2. Removes the job from the jobs and rounds table using db.exec()
 
 <br>
 <div id='queryTable'></div>
@@ -430,7 +452,8 @@ Use: This function is used to query either the jobs or rounds table
 Returns: An object containing the record in the DB for the given field
 
 What it does:
-  1. Builds the SQL query and queries the DB using db.get(). This function is used because we always will need only 1 record. Hence, no need for db.all().
+  1. Loads the DB using loadDB
+  2. Builds the SQL query and queries the DB using db.get(). This function is used because we always will need only 1 record. Hence, no need for db.all().
 
 <br>
 <div id='updateTable'></div>
@@ -447,7 +470,8 @@ Use: This function is used to query either the jobs or rounds table
 Returns: An object containing the record in the DB for the given field
 
 What it does:
-  1. Builds the SQL command and updates the DB using db.exec().
+  1. Loads the DB using loadDB
+  2. Builds the SQL command and updates the DB using db.exec().
 
 <div id='helperjs'></div>
 
@@ -501,6 +525,11 @@ Use: This function is used to create a delay
 
 Returns: A Promise with a delay of a specified number of milliseconds
 
+
+<br>
+<div id='middlewarehelperjs'></div>
+
+### <u>helpers/middleware-helper.js</u>
 
 <br>
 <div id='initialiseState'></div>
@@ -570,6 +599,503 @@ What it does:
     - If its time for a price update by comparing the timestamp of the last round and now by making use of <b>pushInterval</b>(for that feed) (Request type 1)
     - If there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed) between the received price and the latest price on chain (Request type 2)
     - If there was a new a new round (Request type 3)
+
+
+- [helpers/middleware-helper.js](#middlewarehelperjs)
+    - [initialiseState()](#initialiseState)
+    - [submitNewJob(feed, requestType)](#submitNewJob)
+    - [checkIfInSubmission(feed)](#checkIfInSubmission)
+    - [checkForPriceUpdate(jobName, requestType)](#checkForPriceUpdate)
+
+<br>
+<div id='credentials'></div>
+
+### <u>helpers/credentials.js</u>
+
+This contains a class to hold the External Initiator credentials
+
+<br>
+<div id='credentialsproperties'></div>
+
+<b>Properties</b>
+
+This class contains the following properties
+
+* this.credentials - This is an object which holds the credentials. This object has the following structure
+```json
+{
+  "EI_IC_ACCESSKEY": "",
+  "EI_IC_SECRET": ""
+}
+```
+
+<br>
+<div id='constructorCredentials'></div>
+
+<b>constructor(filePath)</b>
+
+Inputs:
+* filePath - The file path from where to read credentials
+
+Use: This function is used to construct an object of the class by loading the credentials from file and validating them
+
+What it does:
+- Reads the credentials from file by using readJSONFile()
+- Validates the credentials by calling validate()
+
+<br>
+<div id='validateCredentials'></div>
+
+<b>validate()</b>
+
+Use: This function validates the credentials object after reading the file containing the credentials. It throws an error if there is a missing property.
+
+What it does:
+- Throws an error if EI_IC_ACCESSKEY is not present
+- Throws an error if EI_IC_SECRET is not present
+
+<div id='feedsconfigjs'></div>
+
+### <u>helpers/feeds-config.js</u>
+
+<br>
+<div id='feedsconfigproperties'></div>
+
+<b>Properties</b>
+
+This class contains the following properties
+
+* this.feeds - This is an object which holds the feeds read from the feeds config file at config/feeds-config.json. This object has the following structure
+```json
+{
+  "ATOM-USD" : {
+    "decimalPlaces": 6,
+    "pollInterval": 180,
+    "pushInterval": 600,
+    "priceDeviationPerc": 1 
+  },
+  "OSMO-USD" : {
+    "decimalPlaces": 6,
+    "pollInterval": 180,
+    "pushInterval": 600,
+    "priceDeviationPerc": 1 
+  }
+}
+```
+
+<br>
+<div id='constructorFeedsconfig'></div>
+
+<b>constructor()</b>
+
+Use: This function is used to construct an object of the class by loading the feeds' configuration from file and performing validation
+
+What it does:
+- Reads the credentials from file by using readJSONFile()
+- Validates the credentials by calling validate()
+
+<br>
+<div id='validateFeedsconfig'></div>
+
+<b>validate()</b>
+
+Use: This function validates the feeds config object after reading the file containing the configuration of feeds. It throws an error if there is a missing property.
+
+What it does:
+- Loops through each feed (key) in the loaded object and does the following:
+    - Throws an error if decimalPlaces is not present    
+    - Throws an error if pollInterval is not present    
+    - Throws an error if pushInterval is not present    
+    - Throws an error if priceDeviationPerc is not present    
+
+
+<div id='middlewareenvjs'></div>
+
+### <u>helpers/middleware-env.js</u>
+
+<br>
+<div id='middlewareenvproperties'></div>
+
+<b>Properties</b>
+
+This class contains the following properties
+
+* this.MIDDLEWARE_PORT - The port on which the middleware will listen for job updates or results from the CL node
+* this.AGORIC_RPC - The Agoric node's RPC
+* this.FROM - The address of the oracle from which to push prices
+* this.SUBMIT_RETRIES -  The number of retries to try when submitting a price on-chain and it fails
+* this.SEND_CHECK_INTERVAL - The interval in seconds which is waited between each send. 
+* this.BLOCK_INTERVAL - The block time of the chain in seconds. This is used to query the price and round at every interval.
+* this.EI_CHAINLINKURL - The CL node URL in order to connect to its API to listen for jobs and send job requests.
+* this.CREDENTIALS_FILE - The path to the file containing the credentials to the CL external initiator
+* this.DB_FILE - This holds the path of the database state file
+
+<br>
+<div id='constructorMiddlewareenv'></div>
+
+<b>constructor()</b>
+
+Use: This function is used to fill load the environment variables inside the properties explained above and to perform validation on them
+
+What it does:
+- Reads the environment variables using process.env
+- Validates the credentials by calling validate()
+
+<br>
+<div id='validateMiddlewareenv'></div>
+
+<b>validate()</b>
+
+Use: This function validates all the properties explained above
+
+What it does:
+- Throws an error if this.MIDDLEWARE_PORT is not a number    
+- Throws an error if this.SUBMIT_RETRIES is not a number    
+- Throws an error if this.SEND_CHECK_INTERVAL is not a number    
+- Throws an error if this.EI_CHAINLINKURL is not a valid URL
+- Throws an error if this.CREDENTIALS_FILE does not exist
+- Throws an error if this.DB_FILE does not exist
+
+<b>
+<div id='monitorenvjs'></div>
+
+### <u>helpers/monitor-env.js</u>
+
+<br>
+<div id='monitorenvproperties'></div>
+
+<b>Properties</b>
+
+This class contains the following properties
+
+* this.MONITOR_PORT - The port on which the monitor will serve metrics
+* this.MONITOR_POLL_INTERVAL - The interval in seconds which needs to pass between each price and round check
+* this.AGORIC_NET - Agoric's chain
+* this.AGORIC_RPC - The Agoric node's RPC
+* this.MONITOR_STATE_FILE -  The path to the monitoring state's file
+* this.ORACLE_FILE - The path to the file containing the oracles to monitor 
+
+<br>
+<div id='constructorMiddlewareenv'></div>
+
+<b>constructor()</b>
+
+Use: This function is used to fill load the environment variables inside the properties explained above and to perform validation on them
+
+What it does:
+- Reads the environment variables using process.env
+- Validates the credentials by calling validate()
+
+<br>
+<div id='validateMiddlewareenv'></div>
+
+<b>validate()</b>
+
+Use: This function validates all the properties explained above
+
+What it does:
+- Throws an error if this.PORT is not a number    
+- Throws an error if this.SUBMIT_RETRIES is not a number    
+- Throws an error if this.SEND_CHECK_INTERVAL is not a number    
+- Throws an error if this.EI_CHAINLINKURL is not a valid URL
+- Throws an error if this.CREDENTIALS_FILE does not exist
+- Throws an error if this.DB_FILE does not exist
+
+<b>
+<div id='monitormetricsjs'></div>
+
+### <u>helpers/monitor-metrics.js</u>
+
+<br>
+<div id='metrics'></div>
+
+<b>Metrics</b>
+
+The following is a list of metrics exposed by the monitoring script:
+
+- <u>oracle_latest_value</u> - This metric contains the latest submitted value by an oracle. The labels include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
+- <u>oracle_last_observation</u> -  This metric contains the timestamp of the latest submission by an oracle. The labels include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
+- <u>oracle_last_round</u> - This metric contains the round of the latest submission by an oracle. The labels include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
+- <u>oracle_price_deviation</u> - This metric contains the deviation between an oracle's submitted value and the aggregated on-chain value. The labels include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
+- <u>oracle_balance</u> - This metric contains the balance of an oracle for a brand. The labels include oracleName, oracle and brand which represent the oracle name, oracle address and the brand respectively.
+- <u>actual_price</u> - This metric contains the actual aggregated value on chain. The labels include feed which represents the feed for the price.
+
+<br>
+<div id='constructorMonitormetrics'></div>
+
+<b>constructor()</b>
+
+Use: This function is used to initialise the Registry, Gauge metrics and to register the metrics to the registry
+
+What it does:
+- Creates a new Registry
+- Initialises the metrics
+- Registers the metrics to the registry
+
+<br>
+<div id='updateMetrics'></div>
+
+<b>updateMetrics(oracleName, oracle, feed, value, id, actualPrice, lastRound)</b>
+
+Inputs:
+* oracleName - The name of the oracle
+* oracle - The address of the oracle
+* feed - The feed
+* value - The latest submitted value on chain
+* id - The submission ID which is also the last timestamp
+* actualPrice - The actual aggregated price on chain
+* lastRound - The latest round ID for which a submission was made
+
+Use: This function is used to update metrics 
+
+What it does:
+  1. Calculates the deviation between the price submitted and the aggregated price on chain
+  2. Updates the metrics
+
+
+<br>
+<div id='updateBalanceMetrics'></div>
+
+<b>updateBalanceMetrics(oracleName, oracle, brand, value)</b>
+
+Inputs:
+* oracleName - The name of the oracle
+* oracle - The address of the oracle
+* brand - The brand
+* value - The latest balance value
+
+Use: This function is used to update balance metrics 
+
+What it does:
+  1. Updates the metrics
+
+<b>
+<div id='monitoringstatejs'></div>
+
+### <u>helpers/monitoring-state.js</u>
+
+<br>
+<div id='monitoringstateproperties'></div>
+
+<b>Properties</b>
+
+This class contains the following properties
+
+* this.stateFile - The path to the state file
+* this.state - This contains the monitoring state of each oracle being monitored. The object has the following structure:
+```json
+{
+  "agoric123456": {
+    "last_index": 0,
+    "values": {
+      "ATOM-USD": {
+        "price": 12.915342,
+        "id": 1677683115273,
+        "round": 2463
+      }
+    }
+  }
+}
+```
+
+<br>
+<div id='constructorMonitoringstate'></div>
+
+<b>constructor()</b>
+
+Use: This function is used to create an object which holds the monitoring state. This reads the state from file and validates it
+
+What it does:
+- Sets the file path of the state file to this.stateFile
+- Reads the monitoring state by calling readMonitoringState()
+- Validates the read state by calling validate()
+
+<br>
+<div id='validateMonitoringstate'></div>
+
+<b>validate()</b>
+
+Use: This function is used to validate the monitoring state
+
+What it does:
+- Loops through each oracle in the monitoring state and does the following
+    - Throws an error if the object has no last_index property
+    - Throws an error if the object has no values property
+    - If the last_index is not 0, it does the following:
+        - Throws an error if values does not contain price
+        - Throws an error if values does not contain id
+        - Throws an error if values does not contain round
+
+<br>
+<div id='readMonitoringState'></div>
+
+<b>readMonitoringState(oracleConfig)</b>
+
+Inputs:
+* oracleConfig - The oracle config containing the addresses and names of oracles to monitor
+
+Use: This function is used to read the monitoring state from the MONITOR_STATE_FILE. This is used upon startup to continue on previous data.
+
+What it does:
+  1. Tries to read the file using <b>readJSONFile</b>
+  2. If it succeeds, it returns the state
+  3. If it fails, it initialises the state and saves it to file
+  4. Sets the initialised or read state to this.state
+
+<br>
+<div id='initialiseStateForOracle'></div>
+
+<b>initialiseStateForOracle(oracle)</b>
+
+Inputs:
+* oracle - The address of the oracle whose state is to be initialised
+
+Use: This function is used to initialise the state of a particular oracle
+
+What it does:
+  1. Creates an empty entry in this.state for the oracle with last_index set to 0 and an empty values object
+  2. Saves the state to file by calling saveJSONDataToFile()
+
+<br>
+<div id='updateOracleState'></div>
+
+<b>updateOracleState(oracle, newState)</b>
+
+Inputs:
+* oracle - The address of the oracle whose state is to be updated
+* newState - The new state to set to the oracle
+
+Use: This function is used to to update the state for an oracle
+
+What it does:
+  1. Sets the state of the oracle in this.state to newState
+  2. Saves the state to file by calling saveJSONDataToFile()
+
+<b>
+<div id='oraclemonitorconfigjs'></div>
+
+### <u>helpers/oracle-monitor-config.js</u>
+
+<br>
+<div id='omcproperties'></div>
+
+<b>Properties</b>
+
+This class contains the following properties
+
+* this.oracles - The holds the config found in ORACLE_FILE. This object has the following structure:
+```json
+{
+  "agoric123" : { 
+    "oracleName": "Oracle 1" 
+  },
+  "agoric345" : { 
+    "oracleName": "Oracle 2" 
+  },
+  "agoric789" : { 
+    "oracleName": "Oracle 3" 
+  }
+}
+```
+* this.amountsIn - This holds an object of amountsIn for feeds. This structure of this object looks similar to the following structure
+```json
+{
+  "ATOM-USD": 100000,
+  "OSMO-USD": 100000,
+}
+```
+
+<br>
+<div id='constructorOraclemonitorconfig'></div>
+
+<b>constructor(filePath)</b>
+
+Inputs:
+* filePath - The file path to the config containing the oracles to monitor. This is equal to the ORACLE_FILE environment variable.
+
+Use: This function is used initialise an object which contains the details of the oracles to monitor and an object containing the amountsIn for feeds in order to calculate the price.
+
+What it does:
+- Reads the oracles config by calling readJSONFile() and sets the output to this.oracles
+- Initialises this.amountsIn to an empty object
+- Validates the read config by calling validate()
+- Fills this.amountsIn by calling getInvsForOracles()
+
+<br>
+<div id='validateOraclemonitorconfig'></div>
+
+<b>validate()</b>
+
+Use: This function is used to validate the oracles config
+
+What it does:
+- Loops through each oracle loaded in this.oracles
+    - Throws an error if the object has no oracleName property
+
+<br>
+<div id='getInvsForOracles'></div>
+
+<b>getInvsForOracles()</b>
+
+Use: This function is used to obtain the invitation IDs for feed participation for the oracles and to fill this.amountsIn
+
+What it does:
+- Loops through each oracle loaded in this.oracles and does the following:
+    - Gets the oracle's invitations by calling getOraclesInvitations()
+    - Loops through the different feeds in the obtained list of invitations and does the following:
+      - Sets the invitation IDs of the feed to the oracle's config entry
+      - Sets the amountIn for that feed if it is not already in the this.amountsIn
+
+<br>
+<div id='rounddetailsjs'></div>
+
+### <u>helpers/round-details.js</u>
+
+<br>
+<div id='rounddetailsproporties'></div>
+
+<b>Properties</b>
+
+This class contains the following properties
+
+* this.roundId - The holds the round ID for the round
+* this.startedAt - This holds the timestamp when this round was started
+* this.startedBy - This holds the address of the oracle who started the round
+* this.submissionMade - This holds whether the oracle submitted to this round
+
+<br>
+<div id='constructorRoundDetails'></div>
+
+<b>constructor(roundId, startedAt, startedBy, submissionMade)</b>
+
+Inputs:
+* roundId - The holds the round ID for the round
+* startedAt - This holds the timestamp when this round was started
+* startedBy - This holds the address of the oracle who started the round
+* submissionMade - This holds whether the oracle submitted to this round
+
+Use: This function is used initialise an object by just setting the passed variables to the object's properties
+
+What it does:
+- Sets the passed in values to the object's properties
+
+<br>
+<div id='toObject'></div>
+
+<b>toObject()</b>
+
+Use: This function is used to turn this class' properties into a single object
+
+What it does:
+- Places the object's properties in a single object of the following structure
+```
+{
+  roundId: 1,
+  startedAt: 1677686233,
+  startedBy: "agoric123",
+  submissionMade: true
+}
+```
 
 <br>
 <div id='bridgejs'></div>
@@ -653,7 +1179,7 @@ This script makes use of the following environment variables.
 
 | Variable Name        	| Description                                                                                                                                                          	| Default value              	|
 |----------------------	|----------------------------------------------------------------------------------------------------------------------------------------------------------------------	|----------------------------	|
-| PORT                 	| The port on which the middleware will listen <br>for job updates or results from the CL node                                                                         	| 3000                       	|
+| MIDDLEWARE_PORT                 	| The port on which the middleware will listen <br>for job updates or results from the CL node                                                                         	| 3000                       	|
 | EI_CHAINLINKURL      	| The CL node URL in order to connect to its API<br>to listen for jobs and send job requests.<br><b>Note that this has no default value and needs<br>to be defined</b> 	| N/A                        	|
 | FROM                 	| The address of the oracle from which to push prices.<br><b>Note that this has no default value and needs<br>to be defined</b>                                        	| N/A                        	|
 | SUBMIT_RETRIES       	| The number of retries to try when submitting a price<br>on-chain and it fails                                                                                        	| 3                          	|
@@ -661,7 +1187,7 @@ This script makes use of the following environment variables.
 | SEND_CHECK_INTERVAL  	| The interval in seconds which is waited between each send.                                                                                                           	| 45                         	|
 | AGORIC_RPC           	| The Agoric node's RPC endpoint                                                                                                                                       	| http://0.0.0.0:26657       	|
 | CREDENTIALS_FILE     	| The path to the file containing the credentials to the <br>CL node                                                                                                   	| config/ei_credentials.json 	|
-
+| DB_FILE     	| The path to the database state file                                                                                                   	| data/database.db 	|
 
 The CREDENTIALS_FILE should contain a JSON object containing the credentials to communicate with the CL node as can be seen below
 ```json
@@ -699,7 +1225,7 @@ This script makes use of the following environment variables and it requires the
 
 | Variable Name 	| Description                                                                       	| Default value              	|
 |---------------	|-----------------------------------------------------------------------------------	|----------------------------	|
-| PORT          	| The port on which the monitor will serve metrics                                  	| 3001                       	|
+| MONITOR_PORT          	| The port on which the monitor will serve metrics                                  	| 3001                       	|
 | MONITOR_POLL_INTERVAL 	| The interval in seconds which needs to pass between<br>each price and round check 	| 10                         	|
 | AGORIC_NET    	| Agoric's chain ID                                                                 	| N/A                        	|
 | AGORIC_RPC    	| The Agoric's node RPC endpoint                                                    	| http://0.0.0.0:26657       	|
@@ -717,112 +1243,6 @@ The ORACLE_FILE should contain a JSON array containing the oracles to monitor al
 }
 ```
 
-<br>
-<div id='metrics'></div>
-
-<b>Metrics</b>
-
-The following is a list of metrics exposed by the monitoring script:
-
-- <u>oracle_latest_value</u> - This metric contains the latest submitted value by an oracle. The labels include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
-- <u>oracle_last_observation</u> -  This metric contains the timestamp of the latest submission by an oracle. The labels include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
-- <u>oracle_last_round</u> - This metric contains the round of the latest submission by an oracle. The labels include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
-- <u>oracle_price_deviation</u> - This metric contains the deviation between an oracle's submitted value and the aggregated on-chain value. The labels include oracleName, oracle and feed which represent the oracle name, oracle address and the feed respectively.
-- <u>oracle_balance</u> - This metric contains the balance of an oracle for a brand. The labels include oracleName, oracle and brand which represent the oracle name, oracle address and the brand respectively.
-- <u>actual_price</u> - This metric contains the actual aggregated value on chain. The labels include feed which represents the feed for the price.
-
-
-<br>
-<div id='readOracleAddresses'></div>
-
-<b>readOracleAddresses()</b>
-
-Use: This function is used to read the oracle details to monitor from ORACLE_FILE
-
-Returns: A JSON array containing oracle names and addresses to monitor
-
-What it does:
-  1. Reads oracle details from ORACLE_FILE using <b>readJSONFile</b>
-
-<br>
-<div id='readMonitoringState'></div>
-
-<b>readMonitoringState()</b>
-
-Use: This function is used to read the monitoring state from the MONITOR_STATE_FILE. This is used upon startup to continue on previous data.
-
-Returns: The monitoring's state as JSON from the file or an empty initialised state
-
-What it does:
-  1. Tries to read the file using <b>readJSONFile</b>
-  2. If it succeeds, it returns the state
-  3. If it fails, it initialises the state and saves it to file
-  4. Returns either the state from the file or the initialised state
-
-<br>
-<div id='getOraclesInvitations'></div>
-
-<b>getOraclesInvitations()</b>
-
-Use: This function is used to get the oracle invitation IDs for price feeds 
-
-What it does:
-  1. Loops through each oracle to monitor and obtain their invitation IDs for feeds
-  2. The invitations IDs are added to the oracle details in the global variable containing details about oracles.
-
-<br>
-<div id='updateMetrics'></div>
-
-<b>updateMetrics(oracleName, oracle, feed, value, id, actualPrice, lastRound)</b>
-
-Inputs:
-* oracleName - The name of the oracle
-* oracle - The address of the oracle
-* feed - The feed
-* value - The latest submitted value on chain
-* id - The submission ID which is also the last timestamp
-* actualPrice - The actual aggregated price on chain
-* lastRound - The latest round ID for which a submission was made
-
-Use: This function is used to update metrics 
-
-What it does:
-  1. Calculates the deviation between the price submitted and the aggregated price on chain
-  2. Updates the metrics
-
-
-<br>
-<div id='updateBalanceMetrics'></div>
-
-<b>updateBalanceMetrics(oracleName, oracle, brand, value)</b>
-
-Inputs:
-* oracleName - The name of the oracle
-* oracle - The address of the oracle
-* brand - The brand
-* value - The latest balance value
-
-Use: This function is used to update balance metrics 
-
-What it does:
-  1. Updates the metrics
-
-<br>
-<div id='queryPriceMonitor'></div>
-
-<b>queryPrice(feed)</b>
-
-Inputs:
-* feed - Feed name to query price for
-
-Use: This function is used to query the latest on-chain price for a feed
-
-Returns: The latest price
-
-What it does:
-  1. Reads the latest published price from vstorage using Agoric's functions from agoric-sdk
-  2. Parses the value and returns it 
-  3. If the above fails for some reason, 0 is returned. A reason for failing could be the first time a feed is created and there is no price on-chain yet
 
 <br>
 <div id='monitorfunc'></div>
