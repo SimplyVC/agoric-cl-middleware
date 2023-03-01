@@ -600,13 +600,6 @@ What it does:
     - If there is a price deviation greater than <b>priceDeviationPerc</b>(for that feed) between the received price and the latest price on chain (Request type 2)
     - If there was a new a new round (Request type 3)
 
-
-- [helpers/middleware-helper.js](#middlewarehelperjs)
-    - [initialiseState()](#initialiseState)
-    - [submitNewJob(feed, requestType)](#submitNewJob)
-    - [checkIfInSubmission(feed)](#checkIfInSubmission)
-    - [checkForPriceUpdate(jobName, requestType)](#checkForPriceUpdate)
-
 <br>
 <div id='credentials'></div>
 
