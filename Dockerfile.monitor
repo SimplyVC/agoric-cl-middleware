@@ -1,0 +1,13 @@
+FROM node:16.17.1
+
+WORKDIR /oracle-cl-middleware
+
+COPY package.json package.json
+
+RUN yarn install
+
+COPY . .
+
+WORKDIR /oracle-cl-middleware/src
+
+CMD [ "./bin-monitor.js" ]

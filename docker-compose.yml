@@ -1,0 +1,38 @@
+version: "3.9"
+services:
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.monitor
+    ports:
+      - "3001:3001"
+    volumes:
+      - ~/config:/oracle-cl-middleware/src/config
+      - ~/state:/oracle-cl-middleware/src/data
+    environment:
+      AGORIC_NET: agoriclocal 
+      AGORIC_RPC: http://$THIS_VM_IP:26657 
+      MONITORING_POLL_INTERVAL: 10
+      SERVICE: monitor
+    restart: always
+  middleware:
+    build:
+      context: .
+      dockerfile: Dockerfile.middleware
+    ports:
+      - "3000:3000"
+    volumes:
+      - ~/config:/oracle-cl-middleware/src/config
+      - ~/state:/oracle-cl-middleware/src/data
+      - ~/.agoric:/root/.agoric
+    environment: 
+      AGORIC_NET: agoriclocal 
+      AGORIC_RPC: http://$THIS_VM_IP:26657 
+      FROM: $WALLET_ADDR 
+      EI_CHAINLINKURL: http://$THIS_VM_IP:6691
+      SEND_CHECK_INTERVAL: 45
+      SUBMIT_RETRIES: 3
+      CREDENTIALS_FILE: config/ei_credentials.json
+      DB_FILE: data/database.db
+    restart: always
+  
