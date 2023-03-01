@@ -4,7 +4,7 @@ import { logger } from "./logger.js";
 class MonitorENV {
   constructor() {
     const {
-      PORT = "3001",
+      MONITOR_PORT = "3001",
       MONITOR_POLL_INTERVAL = "10",
       AGORIC_NET,
       AGORIC_RPC = "http://0.0.0.0:26657",
@@ -12,7 +12,7 @@ class MonitorENV {
       ORACLE_FILE = "config/oracles.json",
     } = process.env;
 
-    this.PORT = PORT;
+    this.MONITOR_PORT = MONITOR_PORT;
     this.MONITOR_POLL_INTERVAL = MONITOR_POLL_INTERVAL;
     this.AGORIC_NET = AGORIC_NET;
     this.AGORIC_RPC = AGORIC_RPC;
@@ -26,7 +26,7 @@ class MonitorENV {
    * This function validates the env vars
    */
   validate() {
-    assert(!isNaN(Number(this.PORT)), "$PORT should be a valid number");
+    assert(!isNaN(Number(this.MONITOR_PORT)), "$MONITOR_PORT should be a valid number");
     assert(
       !isNaN(Number(this.MONITOR_POLL_INTERVAL)),
       "$POLL_INTERVAL is required"

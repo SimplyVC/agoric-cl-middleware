@@ -63,7 +63,7 @@ const startServer = () => {
     }
   });
 
-  server.listen(monitorEnvInstance.PORT);
+  server.listen(monitorEnvInstance.MONITOR_PORT);
 };
 
 startServer();

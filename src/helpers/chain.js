@@ -480,11 +480,11 @@ export const getOracleLatestInfo = async (
   let offersBalances = await getOffersAndBalances(follower, oracle);
 
   // Get last offer id from offers from state
-  let lastOfferId = isNaN(state["last_offer_id"]) ? 0 : state["last_offer_id"];
+  let lastOfferId = isNaN(state["last_index"]) ? 0 : state["last_index"];
 
   // Initialise variable to hold results
   let lastResults = {
-    last_offer_id: lastOfferId,
+    last_index: lastOfferId,
     values: state["values"] ? state["values"] : {},
   };
 
@@ -521,7 +521,7 @@ export const getOracleLatestInfo = async (
         !currentOffer["status"].hasOwnProperty("error")
       ) {
         // If id is bigger than last offer id in state, set it
-        lastResults["last_offer_id"] = id;
+        lastResults["last_index"] = id;
         lastOfferId = id;
 
         let price =
@@ -574,5 +574,5 @@ export const getOracleLatestInfo = async (
     }
   }
 
-  return lastResults["last_offer_id"] !== lastOfferId ? lastResults : state;
+  return lastResults["last_index"] !== lastOfferId ? lastResults : state;
 };

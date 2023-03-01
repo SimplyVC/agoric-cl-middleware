@@ -21,7 +21,6 @@ export class MonitoringState {
   /**
    * Function to read the latest monitoring state from file
    * @param {OracleMonitorConfig} oracleConfig config
-   * @returns {object} latest monitoring state
    */
   readMonitoringState(oracleConfig) {
     // Try to read from file

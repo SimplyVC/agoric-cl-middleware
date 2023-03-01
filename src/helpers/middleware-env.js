@@ -4,7 +4,7 @@ import { logger } from "./logger.js";
 class MiddlewareENV {
   constructor() {
     const {
-      PORT = "3000",
+      MIDDLEWARE_PORT = "3000",
       AGORIC_RPC = "http://0.0.0.0:26657",
       FROM,
       SUBMIT_RETRIES = "3",
@@ -15,7 +15,7 @@ class MiddlewareENV {
       DB_FILE = "data/database.db",
     } = process.env;
 
-    this.PORT = PORT;
+    this.MIDDLEWARE_PORT = MIDDLEWARE_PORT;
     this.AGORIC_RPC = AGORIC_RPC;
     this.FROM = FROM;
     this.SUBMIT_RETRIES = SUBMIT_RETRIES;
@@ -32,7 +32,7 @@ class MiddlewareENV {
    * This function validates the env vars
    */
   validate() {
-    assert(!isNaN(Number(this.PORT)), "$PORT should be a valid number");
+    assert(!isNaN(Number(this.MIDDLEWARE_PORT)), "$MIDDLEWARE_PORT should be a valid number");
     assert(
       !isNaN(Number(this.SUBMIT_RETRIES)),
       "$SUBMIT_RETRIES should be a valid number"

@@ -16,7 +16,7 @@ export const middleware = async () => {
   await initialiseState()
 
   // Start the bridge
-  startBridge(middlewareEnvInstance.PORT);
+  startBridge(middlewareEnvInstance.MIDDLEWARE_PORT);
 
   // Calculate how many seconds left for a new minute
   let secondsLeft = 60 - (new Date().getSeconds());
