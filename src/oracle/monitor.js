@@ -38,7 +38,7 @@ export const monitor = async () => {
           metrics,
           oracleConfig.amountsIn
         );
-        state.updateOracleState(latestOracleState)
+        state.updateOracleState(oracle, latestOracleState)
       }
 
     } catch (err) {
