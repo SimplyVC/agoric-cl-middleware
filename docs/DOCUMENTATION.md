@@ -747,7 +747,7 @@ What it does:
 - Throws an error if this.SEND_CHECK_INTERVAL is not a number    
 - Throws an error if this.EI_CHAINLINKURL is not a valid URL
 - Throws an error if this.CREDENTIALS_FILE does not exist
-- Throws an error if this.DB_FILE does not exist
+- Throws an error if this.DB_FILE is empty
 
 <b>
 <div id='monitorenvjs'></div>

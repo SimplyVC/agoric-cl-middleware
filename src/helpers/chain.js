@@ -192,7 +192,7 @@ export const queryPrice = async (feed) => {
     logger.info(`${feed} Price Query: ${String(latestPrice)}`);
     return latestPrice;
   } catch (err) {
-    logger.error(`ERROR querying price:  ${feed}`);
+    logger.error(`ERROR querying price: ${feed}`);
     return -1;
   }
 };

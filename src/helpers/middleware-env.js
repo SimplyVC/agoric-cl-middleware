@@ -51,7 +51,7 @@ class MiddlewareENV {
       checkFileExists(this.CREDENTIALS_FILE),
       "$CREDENTIALS_FILE does not exist"
     );
-    assert(checkFileExists(this.DB_FILE), "$DB_FILE does not exist");
+    assert(this.DB_FILE && this.DB_FILE !== "", "$DB_FILE cannot be empty");
   }
 }
 
