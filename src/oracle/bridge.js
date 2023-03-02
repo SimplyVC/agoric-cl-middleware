@@ -135,7 +135,7 @@ export const startBridge = (PORT) => {
     try {
       let newJob = req.body.jobId;
       let newJobName = req.body.params.name;
-      logger.info(`new job ${newJobNam} ${newJob}`);
+      logger.info(`new job ${newJobName} ${newJob}`);
   
       await createJob(newJob, newJobName);
   
