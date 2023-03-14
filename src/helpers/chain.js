@@ -93,7 +93,7 @@ export const getLatestSubmittedRound = async (oracle) => {
   // Get offers
   let offers = await getOffers(follower);
 
-  if (offers.length > 0) {
+  if (offers.length > 0 && offers[0]["status"]["invitationSpec"]["invitationArgs"].length > 0) {
     return Number(
       offers[0]["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
     );
