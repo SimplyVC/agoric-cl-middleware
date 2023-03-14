@@ -15,6 +15,7 @@ import {
 } from "../helpers/chain.js";
 import middlewareEnvInstance from '../helpers/middleware-env.js';
 import { logger } from "../helpers/logger.js";
+import { RoundDetails } from "../helpers/round-details.js";
 
 /**
  * Function to create a bridge which listens from the Chainlink node for
@@ -66,7 +67,13 @@ export const startBridge = (PORT) => {
 
       if (toUpdate) {
         // Get latest round
-        let latestRound = await queryRound(jobName);
+        let latestRound;
+        try {
+          latestRound = await queryRound(jobName);
+        } catch (err) {
+          logger.error("Error while getting round " + err)
+          latestRound = new RoundDetails(1, 0, "", false );
+        }
 
         await updateTable("rounds", latestRound, jobName);
 

@@ -89,6 +89,11 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
     jobName
   );
 
+  // If there was never a submission
+  if (query.last_submission_time == 0){
+    return true;
+  }
+
   let timePassedSinceSubmission = now - query.last_submission_time;
 
   // Check if in submission
@@ -109,6 +114,11 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
   // Check if time for update
   query = await queryTable("rounds", ["startedAt"], jobName);
+
+  // If there was never a round
+  if (query.startedAt == 0){
+    return true;
+  }
 
   // Check if it is time for an update
   let timeForUpdate = now >= query.startedAt + pushInterval;

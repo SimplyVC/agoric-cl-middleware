@@ -93,9 +93,13 @@ export const getLatestSubmittedRound = async (oracle) => {
   // Get offers
   let offers = await getOffers(follower);
 
-  return Number(
-    offers[0]["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
-  );
+  if (offers.length > 0) {
+    return Number(
+      offers[0]["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
+    );
+  }
+
+  return 0;
 };
 
 /**
@@ -216,13 +220,14 @@ export const getOraclesInvitations = async (oracle) => {
 
   // Loop through invitations and store the IDs in feedInvs
   for (let inv in invitations) {
-
+    let invitationId = invitations[inv][0]
+    let invitationDetails = invitations[inv][1]
     //if there is a value
-    if(invitations[inv].value.length > 0){
-      let boardId = invitations[inv].value[0].instance.boardId;
+    if(invitationDetails.value && invitationDetails.value.length > 0){
+      let boardId = invitationDetails.value[0].instance.boardId;
       let feed = feedBoards[boardId].split(" price feed")[0];
   
-      feedInvs[feed] = Number(inv);
+      feedInvs[feed] = Number(invitationId);
     }
   }
 
@@ -236,11 +241,11 @@ export const getOraclesInvitations = async (oracle) => {
  */
 export const queryRound = async (feed) => {
   // Read value from vstorage
-  const capDataStr = await readVStorage(feed, true);
-
   let capData;
 
   try {
+    const capDataStr = await readVStorage(feed, true);
+
     // Parse the value
     capData = JSON.parse(JSON.parse(capDataStr).value);
     capData = JSON.parse(capData.values[capData.values.length - 1]);
@@ -248,7 +253,8 @@ export const queryRound = async (feed) => {
     // Replace any extra characters
     capData = JSON.parse(capData.body.replaceAll("\\", ""));
   } catch (err) {
-    throw new Error("Failed to parse CapData for queryRound");
+    logger.error("Failed to parse CapData for queryRound");
+    return new RoundDetails(1, 0, "", false);
   }
 
   // Get round from result
@@ -259,9 +265,8 @@ export const queryRound = async (feed) => {
 
   // Check if invitation for feed exists
   if (!(feed in offers)) {
-    throw new Error(
-      `Invitation for ${feed} not found in oracle invitations`
-    );
+    logger.error(`Invitation for ${feed} not found in oracle invitations`);
+    return new RoundDetails(1, 0, "", false);
   }
 
   // Get feed offer id
@@ -334,7 +339,7 @@ export const pushPrice = async (price, feed, round, from) => {
   // Check if submitted for round
   let submitted = await checkSubmissionForRound(from, previousOffer, round);
 
-  // Check if in submissiona
+  // Check if in submission
   let inSubmission = await checkIfInSubmission(feed);
 
   // Loop retries
