@@ -22,6 +22,7 @@ import { updateTable } from "./db.js";
 import middlewareEnvInstance from './middleware-env.js';
 import { logger } from "./logger.js";
 import { RoundDetails } from "./round-details.js";
+import { execSync } from 'child_process';
 
 const marshaller = boardSlottingMarshaller();
 
@@ -424,13 +425,11 @@ export const getOffersAndBalances = async (follower, oracle) => {
     balances: [],
   };
 
-  // Get current purses
-  let fromBoard = makeFromBoard();
-  const vstorage = makeVStorage({ fetch });
-  let current = await getCurrent(oracle, fromBoard, { vstorage });
-  for (let i = 0; i < current.purses.length; i++) {
-    let currentPurse = current.purses[i];
-    toReturn["balances"].push(currentPurse.balance);
+  // Get balances
+  let balances = JSON.parse(execSync(`agd query --node ${networkConfig.rpcAddrs[0]} bank balances ${oracle} --output=json`).toString()).balances;
+
+  for (let i = 0; i < balances.length; i++) {
+    toReturn["balances"].push(balances[i]);
   }
 
   return toReturn;
@@ -567,9 +566,9 @@ export const getOracleLatestInfo = async (
   for (let i = 0; i < offersBalances.balances.length; i++) {
     let currentBalance = offersBalances.balances[i];
 
-    let brand = currentBalance.brand.iface.split(" ")[1];
-    if (brand.includes("BLD") || brand.includes("IST")) {
-      let value = Number(currentBalance.value);
+    let brand = currentBalance.denom;
+    if (brand.includes("bld") || brand.includes("ist")) {
+      let value = Number(currentBalance.amount);
       metrics.updateBalanceMetrics(
         oracleDetails["oracleName"],
         oracle,
