@@ -6,20 +6,43 @@ import { MonitorMetrics } from "../helpers/monitor-metrics.js";
 import { OracleMonitorConfig } from "../helpers/oracle-monitor-config.js";
 import { MonitoringState } from "../helpers/monitoring-state.js";
 import monitorEnvInstance from "../helpers/monitor-env.js";
+import { FeedsConfig } from "../helpers/feeds-config.js";
 
 let metrics = new MonitorMetrics();
 let oracleConfig = new OracleMonitorConfig(monitorEnvInstance.ORACLE_FILE);
-let state = new MonitoringState(monitorEnvInstance.MONITOR_STATE_FILE, oracleConfig);
+let state = new MonitoringState(
+  monitorEnvInstance.MONITOR_STATE_FILE,
+  oracleConfig
+);
+let feedsConfig = new FeedsConfig();
 
 /**
  * Main function to monitor
  */
 export const monitor = async () => {
+  // Holds last round details
+  let lastRound = {};
+
+  // Loop through feeds from config
+  for (let feed in feedsConfig.feeds) {
+    // Set config metrics
+    metrics.setConfigMetrics(
+      feed,
+      feedsConfig.feeds[feed].priceDeviationPerc,
+      feedsConfig.feeds[feed].pushInterval
+    );
+
+    lastRound[feed] = {
+      round: 0,
+      submissions: [],
+    };
+  }
+
   // Create interval
   setInterval(async () => {
     try {
       oracleConfig.getInvsForOracles();
-      
+
       // Read monitoring state
       state.readMonitoringState(oracleConfig);
 
@@ -27,7 +50,7 @@ export const monitor = async () => {
       for (let oracle in oracleConfig.oracles) {
         // Check if there is no state for oracle
         if (!(oracle in state.state)) {
-          state.initialiseStateForOracle(oracle)
+          state.initialiseStateForOracle(oracle);
         }
 
         // Get latest prices for oracle
@@ -38,9 +61,44 @@ export const monitor = async () => {
           metrics,
           oracleConfig.amountsIn
         );
-        state.updateOracleState(oracle, latestOracleState)
+
+        // For each feed in result
+        for (let feed in latestOracleState.values) {
+          let feedState = latestOracleState.values[feed];
+
+          // Check if round is greater than in memory variable
+          if (feedState.round > lastRound.round) {
+            // Reset variable
+            lastRound[feed] = {
+              round: feedState.round,
+              submissions: [feedState.id],
+            };
+          } else {
+            // Otherwise add submission time to array
+            if (!lastRound[feed].submissions.includes(feedState.id)) {
+              lastRound[feed].submissions.push(feedState.id);
+            }
+          }
+        }
+
+        state.updateOracleState(oracle, latestOracleState);
       }
 
+      // Once all oracles were queried, get consensus time for each feed
+      for (let feed in lastRound) {
+        let feedLastRound = lastRound[feed];
+
+        // If there were at least  3 submissions
+        if (feedLastRound.submissions.length >= 3) {
+          // First sort the array
+          feedLastRound.submissions.sort((a, b) => a - b);
+          // Calculate consensus time, subtract third time from first
+          let consensusTime =
+            feedLastRound.submissions[2] - feedLastRound.submissions[0];
+          // Update metric
+          metrics.updateConsensusTimeTaken(feed, consensusTime);
+        }
+      }
     } catch (err) {
       logger.error("MONITOR ERROR: " + err);
     }
