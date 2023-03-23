@@ -67,13 +67,13 @@ export const monitor = async () => {
           let feedState = latestOracleState.values[feed];
 
           // Check if round is greater than in memory variable
-          if (feedState.round > lastRound.round) {
+          if (feedState.round > lastRound[feed].round) {
             // Reset variable
             lastRound[feed] = {
               round: feedState.round,
-              submissions: [feedState.id],
+              submissions: [feedState.id]
             };
-          } else {
+          } else if (feedState.round == lastRound[feed].round) {
             // Otherwise add submission time to array
             if (!lastRound[feed].submissions.includes(feedState.id)) {
               lastRound[feed].submissions.push(feedState.id);
