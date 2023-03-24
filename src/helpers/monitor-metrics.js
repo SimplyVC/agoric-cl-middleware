@@ -69,8 +69,15 @@ export class MonitorMetrics {
     // Create gauge for consensus time
     this.consensusTimeTaken = new Gauge({
       name: "consensus_time_taken",
-      help: "Threshold for heartbeat",
+      help: "Time take to reach consensus for a feed",
       labelNames: ["feed"],
+    });
+
+    // Create gauge for rounds created
+    this.roundsCreated = new Gauge({
+      name: "oracle_rounds_created",
+      help: "Rounds created by each oracle",
+      labelNames: ["oracleName", "oracle", "brand"],
     });
 
     // Register the gauges
@@ -83,6 +90,7 @@ export class MonitorMetrics {
     this.register.registerMetric(this.deviationThresholdGauge);
     this.register.registerMetric(this.heartbeatGauge);
     this.register.registerMetric(this.consensusTimeTaken);
+    this.register.registerMetric(this.roundsCreated);
   }
 
   /**
@@ -94,8 +102,9 @@ export class MonitorMetrics {
    * @param {number} id submission id which is a timestamp
    * @param {number} actualPrice feed actual aggregated price
    * @param {number} lastRound latest round id for which there was a submission
+   * @param {number} roundsCreated the number of rounds created
    */
-  updateMetrics(oracleName, oracle, feed, value, id, actualPrice, lastRound) {
+  updateMetrics(oracleName, oracle, feed, value, id, actualPrice, lastRound, roundsCreated) {
     // Calculate price deviation from actual value
     let priceDeviation = Math.abs((value - actualPrice) / actualPrice) * 100;
 
@@ -104,6 +113,7 @@ export class MonitorMetrics {
     this.oracleLastRound.labels(oracleName, oracle, feed).set(lastRound);
     this.oracleDeviation.labels(oracleName, oracle, feed).set(priceDeviation);
     this.actualPriceGauge.labels(feed).set(actualPrice);
+    this.roundsCreated.labels(oracleName, oracle, feed).set(roundsCreated);
   }
 
   /**

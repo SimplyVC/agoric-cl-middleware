@@ -119,9 +119,8 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
 
   // Loop through offers starting from last offer
   for (let i = 0; i < offers.length; i++) {
-
     // Get current offer
-    let currentOffer = offers[i]
+    let currentOffer = offers[i];
 
     // If a price invitation and for the correct feed
     let invitationType = currentOffer["status"]["invitationSpec"][
@@ -218,7 +217,7 @@ export const getOraclesInvitations = async (oracle) => {
   for (let inv in invitations) {
 
     //if there is a value
-    if(invitations[inv].value.length > 0){
+    if(invitations[inv].value.length > 0) {
       let boardId = invitations[inv].value[0].instance.boardId;
       let feed = feedBoards[boardId].split(" price feed")[0];
   
@@ -232,9 +231,10 @@ export const getOraclesInvitations = async (oracle) => {
 /**
  * Function to query round from chain
  * @param {string} feed feed name of the price to query (Ex. ATOM-USD)
+ * @param {string} oracle address of oracle to check for submission
  * @returns {RoundDetails} the latest round
  */
-export const queryRound = async (feed) => {
+export const queryRound = async (feed, oracle) => {
   // Read value from vstorage
   const capDataStr = await readVStorage(feed, true);
 
@@ -255,13 +255,11 @@ export const queryRound = async (feed) => {
   let round = Number(capData.roundId.digits);
 
   // Get offers
-  let offers = await getOraclesInvitations(middlewareEnvInstance.FROM);
+  let offers = await getOraclesInvitations(oracle);
 
   // Check if invitation for feed exists
   if (!(feed in offers)) {
-    throw new Error(
-      `Invitation for ${feed} not found in oracle invitations`
-    );
+    throw new Error(`Invitation for ${feed} not found in oracle invitations`);
   }
 
   // Get feed offer id
@@ -300,15 +298,12 @@ export const outputAction = (bridgeAction) => {
  * @returns {boolean} whether successful
  */
 export const pushPrice = async (price, feed, round, from) => {
-
   // Get offers
   let offers = await getOraclesInvitations(from);
 
   // Check if invitation for feed exists
   if (!(feed in offers)) {
-    throw new Error(
-      `Invitation for ${feed} not found in oracle invitations`
-    );
+    throw new Error(`Invitation for ${feed} not found in oracle invitations`);
   }
 
   // Get previous offer for feed
@@ -344,7 +339,7 @@ export const pushPrice = async (price, feed, round, from) => {
     i++
   ) {
     // Query round
-    let latestRound = await queryRound(feed);
+    let latestRound = await queryRound(feed, from);
 
     /**
      * If latestRound is greater than round being pushed or submission to the
@@ -358,7 +353,7 @@ export const pushPrice = async (price, feed, round, from) => {
       return false;
     }
 
-    logger.info(`Submitting price for round ${round} attempt ${(i + 1)}`);
+    logger.info(`Submitting price for round ${round} attempt ${i + 1}`);
 
     offer.id = Number(Date.now());
 
@@ -413,7 +408,6 @@ export const pushPrice = async (price, feed, round, from) => {
  * @returns {object[]} returns.balances Array of balances
  */
 export const getOffersAndBalances = async (follower, oracle) => {
-    
   let toReturn = {
     offers: await getOffers(follower),
     balances: [],
@@ -437,7 +431,7 @@ export const getOffersAndBalances = async (follower, oracle) => {
  * @returns {number} the amount in for the feed
  */
 export const getAmountsIn = async (feed) => {
-  const capDataStr = await readVStorage(feed, false)
+  const capDataStr = await readVStorage(feed, false);
 
   // Parse the value
   let capData = JSON.parse(JSON.parse(capDataStr).value);
@@ -510,6 +504,7 @@ export const getOracleLatestInfo = async (
         currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
       );
 
+
       // Get feeds' last observed round from state
       let lastObservedRound = state["values"].hasOwnProperty(feed)
         ? state["values"][feed]["round"]
@@ -524,6 +519,20 @@ export const getOracleLatestInfo = async (
         lastResults["last_index"] = id;
         lastOfferId = id;
 
+        // Get latest round
+        let latestRound = await queryRound(feed, oracle)
+
+        // Get current rounds created
+        let roundsCreated = state["values"].hasOwnProperty(feed) &&
+        "rounds_created" in lastResults["values"][feed]
+          ? lastResults["values"][feed]
+          : 0
+
+        // If oracle is the new round's creator, increment rounds created
+        if (latestRound.startedBy == oracle){
+          roundsCreated++;
+        }
+
         let price =
           Number(
             currentOffer["status"]["invitationSpec"]["invitationArgs"][0][
@@ -536,6 +545,7 @@ export const getOracleLatestInfo = async (
           price: price,
           id: id,
           round: lastRound,
+          rounds_created: roundsCreated
         };
         state = lastResults;
 
@@ -549,7 +559,8 @@ export const getOracleLatestInfo = async (
           price,
           id,
           feedPrice,
-          lastRound
+          lastRound,
+          roundsCreated
         );
       }
     }

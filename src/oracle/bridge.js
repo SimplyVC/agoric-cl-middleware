@@ -66,7 +66,7 @@ export const startBridge = (PORT) => {
 
       if (toUpdate) {
         // Get latest round
-        let latestRound = await queryRound(jobName);
+        let latestRound = await queryRound(jobName, middlewareEnvInstance.FROM);
 
         await updateTable("rounds", latestRound, jobName);
 

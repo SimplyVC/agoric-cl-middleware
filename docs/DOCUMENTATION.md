@@ -8,7 +8,7 @@
     - [checkSubmissionForRound(oracle, feedOfferId, roundId)](#checkSubmissionForRound)
     - [queryPrice(feed)](#queryPrice)
     - [getOraclesInvitations(oracle)](#getOraclesInvitationsMiddleware)
-    - [queryRound(feed)](#queryRound)
+    - [queryRound(feed, oracle)](#queryRound)
     - [pushPrice(price, feed, round, from)](#pushPrice)
     - [getOffersAndBalances(follower, oracle)](#getOffersAndBalances)
     - [getAmountsIn(feed)](#getAmountsIn)
@@ -53,7 +53,7 @@
   - [helpers/monitor-metrics.js](#monitormetricsjs)
     - [Metrics](#metrics)
     - [constructor()](#constructorMonitormetrics)
-    - [updateMetrics(oracleName, oracle, feed, value, id, actualPrice, lastRound)](#updateMetrics)
+    - [updateMetrics(oracleName, oracle, feed, value, id, actualPrice, lastRound, roundsCreated)](#updateMetrics)
     - [updateBalanceMetrics(oracleName, oracle, feed, value)](#updateBalanceMetrics)
     - [setConfigMetrics(feed, threshold, heartbeat)](#setConfigMetrics)
     - [updateConsensusTimeTaken(feed, consensusTime)](#updateConsensusTimeTaken)
@@ -213,10 +213,11 @@ What it does:
 <br>
 <div id='queryRound'></div>
 
-<b>queryRound(feed)</b>
+<b>queryRound(feed, oracle)</b>
 
 Inputs:
 * feed - Feed name to query round for
+* oracle - oracle address to get submission for
 
 Use: This function is used to query the latest on-chain round for a feed
 
@@ -817,6 +818,7 @@ The following is a list of metrics exposed by the monitoring script:
 - <u>config_threshold</u> - This metric contains the config deviation threshold for every feed
 - <u>config_heartbeat</u> - This metric contains the config heartbeat for every feed
 - <u>consensus_time_taken</u> - This metric contains the time taken for consensus for the last round which achieved consensus
+- <u>oracle_rounds_created</u> - This metric contains the number of rounds created by the oracle
 
 <br>
 <div id='constructorMonitormetrics'></div>
@@ -833,7 +835,7 @@ What it does:
 <br>
 <div id='updateMetrics'></div>
 
-<b>updateMetrics(oracleName, oracle, feed, value, id, actualPrice, lastRound)</b>
+<b>updateMetrics(oracleName, oracle, feed, value, id, actualPrice, lastRound, createdRounds)</b>
 
 Inputs:
 * oracleName - The name of the oracle
@@ -843,6 +845,7 @@ Inputs:
 * id - The submission ID which is also the last timestamp
 * actualPrice - The actual aggregated price on chain
 * lastRound - The latest round ID for which a submission was made
+* createdRounds - The number of created rounds by the oracle
 
 Use: This function is used to update metrics 
 

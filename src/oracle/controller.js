@@ -86,7 +86,7 @@ export const makeController = () => {
         let currentPrice = query.last_result;
 
         // Query latest round
-        let latestRound = await queryRound(jobName);
+        let latestRound = await queryRound(jobName, middlewareEnvInstance.FROM);
 
         // Get latest submitted round
         let latestSubmittedRound = await getLatestSubmittedRound(middlewareEnvInstance.FROM);
