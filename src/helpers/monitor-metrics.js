@@ -52,6 +52,27 @@ export class MonitorMetrics {
       labelNames: ["feed"],
     });
 
+    // Create gauge for threshold
+    this.deviationThresholdGauge = new Gauge({
+      name: "config_threshold",
+      help: "Threshold for deviation",
+      labelNames: ["feed"],
+    });
+
+    // Create gauge for heartbeat
+    this.heartbeatGauge = new Gauge({
+      name: "config_heartbeat",
+      help: "Threshold for heartbeat",
+      labelNames: ["feed"],
+    });
+
+    // Create gauge for consensus time
+    this.consensusTimeTaken = new Gauge({
+      name: "consensus_time_taken",
+      help: "Threshold for heartbeat",
+      labelNames: ["feed"],
+    });
+
     // Register the gauges
     this.register.registerMetric(this.oracleSubmission);
     this.register.registerMetric(this.oracleLastEpoch);
@@ -59,6 +80,9 @@ export class MonitorMetrics {
     this.register.registerMetric(this.oracleBalance);
     this.register.registerMetric(this.oracleDeviation);
     this.register.registerMetric(this.actualPriceGauge);
+    this.register.registerMetric(this.deviationThresholdGauge);
+    this.register.registerMetric(this.heartbeatGauge);
+    this.register.registerMetric(this.consensusTimeTaken);
   }
 
   /**
@@ -91,5 +115,25 @@ export class MonitorMetrics {
    */
   updateBalanceMetrics(oracleName, oracle, brand, value) {
     this.oracleBalance.labels(oracleName, oracle, brand).set(value);
+  }
+
+  /**
+   * Function to set config metrics
+   * @param {*} feed feed name to set metric for
+   * @param {*} threshold deviation threshold
+   * @param {*} heartbeat heartbeat threshold
+   */
+  setConfigMetrics(feed, threshold, heartbeat){
+    this.deviationThresholdGauge.labels(feed).set(threshold);
+    this.heartbeatGauge.labels(feed).set(heartbeat);
+  }
+
+  /**
+   * Function to set consensus time taken
+   * @param {*} feed feed name to set metric for
+   * @param {*} consensusTime consensus time taken
+   */
+  updateConsensusTimeTaken(feed, consensusTime){
+    this.consensusTimeTaken.labels(feed).set(consensusTime)
   }
 }
