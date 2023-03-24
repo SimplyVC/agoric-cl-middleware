@@ -22,7 +22,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 300,
-  "iteration": 1679647848080,
+  "iteration": 1679668326773,
   "links": [],
   "panels": [
     {
@@ -787,7 +787,7 @@
       "id": 37,
       "options": {
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -804,7 +804,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "changes(oracle_last_round{feed=\"$feed\", group=\"Agoric Oracle Network\"}[24h])",
+          "expr": "increase(oracle_rounds_created{feed=\"$feed\", group=\"Agoric Oracle Network\"}[24h])",
           "hide": false,
           "interval": "",
           "legendFormat": "{{oracleName}}",
@@ -1300,7 +1300,7 @@
             "hideFromInspector": true,
             "method": "GET",
             "retry": 0,
-            "url": "api/datasources/proxy/10/api/v1/label/feed/values?start=1679646048&end=1679647848"
+            "url": "api/datasources/proxy/10/api/v1/label/feed/values?start=1679666527&end=1679668327"
           },
           "data": {
             "error": "Bad Gateway",
@@ -1336,6 +1336,6 @@
   "timepicker": {},
   "timezone": "",
   "title": "Agoric Oracle Network Template",
-  "uid": "6dkV7cBVz",
+  "uid": null,
   "version": 2
 }
