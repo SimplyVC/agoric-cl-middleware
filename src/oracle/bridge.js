@@ -69,7 +69,7 @@ export const startBridge = (PORT) => {
         // Get latest round
         let latestRound;
         try {
-          latestRound = await queryRound(jobName);
+          latestRound = await queryRound(jobName, middlewareEnvInstance.FROM);
         } catch (err) {
           logger.error("Error while getting round " + err)
           latestRound = new RoundDetails(1, 0, "", false );
