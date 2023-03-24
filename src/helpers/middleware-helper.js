@@ -135,33 +135,30 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   // Check if an update is needed
   let toUpdate = noLastPrice || updateTimeExpired || newRoundFound;
 
-  //Check if it is a price deviation request
-  let priceDeviationRequest = requestType === 2;
+  // Get decimal places for feed
+  let decimalPlaces = Number(feeds.feeds[jobName].decimalPlaces);
 
-  // If last price is found and it is a price deviation request
-  if (!noLastPrice && priceDeviationRequest) {
-    // Get decimal places for feed
-    let decimalPlaces = Number(feeds.feeds[jobName].decimalPlaces);
-    // Calculate percentage change
-    lastPrice = lastPrice * Math.pow(10, decimalPlaces);
+  // Calculate percentage change
+  lastPrice = lastPrice * Math.pow(10, decimalPlaces);
+  let percChange = Math.abs((result - lastPrice) / lastPrice) * 100;
 
-    let percChange = Math.abs((result - lastPrice) / lastPrice) * 100;
-    logger.info(
-      "Price change is " +
-        percChange +
-        "%. Last Price: " +
-        String(result) +
-        ". Current Price: " +
-        String(lastPrice)
-    );
+  // Get price deviation threshold for feed
+  let priceDeviationPercentage = Number(
+    feeds.feeds[jobName].priceDeviationPerc
+  );
 
-    // Get price deviation threshold for feed
-    let priceDeviationPercentage = Number(
-      feeds.feeds[jobName].priceDeviationPerc
-    );
+  logger.info(
+    "Price change is " +
+      percChange +
+      "%. Last Price: " +
+      String(result) +
+      ". Current Price: " +
+      String(lastPrice)
+  );
 
-    // Update price if result is greater than price deviation threshold
-    toUpdate = percChange >= priceDeviationPercentage;
+  // If last price is found and there is price deviation
+  if (!noLastPrice && percChange >= priceDeviationPercentage) {
+    toUpdate = true;
   }
 
   return toUpdate;
