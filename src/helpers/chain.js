@@ -530,16 +530,17 @@ export const getOracleLatestInfo = async (
         lastOfferId = id;
 
         // Get latest round
-        let latestRound = await queryRound(feed, oracle)
+        let latestRound = await queryRound(feed, oracle);
 
         // Get current rounds created
-        let roundsCreated = state["values"].hasOwnProperty(feed) &&
-        "rounds_created" in lastResults["values"][feed]
-          ? lastResults["values"][feed]
-          : 0
+        let roundsCreated =
+          state["values"].hasOwnProperty(feed) &&
+          state["values"][feed].hasOwnProperty("rounds_created")
+            ? state["values"][feed]["rounds_created"]
+            : 0;
 
         // If oracle is the new round's creator, increment rounds created
-        if (latestRound.startedBy == oracle){
+        if (latestRound.startedBy == oracle) {
           roundsCreated++;
         }
 
