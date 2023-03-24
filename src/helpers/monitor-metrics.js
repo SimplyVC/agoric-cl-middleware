@@ -77,7 +77,7 @@ export class MonitorMetrics {
     this.roundsCreated = new Gauge({
       name: "oracle_rounds_created",
       help: "Rounds created by each oracle",
-      labelNames: ["oracleName", "oracle", "brand"],
+      labelNames: ["oracleName", "oracle", "feed"],
     });
 
     // Register the gauges
