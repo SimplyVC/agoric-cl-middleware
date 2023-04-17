@@ -178,7 +178,7 @@ export const makeController = () => {
               "Will not be initialising new job request - Still waiting for request " +
                 query.request_id +
                 " to finish. Last finished request is " +
-                query.last_received_rsequest_id
+                query.last_received_request_id
             );
           }
         }

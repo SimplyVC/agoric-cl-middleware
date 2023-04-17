@@ -8,13 +8,8 @@ import { logger } from "./logger.js";
  * @returns {object} the JSON data in the file
  */
 export const readJSONFile = (filename) => {
-  try {
-    let rawData = fs.readFileSync(filename);
-    return JSON.parse(String(rawData));
-  } catch (err) {
-    logger.error(`Failed to read JSON file ${filename}: ${err}`);
-    process.exit(1)
-  }
+  let rawData = fs.readFileSync(filename);
+  return JSON.parse(String(rawData));
 };
 
 /**

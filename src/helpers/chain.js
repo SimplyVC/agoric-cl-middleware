@@ -220,32 +220,29 @@ export const getOraclesInvitations = async (oracle) => {
   const liveOffers = current.liveOffers;
   const invitations = current.offerToUsedInvitation;
 
-  // If used invitations is empty, check liveOffers
-  if(invitations.length == 0){
-    // Loop through liveOffers and store the IDs in feedInvs
-    for (let inv in liveOffers) {
-      let invitationId = liveOffers[inv][0]
-      let invitationDetails = liveOffers[inv][1]
-      //if there is a value
-      if(invitationDetails.invitationSpec.hasOwnProperty("instance")){
-        let boardId = invitationDetails.invitationSpec.instance.boardId;
-        let feed = feedBoards[boardId].split(" price feed")[0];
+  // Loop through liveOffers and store the IDs in feedInvs
+  for (let inv in liveOffers) {
+    let invitationId = liveOffers[inv][0]
+    let invitationDetails = liveOffers[inv][1]
+    //if there is a value
+    if(invitationDetails.invitationSpec.hasOwnProperty("instance")){
+      let boardId = invitationDetails.invitationSpec.instance.boardId;
+      let feed = feedBoards[boardId].split(" price feed")[0];
 
-        feedInvs[feed] = Number(invitationId);
-      }
+      feedInvs[feed] = Number(invitationId);
     }
-  } else {
-    // Loop through invitations and store the IDs in feedInvs
-    for (let inv in invitations) {
-      let invitationId = invitations[inv][0]
-      let invitationDetails = invitations[inv][1]
-      //if there is a value
-      if(invitationDetails.value && invitationDetails.value.length > 0){
-        let boardId = invitationDetails.value[0].instance.boardId;
-        let feed = feedBoards[boardId].split(" price feed")[0];
+  }
 
-        feedInvs[feed] = Number(invitationId);
-      }
+  // Loop through invitations and store the IDs in feedInvs
+  for (let inv in invitations) {
+    let invitationId = invitations[inv][0]
+    let invitationDetails = invitations[inv][1]
+    //if there is a value
+    if(invitationDetails.value && invitationDetails.value.length > 0){
+      let boardId = invitationDetails.value[0].instance.boardId;
+      let feed = feedBoards[boardId].split(" price feed")[0];
+
+      feedInvs[feed] = Number(invitationId);
     }
   }
   
