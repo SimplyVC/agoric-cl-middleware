@@ -217,15 +217,15 @@ export const getOraclesInvitations = async (oracle) => {
   let feedInvs = {};
 
   const current = await getCurrent(String(oracle), fromBoard, { vstorage });
-  const invitations = current.offerToUsedInvitation;
+  const invitations = current.liveOffers;
 
   // Loop through invitations and store the IDs in feedInvs
   for (let inv in invitations) {
     let invitationId = invitations[inv][0]
     let invitationDetails = invitations[inv][1]
     //if there is a value
-    if(invitationDetails.value && invitationDetails.value.length > 0){
-      let boardId = invitationDetails.value[0].instance.boardId;
+    if(invitationDetails.invitationSpec){
+      let boardId = invitationDetails.invitationSpec.instance.boardId;
       let feed = feedBoards[boardId].split(" price feed")[0];
   
       feedInvs[feed] = Number(invitationId);
