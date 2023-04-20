@@ -15,5 +15,5 @@ export const getCurrent = async (addr, ctx, { vstorage }) => {
 
   const capDatas = storageHelper.unserializeTxt(capDataStr, ctx);
 
-  return capDatas[0];
+  return capDatas[-1];
 };
