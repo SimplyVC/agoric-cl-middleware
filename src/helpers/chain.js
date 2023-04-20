@@ -124,7 +124,6 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
 
   // Loop through offers starting from last offer
   for (let i = 0; i < offers.length; i++) {
-
     // Get current offer
     let currentOffer = offers[i];
 
@@ -253,7 +252,7 @@ export const getOraclesInvitations = async (oracle) => {
 /**
  * Function to query round from chain
  * @param {string} feed feed name of the price to query (Ex. ATOM-USD)
-  * @param {string} oracle address of oracle to check for submission
+ * @param {string} oracle address of oracle to check for submission
  * @returns {RoundDetails} the latest round
  */
 export const queryRound = async (feed, oracle) => {
@@ -322,15 +321,12 @@ export const outputAction = (bridgeAction) => {
  * @returns {boolean} whether successful
  */
 export const pushPrice = async (price, feed, round, from) => {
-
   // Get offers
   let offers = await getOraclesInvitations(from);
 
   // Check if invitation for feed exists
   if (!(feed in offers)) {
-    throw new Error(
-      `Invitation for ${feed} not found in oracle invitations`
-    );
+    throw new Error(`Invitation for ${feed} not found in oracle invitations`);
   }
 
   // Get previous offer for feed
@@ -380,7 +376,7 @@ export const pushPrice = async (price, feed, round, from) => {
       return false;
     }
 
-    logger.info(`Submitting price for round ${round} attempt ${(i + 1)}`);
+    logger.info(`Submitting price for round ${round} attempt ${i + 1}`);
 
     offer.id = Number(Date.now());
 
@@ -435,7 +431,6 @@ export const pushPrice = async (price, feed, round, from) => {
  * @returns {object[]} returns.balances Array of balances
  */
 export const getOffersAndBalances = async (follower, oracle) => {
-    
   let toReturn = {
     offers: await getOffers(follower),
     balances: [],
@@ -529,6 +524,7 @@ export const getOracleLatestInfo = async (
       let lastRound = Number(
         currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
       );
+
 
       // Get feeds' last observed round from state
       let lastObservedRound = state["values"].hasOwnProperty(feed)

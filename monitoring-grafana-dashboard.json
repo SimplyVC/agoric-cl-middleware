@@ -21,10 +21,76 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 279,
-  "iteration": 1673536334307,
+  "id": 300,
+  "iteration": 1679668326773,
   "links": [],
   "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 40,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {
+          "titleSize": 15,
+          "valueSize": 70
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.1.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "config_heartbeat{feed=\"$feed\", group=\"Agoric Oracle Network\"}/60",
+          "interval": "",
+          "legendFormat": "Minutes",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "config_threshold{feed=\"$feed\", group=\"Agoric Oracle Network\"}",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Deviation threshold Percentage",
+          "refId": "B"
+        }
+      ],
+      "title": "Config Thresholds",
+      "type": "stat"
+    },
     {
       "collapsed": false,
       "datasource": null,
@@ -32,11 +98,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 6
       },
       "id": 9,
       "panels": [],
-      "title": "Local Chain",
+      "title": "Pricing metrics",
       "type": "row"
     },
     {
@@ -44,14 +110,15 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus Secondary MT",
+      "datasource": "Prometheus",
+      "description": "",
       "fill": 0,
       "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 1
+        "y": 7
       },
       "hiddenSeries": false,
       "id": 2,
@@ -82,7 +149,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "actual_price{feed=\"$feed\"}",
+          "expr": "actual_price{feed=\"$feed\", group=\"Agoric Oracle Network\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "Actual Value",
@@ -90,7 +157,7 @@
         },
         {
           "exemplar": true,
-          "expr": "oracle_latest_value{feed=\"$feed\"}",
+          "expr": "oracle_latest_value{feed=\"$feed\", group=\"Agoric Oracle Network\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "{{oracleName}} - {{oracle}}",
@@ -101,7 +168,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Node observations",
+      "title": "Last Observed Node Operator Price Submission",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -118,6 +185,7 @@
       "yaxes": [
         {
           "$$hashKey": "object:55",
+          "decimals": 5,
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -145,14 +213,14 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus Secondary MT",
+      "datasource": "Prometheus",
       "fill": 0,
       "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 1
+        "y": 7
       },
       "hiddenSeries": false,
       "id": 13,
@@ -183,7 +251,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "oracle_price_deviation{feed=\"$feed\"}",
+          "expr": "oracle_price_deviation{feed=\"$feed\", group=\"Agoric Oracle Network\"}",
           "interval": "",
           "legendFormat": "{{oracleName}} - {{oracle}}",
           "refId": "A"
@@ -237,14 +305,15 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus Secondary MT",
+      "datasource": "Prometheus",
+      "description": "",
       "fill": 0,
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 10
+        "y": 16
       },
       "hiddenSeries": false,
       "id": 7,
@@ -275,7 +344,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "delta(actual_price{feed=\"$feed\"}[15m])",
+          "expr": "delta(actual_price{feed=\"$feed\", group=\"Agoric Oracle Network\"}[15m])",
           "interval": "",
           "legendFormat": "Actual Value",
           "refId": "A"
@@ -285,7 +354,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Actual Value Change in last 15 mins",
+      "title": "Actual value change in last 15mins",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -329,14 +398,15 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus Secondary MT",
+      "datasource": "Prometheus",
+      "description": "",
       "fill": 0,
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 10
+        "y": 16
       },
       "hiddenSeries": false,
       "id": 6,
@@ -367,7 +437,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "delta(oracle_latest_value{feed=\"$feed\"}[15m])",
+          "expr": "delta(oracle_latest_value{feed=\"$feed\", group=\"Agoric Oracle Network\"}[15m])",
           "interval": "",
           "legendFormat": "{{oracleName}} - {{oracle}}",
           "refId": "A"
@@ -377,7 +447,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Observation Change in last 15 mins",
+      "title": "Observed change in last 15mins",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -417,21 +487,351 @@
       }
     },
     {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 30,
+      "panels": [],
+      "title": "Round metrics",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "max": 10,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 25
+      },
+      "id": 24,
+      "options": {
+        "displayMode": "lcd",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "pluginVersion": "8.1.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "(time()-max(oracle_last_observation{feed=\"$feed\", group=\"Agoric Oracle Network\"})/1000)/60",
+          "format": "time_series",
+          "instant": false,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": " Time since Last on-chain value published (mins)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "max": 10,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 25
+      },
+      "id": 20,
+      "options": {
+        "displayMode": "lcd",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "pluginVersion": "8.1.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "(time()-(oracle_last_observation{feed=\"$feed\", group=\"Agoric Oracle Network\"})/1000)/60",
+          "interval": "",
+          "legendFormat": "{{oracleName}} - {{oracle}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Oracle Last Submission Age (mins)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "max": 10,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 33
+      },
+      "id": 35,
+      "options": {
+        "displayMode": "lcd",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "pluginVersion": "8.1.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "(time()-min(oracle_last_observation{feed=\"$feed\", group=\"Agoric Oracle Network\"})/1000)/60",
+          "format": "time_series",
+          "instant": false,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": " Time since last created round (mins)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "max": 10,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 33
+      },
+      "id": 42,
+      "options": {
+        "displayMode": "lcd",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "pluginVersion": "8.1.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "(((min(oracle_last_observation{feed=\"$feed\", group=\"Agoric Oracle Network\"})/1000)+sum(config_heartbeat{feed=\"$feed\", group=\"Agoric Oracle Network\"})) - time()) / 60",
+          "format": "time_series",
+          "instant": false,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": " Time left for next update",
+      "type": "bargauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 144
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 33
+      },
+      "id": 37,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.1.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "increase(oracle_rounds_created{feed=\"$feed\", group=\"Agoric Oracle Network\"}[24h])",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "{{oracleName}}",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Rounds Created in the past 24 hours",
+      "type": "stat"
+    },
+    {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus Secondary MT",
+      "datasource": "Prometheus",
       "fill": 0,
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
         "x": 0,
-        "y": 18
+        "y": 41
       },
       "hiddenSeries": false,
-      "id": 21,
+      "id": 43,
       "legend": {
         "avg": false,
         "current": false,
@@ -459,9 +859,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "oracle_balance{brand=\"IST\"}",
+          "expr": "consensus_time_taken{feed=\"$feed\", group=\"Agoric Oracle Network\"}/1000",
           "interval": "",
-          "legendFormat": "{{oracleName}} - {{oracle}} - {{brand}}",
+          "legendFormat": "{{oracleName}} - {{oracle}}",
           "refId": "A"
         }
       ],
@@ -469,10 +869,10 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Oracle Balances",
+      "title": "Seconds taken for rounds to reach consensus",
       "tooltip": {
         "shared": true,
-        "sort": 1,
+        "sort": 0,
         "value_type": "individual"
       },
       "type": "graph",
@@ -486,6 +886,7 @@
       "yaxes": [
         {
           "$$hashKey": "object:63",
+          "decimals": 3,
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -513,14 +914,14 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus Secondary MT",
+      "datasource": "Prometheus",
       "fill": 0,
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 18
+        "w": 8,
+        "x": 8,
+        "y": 41
       },
       "hiddenSeries": false,
       "id": 22,
@@ -551,7 +952,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "oracle_last_round{feed=\"$feed\"}",
+          "expr": "oracle_last_round{feed=\"$feed\", group=\"Agoric Oracle Network\"}",
           "interval": "",
           "legendFormat": "{{oracleName}} - {{oracle}}",
           "refId": "A"
@@ -578,6 +979,7 @@
       "yaxes": [
         {
           "$$hashKey": "object:63",
+          "decimals": 3,
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -605,17 +1007,17 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "-- Mixed --",
+      "datasource": "Prometheus",
       "fill": 0,
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 26
+        "w": 8,
+        "x": 16,
+        "y": 41
       },
       "hiddenSeries": false,
-      "id": 19,
+      "id": 36,
       "legend": {
         "avg": false,
         "current": false,
@@ -642,28 +1044,18 @@
       "steppedLine": false,
       "targets": [
         {
-          "datasource": "Prometheus Secondary MT",
           "exemplar": true,
-          "expr": "actual_price{feed=\"$feed\"}",
+          "expr": "oracle_last_observation{feed=\"$feed\", group=\"Agoric Oracle Network\"}",
           "interval": "",
-          "legendFormat": "Actual Value",
+          "legendFormat": "{{oracleName}} - {{oracle}}",
           "refId": "A"
-        },
-        {
-          "datasource": "Cosmos",
-          "exemplar": true,
-          "expr": "local_prices{feed=\"$feed\", group=\"Agoric Chainlink\"}",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "{{source}}",
-          "refId": "B"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Actual Price vs Local Sources",
+      "title": "Oracle Last Submission timestamp",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -679,8 +1071,9 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:87",
-          "format": "short",
+          "$$hashKey": "object:63",
+          "decimals": 3,
+          "format": "dateTimeAsIso",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -688,7 +1081,7 @@
           "show": true
         },
         {
-          "$$hashKey": "object:88",
+          "$$hashKey": "object:64",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -703,21 +1096,109 @@
       }
     },
     {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 49
+      },
+      "id": 28,
+      "panels": [],
+      "title": "Balances",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "from": -10000000,
+                "result": {
+                  "index": 0,
+                  "text": "Inf"
+                },
+                "to": -1e-8
+              },
+              "type": "range"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 12,
+        "x": 0,
+        "y": 50
+      },
+      "id": 23,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.1.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "(oracle_balance{brand=\"IST\", group=\"Agoric Oracle Network\"} - 100000) / (-1*delta(oracle_balance{brand=\"IST\", group=\"Agoric Oracle Network\"}[1d]))",
+          "interval": "",
+          "legendFormat": "{{oracleName}} - {{brand}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Oracle Balances Days to 0",
+      "type": "stat"
+    },
+    {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus Secondary MT",
+      "datasource": "Prometheus",
+      "description": "",
       "fill": 0,
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 26
+        "x": 0,
+        "y": 53
       },
       "hiddenSeries": false,
-      "id": 20,
+      "id": 21,
       "legend": {
         "avg": false,
         "current": false,
@@ -745,7 +1226,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "oracle_last_observation{feed=\"$feed\"}",
+          "expr": "oracle_balance{brand=\"IST\", group=\"Agoric Oracle Network\"} / 1000000",
           "interval": "",
           "legendFormat": "{{oracleName}} - {{oracle}}",
           "refId": "A"
@@ -755,10 +1236,10 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Oracle Last Submission Timestamp",
+      "title": "Oracle IST Balances",
       "tooltip": {
         "shared": true,
-        "sort": 0,
+        "sort": 1,
         "value_type": "individual"
       },
       "type": "graph",
@@ -808,10 +1289,28 @@
           "text": "ATOM-USD",
           "value": "ATOM-USD"
         },
-        "datasource": null,
+        "datasource": "Prometheus",
         "definition": "label_values(feed)",
         "description": null,
-        "error": null,
+        "error": {
+          "config": {
+            "headers": {
+              "X-Grafana-Org-Id": 1
+            },
+            "hideFromInspector": true,
+            "method": "GET",
+            "retry": 0,
+            "url": "api/datasources/proxy/10/api/v1/label/feed/values?start=1679666527&end=1679668327"
+          },
+          "data": {
+            "error": "Bad Gateway",
+            "message": "Bad Gateway",
+            "response": ""
+          },
+          "message": "Bad Gateway",
+          "status": 502,
+          "statusText": "Bad Gateway"
+        },
         "hide": 0,
         "includeAll": false,
         "label": null,
@@ -836,7 +1335,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Agoric Oracles",
-  "uid": "umHwLVd4z",
-  "version": 8
+  "title": "Agoric Oracle Network Template",
+  "uid": null,
+  "version": 2
 }

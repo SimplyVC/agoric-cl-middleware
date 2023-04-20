@@ -275,3 +275,20 @@ As can be seen below, it takes an array of oracles with their addresses and name
 docker-compose build
 docker-compose up -d
 ```
+
+#### Adding the monitoring endpoint to prometheus
+
+Make sure you have Grafana and Prometheus installed on your machine.
+
+1. Replace <IP> and add the following endpoint to the Prometheus config
+
+```yaml
+- job_name: 'agoric-oracle-network'
+  static_configs:
+  - targets:
+    - <IP>:3001
+    labels:
+      group: 'Agoric Oracle Network'
+```
+
+2. Add the dashboard found at https://github.com/SimplyVC/agoric-cl-middleware/blob/master/monitoring-grafana-dashboard.json to Grafana
