@@ -99,6 +99,22 @@ export const monitor = async () => {
           metrics.updateConsensusTimeTaken(feed, consensusTime);
         }
       }
+
+      // Once all oracles were queried, get consensus time for each feed
+      for (let feed in lastRound) {
+        let feedLastRound = lastRound[feed];
+
+        // If there were at least  3 submissions
+        if (feedLastRound.submissions.length >= 3) {
+          // First sort the array
+          feedLastRound.submissions.sort((a, b) => a - b);
+          // Calculate consensus time, subtract third time from first
+          let consensusTime =
+            feedLastRound.submissions[2] - feedLastRound.submissions[0];
+          // Update metric
+          metrics.updateConsensusTimeTaken(feed, consensusTime);
+        }
+      }
     } catch (err) {
       logger.error("MONITOR ERROR: " + err);
     }

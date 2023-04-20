@@ -104,7 +104,16 @@ export class MonitorMetrics {
    * @param {number} lastRound latest round id for which there was a submission
    * @param {number} roundsCreated the number of rounds created
    */
-  updateMetrics(oracleName, oracle, feed, value, id, actualPrice, lastRound, roundsCreated) {
+  updateMetrics(
+    oracleName,
+    oracle,
+    feed,
+    value,
+    id,
+    actualPrice,
+    lastRound,
+    roundsCreated
+  ) {
     // Calculate price deviation from actual value
     let priceDeviation = Math.abs((value - actualPrice) / actualPrice) * 100;
 
@@ -133,7 +142,7 @@ export class MonitorMetrics {
    * @param {*} threshold deviation threshold
    * @param {*} heartbeat heartbeat threshold
    */
-  setConfigMetrics(feed, threshold, heartbeat){
+  setConfigMetrics(feed, threshold, heartbeat) {
     this.deviationThresholdGauge.labels(feed).set(threshold);
     this.heartbeatGauge.labels(feed).set(heartbeat);
   }
@@ -143,7 +152,7 @@ export class MonitorMetrics {
    * @param {*} feed feed name to set metric for
    * @param {*} consensusTime consensus time taken
    */
-  updateConsensusTimeTaken(feed, consensusTime){
-    this.consensusTimeTaken.labels(feed).set(consensusTime)
+  updateConsensusTimeTaken(feed, consensusTime) {
+    this.consensusTimeTaken.labels(feed).set(consensusTime);
   }
 }

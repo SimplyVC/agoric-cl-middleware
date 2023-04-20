@@ -158,7 +158,6 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
   // If last price is found and there is price deviation
   if (!noLastPrice && percChange >= priceDeviationPercentage) {
-    
     toUpdate = true;
   }
 
