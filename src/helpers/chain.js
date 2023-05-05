@@ -440,11 +440,9 @@ export const getAmountsIn = async (feed) => {
   const capDataStr = await readVStorage(feed, false);
 
   // Parse the value
-  let capData = JSON.parse(JSON.parse(capDataStr).value);
-  capData = JSON.parse(capData.values[0]);
+  let fromBoard = makeFromBoard();
+  let capData = storageHelper.unserializeTxt(capDataStr, fromBoard).at(-1);
 
-  // Replace any extra characters
-  capData = JSON.parse(capData.body.replaceAll("\\", ""));
   return Number(capData.amountIn.value);
 };
 
