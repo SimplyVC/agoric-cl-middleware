@@ -2,7 +2,8 @@ export const networkConfig = { rpcAddrs: [process.env.AGORIC_RPC], chainName: pr
 /* eslint-disable @jessie.js/no-nested-await */
 /* global Buffer, fetch, process */
 
-import { NonNullish } from '@agoric/assert';
+import { makeMarshal } from '@endo/marshal';
+import { Far } from '@endo/far';
 
 /**
  * @typedef {{boardId: string, iface: string}} RpcRemote
@@ -119,75 +120,45 @@ export const makeVStorage = powers => {
 /** @typedef {ReturnType<typeof makeVStorage>} VStorage */
 
 /**
- * Like makeMarshal but,
- * - slotToVal takes an iface arg
- * - if a part being serialized has a boardId property, it passes through as a slot value whereas the normal marshaller would treat it as a copyRecord
+ * @param {*} slotInfo
+ * @returns {BoardRemote}
+ */
+export const makeBoardRemote = ({ boardId, iface }) => {
+  const nonalleged =
+    iface && iface.length ? iface.slice('Alleged: '.length) : '';
+  return Far(`BoardRemote${nonalleged}`, { getBoardId: () => boardId });
+};
+
+export const boardValToSlot = val => {
+  if ('getBoardId' in val) {
+    return val.getBoardId();
+  }
+  Fail`unknown obj in boardSlottingMarshaller.valToSlot ${val}`;
+};
+
+/**
+ * A marshaller which can serialize getBoardId() -bearing
+ * Remotables. This allows the caller to pick their slots. The
+ * deserializer is configurable: the default cannot handle
+ * Remotable-bearing data.
  *
- * @param {(slot: string, iface: string) => any} slotToVal
+ * @param {(slot: string, iface: string) => any} [slotToVal]
  * @returns {import('@endo/marshal').Marshal<string>}
  */
-export const boardSlottingMarshaller = (slotToVal = (s, _i) => s) => ({
-  /** @param {{body: string, slots: string[]}} capData */
-  unserialize: ({ body, slots }) => {
-    const reviver = (_key, obj) => {
-      const qclass = obj !== null && typeof obj === 'object' && obj['@qclass'];
-      // NOTE: hilbert hotel not impl
-      switch (qclass) {
-        case 'slot': {
-          const { index, iface } = obj;
-          return slotToVal(slots[index], iface);
-        }
-        case 'bigint':
-          return BigInt(obj.digits);
-        case 'undefined':
-          return undefined;
-        default:
-          return obj;
-      }
-    };
-    return JSON.parse(body, reviver);
-  },
-  serialize: whole => {
-    const seen = new Map();
-    const slotIndex = v => {
-      if (seen.has(v)) {
-        return seen.get(v);
-      }
-      const index = seen.size;
-      seen.set(v, index);
-      return { index, iface: v.iface };
-    };
-    const recur = part => {
-      if (part === null) return null;
-      if (typeof part === 'bigint') {
-        return { '@qclass': 'bigint', digits: `${part}` };
-      }
-      if (Array.isArray(part)) {
-        return part.map(recur);
-      }
-      if (typeof part === 'object') {
-        if ('boardId' in part) {
-          return { '@qclass': 'slot', ...slotIndex(part.boardId) };
-        }
-        return Object.fromEntries(
-          Object.entries(part).map(([k, v]) => [k, recur(v)]),
-        );
-      }
-      return part;
-    };
-    const after = recur(whole);
-    return { body: JSON.stringify(after), slots: [...seen.keys()] };
-  },
-});
+export const boardSlottingMarshaller = (slotToVal = undefined) => {
+  return makeMarshal(boardValToSlot, slotToVal, {
+    serializeBodyFormat: 'smallcaps',
+  });
+};
 
-export const makeFromBoard = (slotKey = 'boardId') => {
+export const makeFromBoard = () => {
   const cache = new Map();
-  const convertSlotToVal = (slot, iface) => {
-    if (cache.has(slot)) {
-      return cache.get(slot);
+  const convertSlotToVal = (boardId, iface) => {
+    if (cache.has(boardId)) {
+      return cache.get(boardId);
     }
-    const val = harden({ [slotKey]: slot, iface });
-    cache.set(slot, val);
+    const val = makeBoardRemote({ boardId, iface });
+    cache.set(boardId, val);
     return val;
   };
   return harden({ convertSlotToVal });
@@ -240,13 +211,16 @@ harden(storageHelper);
 export const makeAgoricNames = async (ctx, vstorage) => {
   const reverse = {};
   const entries = await Promise.all(
-    ['brand', 'instance'].map(async kind => {
+    ['brand', 'instance', 'vbankAsset'].map(async kind => {
       const content = await vstorage.readLatest(
         `published.agoricNames.${kind}`,
       );
+      /** @type {Array<[string, import('@agoric/vats/tools/board-utils.js').BoardRemote]>} */
       const parts = storageHelper.unserializeTxt(content, ctx).at(-1);
       for (const [name, remote] of parts) {
-        reverse[remote.boardId] = name;
+        if ('getBoardId' in remote) {
+          reverse[remote.getBoardId()] = name;
+        }
       }
       return [kind, Object.fromEntries(parts)];
     }),

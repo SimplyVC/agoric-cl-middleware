@@ -9,6 +9,7 @@ import {
   makeRpcUtils,
   boardSlottingMarshaller,
   networkConfig,
+  storageHelper,
   makeFromBoard,
   makeVStorage,
 } from "../lib/rpc.js";
@@ -174,24 +175,13 @@ export const queryPrice = async (feed) => {
   try {
     // Read value from vstorage
     const capDataStr = await readVStorage(feed, false);
-
-    let capData;
-
-    try {
-      // Parse the value
-      capData = JSON.parse(JSON.parse(capDataStr).value);
-      capData = JSON.parse(capData.values[0]);
-
-      // Replace any extra characters
-      capData = JSON.parse(capData.body.replaceAll("\\", ""));
-    } catch (err) {
-      throw new Error("Failed to parse CapData for queryPrice");
-    }
+    let fromBoard = makeFromBoard();
+    let capData = storageHelper.unserializeTxt(capDataStr, fromBoard).at(-1);
 
     // Get the latest price by dividing amountOut by amountIn
     let latestPrice =
-      Number(capData.amountOut.value.digits) /
-      Number(capData.amountIn.value.digits);
+      Number(capData.amountOut.value) /
+      Number(capData.amountIn.value);
 
     logger.info(`${feed} Price Query: ${String(latestPrice)}`);
     return latestPrice;
@@ -238,14 +228,14 @@ export const getOraclesInvitations = async (oracle) => {
     let invitationDetails = invitations[inv][1]
     //if there is a value
     if(invitationDetails.value && invitationDetails.value.length > 0){
-      let boardId = invitationDetails.value[0].instance.boardId;
+      let boardId = invitationDetails.value[0].instance.getBoardId();
       let feed = feedBoards[boardId].split(" price feed")[0];
 
       feedInvs[feed] = Number(invitationId);
     }
   }
   
-
+ 
   return feedInvs;
 };
 
@@ -261,20 +251,15 @@ export const queryRound = async (feed, oracle) => {
 
   try {
     const capDataStr = await readVStorage(feed, true);
-
-    // Parse the value
-    capData = JSON.parse(JSON.parse(capDataStr).value);
-    capData = JSON.parse(capData.values[capData.values.length - 1]);
-
-    // Replace any extra characters
-    capData = JSON.parse(capData.body.replaceAll("\\", ""));
+    let fromBoard = makeFromBoard();
+    capData = storageHelper.unserializeTxt(capDataStr, fromBoard).at(-1);
   } catch (err) {
     logger.error("Failed to parse CapData for queryRound");
     return new RoundDetails(1, 0, "", false);
   }
 
   // Get round from result
-  let round = Number(capData.roundId.digits);
+  let round = Number(capData.roundId);
 
   // Get offers
   let offers = await getOraclesInvitations(oracle);
@@ -298,7 +283,7 @@ export const queryRound = async (feed, oracle) => {
   // Get the latest round
   let latestRound = new RoundDetails(
     round,
-    Number(capData.startedAt.digits),
+    Number(capData.startedAt),
     capData.startedBy,
     submissionForRound
   );
@@ -309,7 +294,7 @@ export const queryRound = async (feed, oracle) => {
 
 /** @param {import('../lib/psm.js').BridgeAction} bridgeAction */
 export const outputAction = (bridgeAction) => {
-  return marshaller.serialize(bridgeAction);
+  return marshaller.serialize(harden(bridgeAction));
 };
 
 /**
@@ -460,7 +445,7 @@ export const getAmountsIn = async (feed) => {
 
   // Replace any extra characters
   capData = JSON.parse(capData.body.replaceAll("\\", ""));
-  return Number(capData.amountIn.value.digits);
+  return Number(capData.amountIn.value);
 };
 
 /**
