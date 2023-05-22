@@ -54,7 +54,11 @@ export class OracleMonitorConfig {
 
         // If feed is not in amountsIn
         if (!(feed in this.amountsIn)) {
-          this.amountsIn[feed] = await getAmountsIn(feed);
+          try {
+            this.amountsIn[feed] = await getAmountsIn(feed);
+          } catch {
+            logger.error("Failed to get AmountsIn, make sure there is a price for the feed")
+          }
         }
       }
     }
