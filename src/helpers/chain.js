@@ -218,7 +218,7 @@ export const getOraclesInvitations = async (oracle) => {
       let boardId = invitationDetails.invitationSpec.instance.boardId;
       let feed = feedBoards[boardId].split(" price feed")[0];
 
-      feedInvs[feed] = Number(invitationId);
+      feedInvs[feed] = invitationId;
     }
   }
 
@@ -231,7 +231,7 @@ export const getOraclesInvitations = async (oracle) => {
       let boardId = invitationDetails.value[0].instance.getBoardId();
       let feed = feedBoards[boardId].split(" price feed")[0];
 
-      feedInvs[feed] = Number(invitationId);
+      feedInvs[feed] = invitationId;
     }
   }
   
@@ -321,7 +321,7 @@ export const pushPrice = async (price, feed, round, from) => {
   const offer = {
     invitationSpec: {
       source: "continuing",
-      previousOffer: Number(previousOffer),
+      previousOffer: previousOffer,
       invitationMakerName: "PushPrice",
       invitationArgs: harden([{ unitPrice: BigInt(price), roundId: round }]),
     },
