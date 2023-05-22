@@ -3,7 +3,7 @@ FROM node:16.17.1
 RUN apt install g++
 RUN apt install bash gcc openssl
 RUN apt update && apt install ca-certificates wget
-RUN wget -O go.tgz https://golang.org/dl/go1.19.2.linux-amd64.tar.gz
+RUN wget -O go.tgz https://golang.org/dl/go1.20.4.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go.tgz
 ENV PATH "/usr/local/go/bin:$PATH"
 ENV GOPATH "/opt/go/"
