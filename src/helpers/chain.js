@@ -283,7 +283,7 @@ export const queryRound = async (feed, oracle) => {
   // Get the latest round
   let latestRound = new RoundDetails(
     round,
-    Number(capData.startedAt),
+    Number(capData.startedAt.absValue),
     capData.startedBy,
     submissionForRound
   );
