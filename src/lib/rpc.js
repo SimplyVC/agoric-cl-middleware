@@ -1,4 +1,4 @@
-export const networkConfig = { rpcAddrs: [process.env.AGORIC_RPC], chainName: process.env.AGORIC_NET };
+export const networkConfig = { rpcAddrs: [process.env.AGORIC_RPC || 'http://127.0.0.1:26657'], chainName: process.env.AGORIC_NET };
 /* eslint-disable @jessie.js/no-nested-await */
 /* global Buffer, fetch, process */
 

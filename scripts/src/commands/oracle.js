@@ -8,8 +8,8 @@ import { Offers } from '@agoric/inter-protocol/src/clientSupport.js';
 import { Nat } from '@endo/nat';
 import { Command } from 'commander';
 import { inspect } from 'util';
-import { makeRpcUtils, storageHelper } from '../lib/rpc.js';
-import { getCurrent, outputAction } from '../lib/wallet.js';
+import { makeRpcUtils, storageHelper } from '../../../src/lib/rpc.js';
+import { getCurrent, outputAction } from '../../../src/lib/wallet.js';
 
 // XXX support other decimal places
 const COSMOS_UNIT = 1_000_000n;
@@ -25,7 +25,7 @@ export const makeOracleCommand = logger => {
   export AGORIC_NET=ollinet
 
   # provision wallet if necessary
-  agd keys add $WALLET
+  agd keys add $WALL ET
   # provision with faucet, e.g.
   open https://ollinet.faucet.agoric.net/ # and paste the key and choose client: smart-wallet
 

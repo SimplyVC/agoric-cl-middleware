@@ -1,5 +1,8 @@
 
 import { storageHelper } from './rpc.js';
+import { boardSlottingMarshaller } from './rpc.js';
+
+const marshaller = boardSlottingMarshaller();
 
 /**
  * @param {string} addr
@@ -16,4 +19,14 @@ export const getCurrent = async (addr, ctx, { vstorage }) => {
   const capDatas = storageHelper.unserializeTxt(capDataStr, ctx);
 
   return capDatas[capDatas.length-1];
+};
+
+/**
+ * @param {import('@agoric/smart-wallet/src/smartWallet').BridgeAction} bridgeAction
+ * @param {Pick<import('stream').Writable,'write'>} [stdout]
+ */
+export const outputAction = (bridgeAction, stdout = process.stdout) => {
+  const capData = marshaller.toCapData(harden(bridgeAction));
+  stdout.write(JSON.stringify(capData));
+  stdout.write('\n');
 };
