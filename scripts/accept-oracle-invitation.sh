@@ -9,9 +9,8 @@ AGORIC_RPC=$5
 AGORIC_SDK=$(find ~ -type d -name "agoric-sdk" | head -n 1)
 
 WALLET_ADDR=$(agd keys show "$WALLET_NAME" --keyring-backend test --output json | jq -r .address)
-cd $AGORIC_SDK/packages/agoric-cli
 ORACLE_OFFER=$(mktemp -t agops.XXX)
-bin/agops oracle accept --pair "$BRAND_IN.$BRAND_OUT" >|"$ORACLE_OFFER"
+./src/bin-agops.js oracle accept --pair "$BRAND_IN.$BRAND_OUT" >|"$ORACLE_OFFER"
 cat $ORACLE_OFFER
 jq ".body | fromjson" <"$ORACLE_OFFER"
 OFFER_TO_SEND=$(cat $ORACLE_OFFER | jq .)
