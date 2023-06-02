@@ -57,7 +57,7 @@ export const startBridge = (PORT) => {
        * received
        */
       if (isNaN(result)) {
-        res.status(500).send({ success: false });
+        return res.status(500).send({ success: false });
       } else {
         res.status(200).send({ success: true });
       }
@@ -129,7 +129,7 @@ export const startBridge = (PORT) => {
       
     } catch (err) {
       logger.error("SERVER ERROR: " + err);
-      res.status(500).send({ success: false });
+      return;
     }
     
   });
