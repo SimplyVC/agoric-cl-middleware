@@ -231,7 +231,18 @@ export const getOraclesInvitations = async (oracle) => {
       let boardId = invitationDetails.value[0].instance.getBoardId();
       let feed = feedBoards[boardId].split(" price feed")[0];
 
-      feedInvs[feed] = invitationId;
+      let invDate = invitationId.split("oracleAccept-")[1]
+
+      if(feedInvs[feed]){
+        let currentDate = feedInvs[feed].split("oracleAccept-")[1]
+        if (Number(invDate) > Number(currentDate)){
+          feedInvs[feed] = invitationId;
+        }
+      }
+      else{
+        feedInvs[feed] = invitationId;
+      }
+
     }
   }
   
@@ -288,7 +299,7 @@ export const queryRound = async (feed, oracle) => {
     submissionForRound
   );
 
-  logger.info(`${feed} Latest Round: ${latestRound.roundId}`);
+  logger.info(`${feed} Latest Round: ${latestRound.roundId}. Submitted: ${submissionForRound}`);
   return latestRound;
 };
 
@@ -490,83 +501,106 @@ export const getOracleLatestInfo = async (
   for (let i = 0; i < offersBalances.offers.length; i++) {
     // Get current offer
     let currentOffer = offersBalances.offers[i];
+
     let id = Number(currentOffer["status"]["id"]);
 
-    // If we found the last visited offer id in previous check, stop looping
-    if (id <= lastOfferId) {
-      break;
-    }
+    // If a number
+    if (!isNaN(id)) {
 
-    // If a price invitation
-    let invMakerName =
-      currentOffer["status"]["invitationSpec"]["invitationMakerName"];
-
-    if (invMakerName === "PushPrice") {
-      let feed =
-        feeds[currentOffer["status"]["invitationSpec"]["previousOffer"]];
-      let lastRound = Number(
-        currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
-      );
-
-
-      // Get feeds' last observed round from state
-      let lastObservedRound = state["values"].hasOwnProperty(feed)
-        ? state["values"][feed]["round"]
-        : 0;
-
-      // If round is bigger than last observed and the offer didn't fail
-      if (
-        lastRound > lastObservedRound &&
-        !currentOffer["status"].hasOwnProperty("error")
-      ) {
-        // If id is bigger than last offer id in state, set it
-        lastResults["last_index"] = id;
-        lastOfferId = id;
-
-        // Get latest round
-        let latestRound = await queryRound(feed, oracle);
-
-        // Get current rounds created
-        let roundsCreated =
-          state["values"].hasOwnProperty(feed) &&
-          state["values"][feed].hasOwnProperty("rounds_created")
-            ? state["values"][feed]["rounds_created"]
-            : 0;
-
-        // If oracle is the new round's creator, increment rounds created
-        if (latestRound.startedBy == oracle) {
-          roundsCreated++;
-        }
-
-        let price =
-          Number(
-            currentOffer["status"]["invitationSpec"]["invitationArgs"][0][
-              "unitPrice"
-            ]
-          ) / amountsIn[feed];
-
-        // Fill results variable
-        lastResults["values"][feed] = {
-          price: price,
-          id: id,
-          round: lastRound,
-          rounds_created: roundsCreated
-        };
-        state = lastResults;
-
-        // Get latest feed price
-        let feedPrice = await queryPrice(feed);
-        // Update metrics
-        metrics.updateMetrics(
-          oracleDetails["oracleName"],
-          oracle,
-          feed,
-          price,
-          id,
-          feedPrice,
-          lastRound,
-          roundsCreated
+      // If we found the last visited offer id in previous check, stop looping
+      if (id <= lastOfferId && i > 0) {
+        break;
+      }
+  
+      // If a price invitation
+      let invMakerName =
+        currentOffer["status"]["invitationSpec"]["invitationMakerName"];
+  
+      if (invMakerName === "PushPrice") {
+        let feed =
+          feeds[currentOffer["status"]["invitationSpec"]["previousOffer"]];
+        let lastRound = Number(
+          currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
         );
+  
+  
+        // Get feeds' last observed round from state
+        let lastObservedRound = state["values"].hasOwnProperty(feed)
+          ? state["values"][feed]["round"]
+          : 0;
+  
+        // If round is bigger than last observed and the offer didn't fail
+        if (
+          lastRound > lastObservedRound &&
+          !currentOffer["status"].hasOwnProperty("error")
+        ) {
+          // If id is bigger than last offer id in state, set it
+          lastResults["last_index"] = id;
+          lastOfferId = id;
+  
+          // Get latest round
+          let latestRound = await queryRound(feed, oracle);
+  
+          // Get current rounds created
+          let roundsCreated =
+            state["values"].hasOwnProperty(feed) &&
+            state["values"][feed].hasOwnProperty("rounds_created")
+              ? state["values"][feed]["rounds_created"]
+              : 0;
+  
+          // If oracle is the new round's creator, increment rounds created
+          if (latestRound.startedBy == oracle) {
+            roundsCreated++;
+          }
+  
+          let price =
+            Number(
+              currentOffer["status"]["invitationSpec"]["invitationArgs"][0][
+                "unitPrice"
+              ]
+            ) / amountsIn[feed];
+  
+          // Fill results variable
+          lastResults["values"][feed] = {
+            price: price,
+            id: id,
+            round: lastRound,
+            rounds_created: roundsCreated
+          };
+          state = lastResults;
+  
+          // Get latest feed price
+          let feedPrice = await queryPrice(feed);
+          // Update metrics
+          metrics.updateMetrics(
+            oracleDetails["oracleName"],
+            oracle,
+            feed,
+            price,
+            id,
+            feedPrice,
+            lastRound,
+            roundsCreated
+          );
+        }
+        else if(lastResults["values"].hasOwnProperty(feed)){
+  
+          console.log("Setting from state", lastResults["values"][feed])
+  
+          // Get latest feed price
+          let feedPrice = await queryPrice(feed);
+  
+          metrics.updateMetrics(
+            oracleDetails["oracleName"],
+            oracle,
+            feed,
+            lastResults["values"][feed]["price"],
+            lastResults["values"][feed]["id"],
+            feedPrice,
+            lastRound,
+            lastResults["values"][feed]["rounds_created"]
+          );
+        }
       }
     }
   }
