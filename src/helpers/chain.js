@@ -231,7 +231,18 @@ export const getOraclesInvitations = async (oracle) => {
       let boardId = invitationDetails.value[0].instance.getBoardId();
       let feed = feedBoards[boardId].split(" price feed")[0];
 
-      feedInvs[feed] = invitationId;
+      let invDate = invitationId.split("oracleAccept-")[1]
+
+      if(feedInvs[feed]){
+        let currentDate = feedInvs[feed].split("oracleAccept-")[1]
+        if (Number(invDate) > Number(currentDate)){
+          feedInvs[feed] = invitationId;
+        }
+      }
+      else{
+        feedInvs[feed] = invitationId;
+      }
+
     }
   }
   
