@@ -502,9 +502,10 @@ export const getOracleLatestInfo = async (
     // Get current offer
     let currentOffer = offersBalances.offers[i];
 
+    let id = Number(currentOffer["status"]["id"]);
+
     // If a number
-    if (!isNaN(currentOffer)) {
-      let id = Number(currentOffer["status"]["id"]);
+    if (!isNaN(id)) {
 
       // If we found the last visited offer id in previous check, stop looping
       if (id <= lastOfferId && i > 0) {
