@@ -4,7 +4,7 @@
   - [helpers/chain.js](#chainjs)
     - [readVStorage(feed, roundData)](#readvstorage)
     - [getOffers(follower)](#getOffers)
-    - [getLatestSubmittedRound(oracle)](#getLatestSubmittedRound)
+    - [getLatestSubmittedRound(oracle, feedOfferId)](#getLatestSubmittedRound)
     - [checkSubmissionForRound(oracle, feedOfferId, roundId)](#checkSubmissionForRound)
     - [queryPrice(feed)](#queryPrice)
     - [getOraclesInvitations(oracle)](#getOraclesInvitationsMiddleware)
@@ -131,10 +131,11 @@ What it does:
 <br>
 <div id='getLatestSubmittedRound'></div>
 
-<b>getLatestSubmittedRound(oracle)</b>
+<b>getLatestSubmittedRound(oracle, feedOfferId)</b>
 
 Inputs:
 * oracle - The address of the oracle of whom we are getting the latest submitted round
+* feedOfferId - The offer ID of the feed to get the latest round for
 
 Use: This function is used to get the latest round for which a submission was made
 

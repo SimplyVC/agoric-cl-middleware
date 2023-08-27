@@ -81,9 +81,10 @@ export const getOffers = async (follower) => {
 /**
  * Function to get the latest submitted round
  * @param {string} oracle oracle address
+ * @param {string} feedOfferId offer ID for feed
  * @returns {number} the latest round submitted
  */
-export const getLatestSubmittedRound = async (oracle) => {
+export const getLatestSubmittedRound = async (oracle, feedOfferId) => {
   let fromBoard = makeFromBoard();
   const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
   const leader = makeLeader(networkConfig.rpcAddrs[0]);
@@ -95,10 +96,12 @@ export const getLatestSubmittedRound = async (oracle) => {
   // Get offers
   let offers = await getOffers(follower);
 
-  if (offers.length > 0 && offers[0]["status"]["invitationSpec"]["invitationArgs"].length > 0) {
-    return Number(
-      offers[0]["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
-    );
+  for (let offer of offers){
+    if (offer["status"]["invitationSpec"]["previousOffer"] == feedOfferId) {
+      return Number(
+        offer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
+      );
+    }
   }
 
   return 0;

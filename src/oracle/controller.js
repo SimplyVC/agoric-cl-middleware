@@ -2,6 +2,7 @@
 
 import { submitNewJob } from "../helpers/middleware-helper.js";
 import { getAllJobs, queryTable, updateTable } from "../helpers/db.js";
+import { getOraclesInvitations } from "../helpers/chain.js";
 import {
   queryPrice,
   queryRound,
@@ -88,9 +89,21 @@ export const makeController = () => {
         // Query latest round
         let latestRound = await queryRound(jobName, middlewareEnvInstance.FROM);
 
-        // Get latest submitted round
-        let latestSubmittedRound = await getLatestSubmittedRound(middlewareEnvInstance.FROM);
+        // Get offers
+        let offers = await getOraclesInvitations(middlewareEnvInstance.FROM);
 
+        // Check if invitation for feed exists
+        if (!(jobName in offers)) {
+          logger.error(`Invitation for ${jobName} not found in oracle invitations`);
+          return;
+        }
+
+        // Get feed offer id
+        let feedOfferId = offers[jobName];
+
+        // Get latest submitted round
+        let latestSubmittedRound = await getLatestSubmittedRound(middlewareEnvInstance.FROM, feedOfferId);
+ 
         // Update jobs table
         await updateTable(
           "jobs",
