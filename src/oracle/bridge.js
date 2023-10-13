@@ -91,7 +91,7 @@ export const startBridge = (PORT) => {
         // (f round to submit is equal to current round but current round is older than push interval, submit to a new round
         let feeds = new FeedsConfig();
         let now = Date.now() / 1000
-        pushInterval = Number(feeds.fees[jobName].pushInterval)
+        pushInterval = Number(feeds.feeds[jobName].pushInterval)
         
         if (roundToSubmit == lastReportedRound && latestRound.startedAt < now - (pushInterval * 1000))
           roundToSubmit = roundToSubmit + 1;
