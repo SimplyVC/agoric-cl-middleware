@@ -332,7 +332,7 @@ export const pushPrice = async (price, feed, round, from) => {
   let previousOffer = offers[feed];
 
   // Create an offer
-  let offer = {
+  let templateOffer = {
     invitationSpec: {
       source: "continuing",
       previousOffer: previousOffer,
@@ -377,6 +377,7 @@ export const pushPrice = async (price, feed, round, from) => {
 
     logger.info(`Submitting price for round ${round} attempt ${i + 1}`);
 
+    let offer = {...templateOffer};
     offer.id = Number(Date.now());
 
     // Output action
