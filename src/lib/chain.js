@@ -46,7 +46,7 @@ export const execSwingsetTransaction = (
   } else {
     const yesCmd = `${cmd} --yes`;
     console.log('Executing ', yesCmd);
-    return execSync(yesCmd);
+    return JSON.parse(execSync(yesCmd).toString());
   }
 };
 harden(execSwingsetTransaction);
