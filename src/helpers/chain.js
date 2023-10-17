@@ -19,7 +19,7 @@ import {
     delay 
 } from "./utils.js";
 import { checkIfInSubmission } from "./middleware-helper.js"
-import { updateTable } from "./db.js";
+import { getNextSequence, incrementSequence, updateTable } from "./db.js";
 import middlewareEnvInstance from './middleware-env.js';
 import { logger } from "./logger.js";
 import { RoundDetails } from "./round-details.js";
@@ -386,9 +386,13 @@ export const pushPrice = async (price, feed, round, from) => {
       offer,
     });
 
+    // Get latest sequence number
+    let sequence = await getNextSequence();
+    console.log("sequence", sequence["next_num"])
+
     // Execute
     await execSwingsetTransaction(
-      "wallet-action --allow-spend '" + JSON.stringify(data) + "'",
+      "wallet-action --allow-spend '" + JSON.stringify(data) + "' --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"],
       networkConfig,
       from,
       false,
@@ -414,6 +418,8 @@ export const pushPrice = async (price, feed, round, from) => {
 
   if (submitted) {
     logger.info("Price submitted successfully for round " + round);
+    // update sequence
+    await incrementSequence();
   } else {
     logger.error("Price failed to be submitted for round " + round);
   }
