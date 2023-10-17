@@ -168,3 +168,17 @@ export const incrementSequence = async () => {
     throw new Error("DB ERROR when updating next sequence number: " + err);
   }
 }
+
+/**
+ * Function to set the next sequence number
+ * @param {number} nextSequence the next sequence number
+ */
+export const setSequenceNumber = async (nextSequence) => {
+  try {
+    await db.run(
+      `UPDATE sequence_numbers SET next_num = ${nextSequence}`
+    );
+  } catch (err) {
+    throw new Error("DB ERROR when updating next sequence number: " + err);
+  }
+}

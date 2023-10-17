@@ -391,13 +391,17 @@ export const pushPrice = async (price, feed, round, from) => {
     console.log("sequence", sequence["next_num"])
 
     // Execute
-    await execSwingsetTransaction(
+    let response = await execSwingsetTransaction(
       "wallet-action --allow-spend '" + JSON.stringify(data) + "' --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"],
       networkConfig,
       from,
       false,
       keyring
     );
+    logger.info("Response: "+JSON.stringify(response))
+
+    // Update sequence
+    await incrementSequence();
 
     // Update last submission time
     await updateTable(
@@ -418,8 +422,6 @@ export const pushPrice = async (price, feed, round, from) => {
 
   if (submitted) {
     logger.info("Price submitted successfully for round " + round);
-    // update sequence
-    await incrementSequence();
   } else {
     logger.error("Price failed to be submitted for round " + round);
   }
