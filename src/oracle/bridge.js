@@ -13,6 +13,7 @@ import {
     pushPrice, 
     queryRound 
 } from "../helpers/chain.js";
+import { FeedsConfig } from "../helpers/feeds-config.js";
 import middlewareEnvInstance from '../helpers/middleware-env.js';
 import { logger } from "../helpers/logger.js";
 import { RoundDetails } from "../helpers/round-details.js";
@@ -86,6 +87,14 @@ export const startBridge = (PORT) => {
           : latestRound.roundId;
         let roundToSubmit =
           lastReportedRound < lastRoundId ? lastRoundId : lastRoundId + 1;
+
+        // (f round to submit is equal to current round but current round is older than push interval, submit to a new round
+        let feeds = new FeedsConfig();
+        let now = Date.now() / 1000
+        let pushInterval = Number(feeds.feeds[jobName].pushInterval)
+        
+        if (roundToSubmit == lastRoundId && latestRound.startedAt < (now - pushInterval))
+          roundToSubmit = roundToSubmit + 1;
 
         // Check if new round
         let newRound = roundToSubmit !== lastRoundId;
