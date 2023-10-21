@@ -93,7 +93,7 @@ export const startBridge = (PORT) => {
         let now = Date.now() / 1000
         let pushInterval = Number(feeds.feeds[jobName].pushInterval)
         
-        if (roundToSubmit == lastRoundId && latestRound.startedAt < (now - pushInterval))
+        if (roundToSubmit != 1 && roundToSubmit == lastRoundId && latestRound.startedAt < (now - pushInterval))
           roundToSubmit = roundToSubmit + 1;
 
         // Check if new round
