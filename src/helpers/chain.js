@@ -19,7 +19,7 @@ import {
     delay 
 } from "./utils.js";
 import { checkIfInSubmission } from "./middleware-helper.js"
-import { updateTable } from "./db.js";
+import { getNextSequence, incrementSequence, setSequenceNumber, updateTable } from "./db.js";
 import middlewareEnvInstance from './middleware-env.js';
 import { logger } from "./logger.js";
 import { RoundDetails } from "./round-details.js";
@@ -386,14 +386,37 @@ export const pushPrice = async (price, feed, round, from) => {
       offer,
     });
 
+    // Get latest sequence number
+    let sequence = await getNextSequence();
+
     // Execute
-    await execSwingsetTransaction(
-      "wallet-action --allow-spend '" + JSON.stringify(data) + "'",
+    let response = await execSwingsetTransaction(
+      "wallet-action --allow-spend '" + JSON.stringify(data) + "' --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"],
       networkConfig,
       from,
       false,
       keyring
     );
+
+    logger.info("Response: "+JSON.stringify(response))
+
+    // If transaction failed
+    if(response["code"] != 0){
+      // Get raw log
+      let rawLog = response["raw_log"];
+      // If error contains sequence mismatch
+      if (rawLog.includes("incorrect account sequence")){
+        // setSequence
+        const regex = /\d+/g;
+        const numbers = rawLog.match(regex);
+        logger.info(`Setting sequence to ${numbers[0]}`)
+        await setSequenceNumber(numbers[0])
+      }
+
+    } else {
+      // Update sequence
+      await incrementSequence();
+    }
 
     // Update last submission time
     await updateTable(
@@ -588,8 +611,6 @@ export const getOracleLatestInfo = async (
           );
         }
         else if(lastResults["values"].hasOwnProperty(feed)){
-  
-          console.log("Setting from state", lastResults["values"][feed])
   
           // Get latest feed price
           let feedPrice = await queryPrice(feed);
