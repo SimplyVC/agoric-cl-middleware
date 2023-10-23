@@ -533,11 +533,6 @@ export const getOracleLatestInfo = async (
 
     // If a number
     if (!isNaN(id)) {
-
-      // If we found the last visited offer id in previous check, stop looping
-      if (id <= lastOfferId && i > 0) {
-        break;
-      }
   
       // If a price invitation
       let invMakerName =
@@ -598,6 +593,9 @@ export const getOracleLatestInfo = async (
   
           // Get latest feed price
           let feedPrice = await queryPrice(feed);
+
+          logger.info(`Updating metrics for ${oracleDetails["oracleName"]} for ${feed} @ round ${lastRound}`);
+              
           // Update metrics
           metrics.updateMetrics(
             oracleDetails["oracleName"],
@@ -608,22 +606,6 @@ export const getOracleLatestInfo = async (
             feedPrice,
             lastRound,
             roundsCreated
-          );
-        }
-        else if(lastResults["values"].hasOwnProperty(feed)){
-  
-          // Get latest feed price
-          let feedPrice = await queryPrice(feed);
-  
-          metrics.updateMetrics(
-            oracleDetails["oracleName"],
-            oracle,
-            feed,
-            lastResults["values"][feed]["price"],
-            lastResults["values"][feed]["id"],
-            feedPrice,
-            lastRound,
-            lastResults["values"][feed]["rounds_created"]
           );
         }
       }
