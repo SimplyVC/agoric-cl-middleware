@@ -391,7 +391,7 @@ export const pushPrice = async (price, feed, round, from) => {
 
     // Execute
     let response = await execSwingsetTransaction(
-      "wallet-action --allow-spend '" + JSON.stringify(data) + "' --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"],
+      "wallet-action --allow-spend '" + JSON.stringify(data) + "' --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"] + " --broadcast-mode=block",
       networkConfig,
       from,
       false,
@@ -416,14 +416,14 @@ export const pushPrice = async (price, feed, round, from) => {
     } else {
       // Update sequence
       await incrementSequence();
-    }
 
-    // Update last submission time
-    await updateTable(
-      "jobs",
-      { last_submission_time: Date.now() / 1000 },
-      feed
-    );
+      // Update last submission time
+      await updateTable(
+        "jobs",
+        { last_submission_time: Date.now() / 1000 },
+        feed
+      );
+    }
 
     // Sleep SEND_CHECK_INTERVAL seconds
     await delay((Number(middlewareEnvInstance.SEND_CHECK_INTERVAL) + 1) * 1000);
