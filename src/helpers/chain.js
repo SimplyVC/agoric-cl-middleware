@@ -24,8 +24,40 @@ import middlewareEnvInstance from './middleware-env.js';
 import { logger } from "./logger.js";
 import { RoundDetails } from "./round-details.js";
 import { execSync } from 'child_process';
+import axios from "axios";
 
 const marshaller = boardSlottingMarshaller();
+
+/**
+ * Function to get the latest block height
+ * @returns {Number} the latest block number or 0 if it fails
+ */
+export const getLatestBlockHeight = async () => {
+  try {
+    // Construct the URL
+    const apiUrl = `${middlewareEnvInstance.AGORIC_RPC}:26657/status`;
+
+    // Make the GET request
+    const response = await axios.get(apiUrl);
+
+    // Parse the JSON response
+    const responseData = response.data;
+
+    // Extract the latest_block_height
+    const latestBlockHeight = responseData.result.sync_info.latest_block_height;
+
+    // Convert it to a number
+    const latestBlockHeightNumber = Number(latestBlockHeight);
+
+    // Log or return the result
+    console.log('Latest Block Height:', latestBlockHeightNumber);
+    return latestBlockHeightNumber;
+  } catch (error) {
+    // Handle errors
+    console.error('Failed to get block height:', error.message);
+    return 0;
+  }
+}
 
 /**
  * Function to read from vstorage
@@ -390,39 +422,51 @@ export const pushPrice = async (price, feed, round, from) => {
     let sequence = await getNextSequence();
 
     // Execute
-    let response = await execSwingsetTransaction(
-      "wallet-action --allow-spend '" + JSON.stringify(data) + "' --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"] + " --broadcast-mode=block",
-      networkConfig,
-      from,
-      false,
-      keyring
-    );
-
-    logger.info("Response: "+JSON.stringify(response))
-
-    // If transaction failed
-    if(response["code"] != 0){
-      // Get raw log
-      let rawLog = response["raw_log"];
-      // If error contains sequence mismatch
-      if (rawLog.includes("incorrect account sequence")){
-        // setSequence
-        const regex = /\d+/g;
-        const numbers = rawLog.match(regex);
-        logger.info(`Setting sequence to ${numbers[0]}`)
-        await setSequenceNumber(numbers[0])
-      }
-
-    } else {
-      // Update sequence
-      await incrementSequence();
-
-      // Update last submission time
-      await updateTable(
-        "jobs",
-        { last_submission_time: Date.now() / 1000 },
-        feed
+    try{
+      let response = await execSwingsetTransaction(
+        "wallet-action --allow-spend '" + JSON.stringify(data) + "' --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"] + " --broadcast-mode=block",
+        networkConfig,
+        from,
+        false,
+        keyring
       );
+
+      logger.info("Response: "+JSON.stringify(response))
+
+      // If transaction failed
+      if(response["code"] != 0){
+        // Get raw log
+        let rawLog = response["raw_log"];
+        // If error contains sequence mismatch
+        if (rawLog.includes("incorrect account sequence")){
+          // setSequence
+          const regex = /\d+/g;
+          const numbers = rawLog.match(regex);
+          logger.info(`Setting sequence to ${numbers[0]}`)
+          await setSequenceNumber(numbers[0])
+        }
+
+      } else {
+        // Update sequence
+        logger.info(`Increment sequence to ${sequence["next_num"]+1}`)
+        await incrementSequence();
+
+        // Update last submission time
+        await updateTable(
+          "jobs",
+          { last_submission_time: Date.now() / 1000 },
+          feed
+        );
+      }
+    }
+    catch(error){
+      logger.error("Error making submission: "+error);
+      // If tx failed to be included (timeout)
+      if (error.includes("timed out waiting for tx to be included in a block")){
+        // Update sequence
+        logger.info(`Increment sequence to ${sequence["next_num"]+1}`)
+        await incrementSequence();
+      }
     }
 
     // Sleep SEND_CHECK_INTERVAL seconds
