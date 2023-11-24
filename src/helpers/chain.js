@@ -429,10 +429,12 @@ export const pushPrice = async (price, feed, round, from) => {
 
     // submit update only if height increased
     if (latestHeight > lastSubmissionBlock){
+      // 5 blocks timeout
+      let timeoutHeight = latestHeight + 5;
       // Execute
       try{
         let response = await execSwingsetTransaction(
-          "wallet-action --allow-spend '" + JSON.stringify(data) + "' --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"] + " --broadcast-mode=block",
+          "wallet-action --allow-spend '" + JSON.stringify(data) + "' --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"] + " --broadcast-mode=block --timeout-height="+timeoutHeight,
           networkConfig,
           from,
           false,
