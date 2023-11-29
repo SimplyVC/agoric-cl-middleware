@@ -2,6 +2,7 @@
 
 - [Technical Documentation](#technical-documentation)
   - [helpers/chain.js](#chainjs)
+    - [getLatestBlockHeight()](#getLatestBlockHeight)
     - [readVStorage(feed, roundData)](#readvstorage)
     - [getOffers(follower)](#getOffers)
     - [getLatestSubmittedRound(oracle, feedOfferId)](#getLatestSubmittedRound)
@@ -99,6 +100,15 @@ In this section, I will go over the <b>oracle</b> directory and explain in detai
 <div id='chainjs'></div>
 
 ### <u>helpers/chain.js</u>
+
+<br>
+<div id='getLatestBlockHeight'></div>
+
+<b>getLatestBlockHeight()</b>
+
+Use: This function is used to get the last block height
+
+Returns: The latest block height or 0 if it fails.
 
 <br>
 <div id='readvstorage'></div>
