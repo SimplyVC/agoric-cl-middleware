@@ -2,6 +2,7 @@
 
 - [Technical Documentation](#technical-documentation)
   - [helpers/chain.js](#chainjs)
+    - [getLatestBlockHeight()](#getLatestBlockHeight)
     - [readVStorage(feed, roundData)](#readvstorage)
     - [getOffers(follower)](#getOffers)
     - [getLatestSubmittedRound(oracle, feedOfferId)](#getLatestSubmittedRound)
@@ -23,6 +24,8 @@
     - [deleteJob(id)](#deleteJob)
     - [queryTable(table, fields, name)](#queryTable)
     - [updateTable(table, values, name)](#updateTable)
+    - [getNextSequence()](#getNextSequence)
+    - [incrementSequence()](#incrementSequence)
   - [helpers/utils.js](#helperjs)
     - [readJSONFile(filename)](#readJSONFile)
     - [saveJSONDataToFile(newData, filename)](#saveJSONDataToFile)
@@ -97,6 +100,15 @@ In this section, I will go over the <b>oracle</b> directory and explain in detai
 <div id='chainjs'></div>
 
 ### <u>helpers/chain.js</u>
+
+<br>
+<div id='getLatestBlockHeight'></div>
+
+<b>getLatestBlockHeight()</b>
+
+Use: This function is used to get the last block height
+
+Returns: The latest block height or 0 if it fails.
 
 <br>
 <div id='readvstorage'></div>
@@ -477,6 +489,30 @@ What it does:
   1. Loads the DB using loadDB
   2. Builds the SQL command and updates the DB using db.exec().
 
+<br>
+<div id='getNextSequence'></div>
+
+<b>getNextSequence()</b>
+
+Use: This function is used to query the next sequence number
+
+Returns: An object containing the next sequence number to be used
+
+What it does:
+  1. Loads the DB using loadDB
+  2. Builds the SQL query and queries the DB using db.get(). This function is used because we always will need only 1 record. Hence, no need for db.all().#
+
+<br>
+<div id='incrementSequence'></div>
+
+<b>incrementSequence()</b>
+
+Use: This function is used to update the next sequence number to be used
+
+What it does:
+  1. Loads the DB using loadDB
+  2. Builds the SQL command and updates the DB using db.exec().
+
 <div id='helperjs'></div>
 
 ### <u>helpers/utils.js</u>
@@ -719,6 +755,7 @@ This class contains the following properties
 
 * this.MIDDLEWARE_PORT - The port on which the middleware will listen for job updates or results from the CL node
 * this.AGORIC_RPC - The Agoric node's RPC
+* this.ACCOUNT_NUMBER - The account number from which to sign transactions
 * this.FROM - The address of the oracle from which to push prices
 * this.SUBMIT_RETRIES -  The number of retries to try when submitting a price on-chain and it fails
 * this.SEND_CHECK_INTERVAL - The interval in seconds which is waited between each send. 
@@ -748,6 +785,7 @@ Use: This function validates all the properties explained above
 What it does:
 - Throws an error if this.MIDDLEWARE_PORT is not a number    
 - Throws an error if this.SUBMIT_RETRIES is not a number    
+- Throws an error if this.ACCOUNT_NUMBER is not a number    
 - Throws an error if this.SEND_CHECK_INTERVAL is not a number    
 - Throws an error if this.EI_CHAINLINKURL is not a valid URL
 - Throws an error if this.CREDENTIALS_FILE does not exist
@@ -1214,11 +1252,13 @@ This script makes use of the following environment variables.
 | EI_CHAINLINKURL      	| The CL node URL in order to connect to its API<br>to listen for jobs and send job requests.<br><b>Note that this has no default value and needs<br>to be defined</b> 	| N/A                        	|
 | FROM                 	| The address of the oracle from which to push prices.<br><b>Note that this has no default value and needs<br>to be defined</b>                                        	| N/A                        	|
 | SUBMIT_RETRIES       	| The number of retries to try when submitting a price<br>on-chain and it fails                                                                                        	| 3                          	|
+| ACCOUNT_NUMBER       	| The account number                                                                                        	| N/A                          	|
 | BLOCK_INTERVAL       	| The block time of the chain in seconds. This is used<br>to query the price and round at every interval.                                                              	| 6                          	|
 | SEND_CHECK_INTERVAL  	| The interval in seconds which is waited between each send.                                                                                                           	| 45                         	|
 | AGORIC_RPC           	| The Agoric node's RPC endpoint                                                                                                                                       	| http://0.0.0.0:26657       	|
 | CREDENTIALS_FILE     	| The path to the file containing the credentials to the <br>CL node                                                                                                   	| config/ei_credentials.json 	|
 | DB_FILE     	| The path to the database state file                                                                                                   	| data/database.db 	|
+
 
 The CREDENTIALS_FILE should contain a JSON object containing the credentials to communicate with the CL node as can be seen below
 ```json

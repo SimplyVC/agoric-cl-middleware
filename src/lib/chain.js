@@ -21,6 +21,7 @@ harden(normalizeAddress);
  * @param {string} from
  * @param {boolean} [dryRun]
  * @param {{home: string, backend: string}} [keyring]
+ * @return {object} response from command
  */
 export const execSwingsetTransaction = (
   swingsetArgs,
@@ -35,16 +36,17 @@ export const execSwingsetTransaction = (
   const backendOpt = keyring?.backend
     ? `--keyring-backend=${keyring.backend}`
     : '';
-  const cmd = `agd --node=${rpcAddrs[0]} --chain-id=${chainName} ${homeOpt} ${backendOpt} --from=${from} tx swingset ${swingsetArgs}`;
+  const cmd = `agd --node=${rpcAddrs[0]} --chain-id=${chainName} ${homeOpt} ${backendOpt} --from=${from} tx swingset ${swingsetArgs} --output=json`;
 
   if (dryRun) {
     process.stdout.write('Run this interactive command in shell:\n\n');
     process.stdout.write(cmd);
     process.stdout.write('\n');
+    return {}
   } else {
     const yesCmd = `${cmd} --yes`;
     console.log('Executing ', yesCmd);
-    execSync(yesCmd);
+    return JSON.parse(execSync(yesCmd).toString());
   }
 };
 harden(execSwingsetTransaction);

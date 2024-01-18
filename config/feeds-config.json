@@ -5,13 +5,13 @@
         "pushInterval": 600,
         "priceDeviationPerc": 1 
     },
-    "OSMO-USD" : {
+    "stATOM-USD" : {
         "decimalPlaces": 6,
         "pollInterval": 60,
         "pushInterval": 600,
         "priceDeviationPerc": 1 
     },
-    "stATOM3-USD" : {
+    "stOSMO-USD" : {
         "decimalPlaces": 6,
         "pollInterval": 60,
         "pushInterval": 600,

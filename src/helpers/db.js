@@ -146,3 +146,39 @@ export const updateTable = async (table, values, name) => {
     throw new Error("DB ERROR when updating table: " + err);
   }
 };
+
+/**
+ * Function to get the next sequence number
+ * @returns {object} an object containing the next sequence number
+ */
+export const getNextSequence = async () => {
+  await loadDB();
+  return await db.get('SELECT next_num FROM sequence_numbers')
+}
+
+/**
+ * Function to increase the next sequence number
+ */
+export const incrementSequence = async () => {
+  try {
+    await db.run(
+      `UPDATE sequence_numbers SET next_num = next_num + 1`
+    );
+  } catch (err) {
+    throw new Error("DB ERROR when updating next sequence number: " + err);
+  }
+}
+
+/**
+ * Function to set the next sequence number
+ * @param {number} nextSequence the next sequence number
+ */
+export const setSequenceNumber = async (nextSequence) => {
+  try {
+    await db.run(
+      `UPDATE sequence_numbers SET next_num = ${nextSequence}`
+    );
+  } catch (err) {
+    throw new Error("DB ERROR when updating next sequence number: " + err);
+  }
+}

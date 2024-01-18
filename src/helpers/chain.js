@@ -19,13 +19,43 @@ import {
     delay 
 } from "./utils.js";
 import { checkIfInSubmission } from "./middleware-helper.js"
-import { updateTable } from "./db.js";
+import { getNextSequence, incrementSequence, setSequenceNumber, updateTable, queryTable } from "./db.js";
 import middlewareEnvInstance from './middleware-env.js';
 import { logger } from "./logger.js";
 import { RoundDetails } from "./round-details.js";
 import { execSync } from 'child_process';
+import axios from "axios";
 
 const marshaller = boardSlottingMarshaller();
+
+/**
+ * Function to get the latest block height
+ * @returns {Number} the latest block number or 0 if it fails
+ */
+export const getLatestBlockHeight = async () => {
+  try {
+    // Construct the URL
+    const apiUrl = `${middlewareEnvInstance.AGORIC_RPC}/status`;
+
+    // Make the GET request
+    const response = await axios.get(apiUrl);
+
+    // Parse the JSON response
+    const responseData = response.data;
+
+    // Extract the latest_block_height
+    const latestBlockHeight = responseData.result.sync_info.latest_block_height;
+
+    // Convert it to a number
+    const latestBlockHeightNumber = Number(latestBlockHeight);
+
+    return latestBlockHeightNumber;
+  } catch (error) {
+    // Handle errors
+    console.error('Failed to get block height:', error.message);
+    return 0;
+  }
+}
 
 /**
  * Function to read from vstorage
@@ -386,21 +416,81 @@ export const pushPrice = async (price, feed, round, from) => {
       offer,
     });
 
-    // Execute
-    await execSwingsetTransaction(
-      "wallet-action --allow-spend '" + JSON.stringify(data) + "'",
-      networkConfig,
-      from,
-      false,
-      keyring
-    );
+    // Get latest sequence number
+    let sequence = await getNextSequence();
 
-    // Update last submission time
-    await updateTable(
-      "jobs",
-      { last_submission_time: Date.now() / 1000 },
-      feed
-    );
+    // Get last submission block
+    let query = await queryTable("jobs", ["last_submitted_block"], feed);
+    let lastSubmissionBlock = query.last_submitted_block
+
+    // Get latest block height
+    let latestHeight = await getLatestBlockHeight();
+    logger.info(`Latest block height ${latestHeight}`);
+
+    // submit update only if height increased
+    if (latestHeight > lastSubmissionBlock){
+      // 5 blocks timeout
+      let timeoutHeight = latestHeight + 5;
+      // Execute
+      try{
+        let response = await execSwingsetTransaction(
+          "wallet-action --allow-spend '" + JSON.stringify(data) + "' --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"] + " --broadcast-mode=block --timeout-height="+timeoutHeight,
+          networkConfig,
+          from,
+          false,
+          keyring
+        );
+
+        logger.info("Response: "+JSON.stringify(response))
+
+        // If transaction failed
+        if(response["code"] != 0){
+          // Get raw log
+          let rawLog = response["raw_log"];
+          // If error contains sequence mismatch
+          if (rawLog.includes("incorrect account sequence")){
+            // setSequence
+            const regex = /\d+/g;
+            const numbers = rawLog.match(regex);
+            logger.info(`Setting sequence to ${numbers[0]}`)
+            await setSequenceNumber(numbers[0])
+          }
+
+        } else {
+          // Update sequence
+          logger.info(`Increment sequence to ${sequence["next_num"]+1}`)
+          await incrementSequence();
+
+          // Update last submission time
+          await updateTable(
+            "jobs",
+            { last_submission_time: Date.now() / 1000 },
+            feed
+          );
+        }
+      }
+      catch(error){
+        // If tx failed to be included (timeout)
+        if (String(error).includes("timed out waiting for tx to be included in a block")){
+          // Update sequence
+          logger.info(`Increment sequence to ${sequence["next_num"]+1}`)
+          await incrementSequence();
+        }
+      }
+      
+      latestHeight = await getLatestBlockHeight();
+      logger.info(`Latest block height ${latestHeight}`);
+
+      // Update last submitted block height
+      await updateTable(
+        "jobs",
+        { last_submitted_block: latestHeight },
+        feed
+      );
+    }
+    else{
+      logger.info(`Already submitted to round in block ${latestHeight}`);
+    }
 
     // Sleep SEND_CHECK_INTERVAL seconds
     await delay((Number(middlewareEnvInstance.SEND_CHECK_INTERVAL) + 1) * 1000);
@@ -510,11 +600,6 @@ export const getOracleLatestInfo = async (
 
     // If a number
     if (!isNaN(id)) {
-
-      // If we found the last visited offer id in previous check, stop looping
-      if (id <= lastOfferId && i > 0) {
-        break;
-      }
   
       // If a price invitation
       let invMakerName =
@@ -575,6 +660,9 @@ export const getOracleLatestInfo = async (
   
           // Get latest feed price
           let feedPrice = await queryPrice(feed);
+
+          logger.info(`Updating metrics for ${oracleDetails["oracleName"]} for ${feed} @ round ${lastRound}`);
+              
           // Update metrics
           metrics.updateMetrics(
             oracleDetails["oracleName"],
@@ -585,24 +673,6 @@ export const getOracleLatestInfo = async (
             feedPrice,
             lastRound,
             roundsCreated
-          );
-        }
-        else if(lastResults["values"].hasOwnProperty(feed)){
-  
-          console.log("Setting from state", lastResults["values"][feed])
-  
-          // Get latest feed price
-          let feedPrice = await queryPrice(feed);
-  
-          metrics.updateMetrics(
-            oracleDetails["oracleName"],
-            oracle,
-            feed,
-            lastResults["values"][feed]["price"],
-            lastResults["values"][feed]["id"],
-            feedPrice,
-            lastRound,
-            lastResults["values"][feed]["rounds_created"]
           );
         }
       }
