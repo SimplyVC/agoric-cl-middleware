@@ -5,7 +5,7 @@
         "pushInterval": 600,
         "priceDeviationPerc": 1 
     },
-    "stATOM-USD" : {
+    "stATOM3-USD" : {
         "decimalPlaces": 6,
         "pollInterval": 60,
         "pushInterval": 600,
