@@ -11,7 +11,7 @@
         "pushInterval": 600,
         "priceDeviationPerc": 1 
     },
-    "stOSMO-USD" : {
+    "STOSMO-USD" : {
         "decimalPlaces": 6,
         "pollInterval": 60,
         "pushInterval": 600,
