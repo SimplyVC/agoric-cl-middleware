@@ -16,5 +16,11 @@
         "pollInterval": 60,
         "pushInterval": 600,
         "priceDeviationPerc": 1 
+    },
+    "stTIA-USD" : {
+        "decimalPlaces": 6,
+        "pollInterval": 60,
+        "pushInterval": 600,
+        "priceDeviationPerc": 1 
     }
 }
