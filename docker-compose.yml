@@ -12,7 +12,7 @@ services:
     environment:
       AGORIC_NET: agoric-3
       AGORIC_RPC: http://$THIS_VM_IP:26657 
-      MONITORING_POLL_INTERVAL: 10
+      MONITORING_POLL_INTERVAL: 30
       SERVICE: monitor
     restart: always
   middleware:
@@ -31,8 +31,8 @@ services:
       FROM: $WALLET_ADDR 
       ACCOUNT_NUMBER: $ACCOUNT_NUMBER
       EI_CHAINLINKURL: http://$THIS_VM_IP:6691
-      SEND_CHECK_INTERVAL: 45
-      SUBMIT_RETRIES: 3
+      SEND_CHECK_INTERVAL: 30
+      SUBMIT_RETRIES: 1
       CREDENTIALS_FILE: config/ei_credentials.json
       DB_FILE: data/database.db
     restart: always

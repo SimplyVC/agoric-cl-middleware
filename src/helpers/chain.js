@@ -117,7 +117,7 @@ export const getOffers = async (follower) => {
 export const getLatestSubmittedRound = async (oracle, feedOfferId) => {
   let fromBoard = makeFromBoard();
   const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
-  const leader = makeLeader(networkConfig.rpcAddrs[0]);
+  const leader = makeLeader(networkConfig.rpcAddrs[0], {retryCallback: null, jitter: null});
 
   const follower = await makeFollower(`:published.wallet.${oracle}`, leader, {
     unserializer,
@@ -147,7 +147,7 @@ export const getLatestSubmittedRound = async (oracle, feedOfferId) => {
 export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
   let fromBoard = makeFromBoard();
   const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
-  const leader = makeLeader(networkConfig.rpcAddrs[0]);
+  const leader = makeLeader(networkConfig.rpcAddrs[0], {retryCallback: null, jitter: null});
 
   const follower = await makeFollower(`:published.wallet.${oracle}`, leader, {
     unserializer,
@@ -574,7 +574,7 @@ export const getOracleLatestInfo = async (
 
   let fromBoard = makeFromBoard();
   const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
-  const leader = makeLeader(networkConfig.rpcAddrs[0]);
+  const leader = makeLeader(networkConfig.rpcAddrs[0], {retryCallback: null, jitter: null});
 
   const follower = await makeFollower(`:published.wallet.${oracle}`, leader, {
     unserializer,

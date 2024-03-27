@@ -15,7 +15,8 @@ RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 RUN apt-get install -y nodejs
 
-RUN apt install -y g++ bash openssl git gcc wget make yarn
+RUN apt-get update
+RUN apt install -y g++ bash openssl git gcc wget make yarn cmake
 
 RUN wget -O go.tgz https://golang.org/dl/go1.20.4.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go.tgz
