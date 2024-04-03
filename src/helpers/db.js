@@ -101,14 +101,14 @@ export const queryTable = async (table, fields, name) => {
   let keyName = table === "jobs" ? "name" : "feed";
   return await db.get(
     "SELECT " +
-      fields.join(", ") +
-      " from " +
-      table +
-      " where " +
-      keyName +
-      " = '" +
-      name +
-      "';"
+    fields.join(", ") +
+    " from " +
+    table +
+    " where " +
+    keyName +
+    " = '" +
+    name +
+    "';"
   );
 };
 
@@ -139,9 +139,16 @@ export const updateTable = async (table, values, name) => {
   let keyName = table === "jobs" ? "name" : "feed";
 
   try {
-    await db.run(
+    let changes = await db.run(
       `UPDATE ${table} SET ${update} WHERE ${keyName} = '${name}';`, actualValues
     );
+    // Check if any rows were affected by the update
+    if (changes.changes === 0) {
+      // No rows were affected, perform insert
+      await db.run(
+        `INSERT INTO ${table} (${keyName}, ${actualFields.join(', ')}) VALUES (?, ${Array(actualFields.length).fill('?').join(', ')});`, [name, ...actualValues]
+      );
+    }
   } catch (err) {
     throw new Error("DB ERROR when updating table: " + err);
   }

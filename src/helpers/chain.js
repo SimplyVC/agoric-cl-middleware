@@ -1,9 +1,9 @@
 /* global fetch, process */
 
-import { 
-    iterateReverse, 
-    makeFollower, 
-    makeLeader 
+import {
+  iterateReverse,
+  makeFollower,
+  makeLeader
 } from "@agoric/casting";
 import {
   makeRpcUtils,
@@ -15,8 +15,8 @@ import {
 } from "../lib/rpc.js";
 import { getCurrent } from "../lib/wallet.js";
 import { execSwingsetTransaction } from "../lib/chain.js";
-import { 
-    delay 
+import {
+  delay
 } from "./utils.js";
 import { checkIfInSubmission } from "./middleware-helper.js"
 import { getNextSequence, incrementSequence, setSequenceNumber, updateTable, queryTable } from "./db.js";
@@ -109,6 +109,68 @@ export const getOffers = async (follower) => {
 };
 
 /**
+ * Function to check if a round submission had already errored
+ * @param {Number} round round for submission
+ * @param {String} feed feed name
+ * @returns {boolean} whether submission already errored
+ */
+export const submissionAlreadyErrored = async (round, feed) => {
+  // Get offers
+  let offers = await getOraclesInvitations(middlewareEnvInstance.FROM);
+
+  // Check if invitation for feed exists
+  if (!(feed in offers)) {
+    logger.error(`Invitation for ${feed} not found in oracle invitations`);
+    return new RoundDetails(1, 0, "", false);
+  }
+
+  // Get feed offer id
+  let feedOfferId = offers[feed];
+
+  let fromBoard = makeFromBoard();
+  const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
+  const leader = makeLeader(networkConfig.rpcAddrs[0], { retryCallback: null, jitter: null });
+
+  const follower = await makeFollower(`:published.wallet.${middlewareEnvInstance.FROM}`, leader, {
+    unserializer,
+  });
+
+  for await (const followerElement of iterateReverse(follower)) {
+
+    // If it is an offer status
+    if (followerElement.value.updated === "offerStatus") {
+      // Get id
+      let id = followerElement.value.status.invitationSpec.previousOffer;
+      let roundId = followerElement.value.status.invitationSpec.invitationArgs[0]["roundId"]
+
+      // If previous offer matches
+      if (id == feedOfferId && roundId == round) {
+        // If it failed
+        if (followerElement.value.status.hasOwnProperty("error")) {
+          logger.info(`Submission for round ${round} for ${feed} has error: ${followerElement.value.status.error}`)
+          if (followerElement.value.status.error.includes("cannot report on previous rounds")) {
+
+            let query = await queryTable("rounds", ["roundId"], feed);
+
+            // If last submission is this round
+            if (query.round_id == round) {
+              await updateTable(
+                "rounds",
+                { errored: true },
+                feed
+              );
+            }
+
+            return true
+          }
+        }
+      }
+    }
+  }
+  return false;
+};
+
+/**
  * Function to get the latest submitted round
  * @param {string} oracle oracle address
  * @param {string} feedOfferId offer ID for feed
@@ -163,12 +225,12 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
 
     // If a price invitation and for the correct feed
     let invitationType = currentOffer["status"]["invitationSpec"][
-    "invitationMakerName"];
+      "invitationMakerName"];
     let previousOffer = currentOffer["status"]["invitationSpec"][
-    "previousOffer"];
+      "previousOffer"];
     if (
-        invitationType === "PushPrice" &&
-        previousOffer === feedOfferId
+      invitationType === "PushPrice" &&
+      previousOffer === feedOfferId
     ) {
       let offerRound = Number(
         currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
@@ -278,8 +340,8 @@ export const getOraclesInvitations = async (oracle) => {
 
     }
   }
-  
- 
+
+
   return feedInvs;
 };
 
@@ -318,11 +380,13 @@ export const queryRound = async (feed, oracle) => {
   let feedOfferId = offers[feed];
 
   // Check if there is a submission for round
+  let query = await queryTable("rounds", ["roundId", "submissionMade"], feed);
   let submissionForRound = await checkSubmissionForRound(
     oracle,
     feedOfferId,
     round
   );
+  submissionForRound = submissionForRound || (query.roundId == round && query.submissionMade == 1)
 
   // Get the latest round
   let latestRound = new RoundDetails(
@@ -423,18 +487,24 @@ export const pushPrice = async (price, feed, round, from) => {
     let query = await queryTable("jobs", ["last_submitted_block"], feed);
     let lastSubmissionBlock = query.last_submitted_block
 
+    // Check if round already errored
+    query = await queryTable("rounds", ["roundId", "errored"], feed);
+
+    if (round == query.round_id && query.errored) {
+      logger.info(`Submission for round ${round} for feed ${feed} already errored`);
+      return false;
+    }
+
     // Get latest block height
     let latestHeight = await getLatestBlockHeight();
     logger.info(`Latest block height ${latestHeight}`);
 
     // submit update only if height increased
     if (latestHeight > lastSubmissionBlock){
-      // 5 blocks timeout
-      let timeoutHeight = latestHeight + 5;
       // Execute
       try{
         let response = await execSwingsetTransaction(
-          "wallet-action --allow-spend '" + JSON.stringify(data) + "' --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"] + " --broadcast-mode=block --timeout-height="+timeoutHeight,
+          "wallet-action --allow-spend '" + JSON.stringify(data) + "' --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"],
           networkConfig,
           from,
           false,
@@ -477,7 +547,7 @@ export const pushPrice = async (price, feed, round, from) => {
           await incrementSequence();
         }
       }
-      
+
       latestHeight = await getLatestBlockHeight();
       logger.info(`Latest block height ${latestHeight}`);
 
@@ -489,7 +559,7 @@ export const pushPrice = async (price, feed, round, from) => {
       );
     }
     else{
-      logger.info(`Already submitted to round in block ${latestHeight}`);
+      logger.info(`Already submitted to round in block ${latestHeight} for feed ${feed}`);
     }
 
     // Sleep SEND_CHECK_INTERVAL seconds
@@ -600,24 +670,24 @@ export const getOracleLatestInfo = async (
 
     // If a number
     if (!isNaN(id)) {
-  
+
       // If a price invitation
       let invMakerName =
         currentOffer["status"]["invitationSpec"]["invitationMakerName"];
-  
+
       if (invMakerName === "PushPrice") {
         let feed =
           feeds[currentOffer["status"]["invitationSpec"]["previousOffer"]];
         let lastRound = Number(
           currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]
         );
-  
-  
+
+
         // Get feeds' last observed round from state
         let lastObservedRound = state["values"].hasOwnProperty(feed)
           ? state["values"][feed]["round"]
           : 0;
-  
+
         // If round is bigger than last observed and the offer didn't fail
         if (
           lastRound > lastObservedRound &&
@@ -626,29 +696,29 @@ export const getOracleLatestInfo = async (
           // If id is bigger than last offer id in state, set it
           lastResults["last_index"] = id;
           lastOfferId = id;
-  
+
           // Get latest round
           let latestRound = await queryRound(feed, oracle);
-  
+
           // Get current rounds created
           let roundsCreated =
             state["values"].hasOwnProperty(feed) &&
-            state["values"][feed].hasOwnProperty("rounds_created")
+              state["values"][feed].hasOwnProperty("rounds_created")
               ? state["values"][feed]["rounds_created"]
               : 0;
-  
+
           // If oracle is the new round's creator, increment rounds created
           if (latestRound.startedBy == oracle) {
             roundsCreated++;
           }
-  
+
           let price =
             Number(
               currentOffer["status"]["invitationSpec"]["invitationArgs"][0][
-                "unitPrice"
+              "unitPrice"
               ]
             ) / amountsIn[feed];
-  
+
           // Fill results variable
           lastResults["values"][feed] = {
             price: price,
@@ -657,12 +727,12 @@ export const getOracleLatestInfo = async (
             rounds_created: roundsCreated
           };
           state = lastResults;
-  
+
           // Get latest feed price
           let feedPrice = await queryPrice(feed);
 
           logger.info(`Updating metrics for ${oracleDetails["oracleName"]} for ${feed} @ round ${lastRound}`);
-              
+
           // Update metrics
           metrics.updateMetrics(
             oracleDetails["oracleName"],

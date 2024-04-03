@@ -11,7 +11,8 @@ import {
 } from "../helpers/middleware-helper.js";
 import { 
     pushPrice, 
-    queryRound 
+    queryRound,
+    submissionAlreadyErrored
 } from "../helpers/chain.js";
 import { FeedsConfig } from "../helpers/feeds-config.js";
 import middlewareEnvInstance from '../helpers/middleware-env.js';
@@ -109,8 +110,9 @@ export const startBridge = (PORT) => {
         let notConsecutiveNewRound = 
         newRound && latestRound.startedBy !== middlewareEnvInstance.FROM;
         let noSubmissionForRound = !newRound && !latestRound.submissionMade
+        let alreadyErrored = await submissionAlreadyErrored(roundToSubmit, jobName)
 
-        if ( firstRound || notConsecutiveNewRound || noSubmissionForRound ) {
+        if ( (firstRound || notConsecutiveNewRound || noSubmissionForRound) && !alreadyErrored) {
           logger.info("Updating price for round " + roundToSubmit);
 
           let submitted = 
