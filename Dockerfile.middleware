@@ -26,6 +26,7 @@ ENV PATH "$PATH:$GOPATH/bin"
 WORKDIR /agoric
 RUN git clone https://github.com/agoric/agoric-sdk
 WORKDIR /agoric/agoric-sdk
+RUN git checkout agoric-upgrade-14
 RUN yarn install
 RUN yarn build
 RUN cd packages/cosmic-swingset && make
