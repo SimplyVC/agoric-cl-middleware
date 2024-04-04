@@ -142,7 +142,11 @@ export const submissionAlreadyErrored = async (round, feed) => {
       // Get id
       let id = followerElement.value.status.invitationSpec.previousOffer;
       let roundId = followerElement.value.status.invitationSpec.invitationArgs[0]["roundId"]
-
+       
+      // Break if round smaller
+      if(id == feedOfferId && roundId < round){
+        break
+      }
       // If previous offer matches
       if (id == feedOfferId && roundId == round) {
         // If it failed
@@ -153,7 +157,7 @@ export const submissionAlreadyErrored = async (round, feed) => {
             let query = await queryTable("rounds", ["roundId"], feed);
 
             // If last submission is this round
-            if (query.round_id == round) {
+            if (query.roundId == round) {
               await updateTable(
                 "rounds",
                 { errored: true },
