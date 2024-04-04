@@ -74,7 +74,7 @@ export const startBridge = (PORT) => {
           latestRound = await queryRound(jobName, middlewareEnvInstance.FROM);
         } catch (err) {
           logger.error("Error while getting round " + err)
-          latestRound = new RoundDetails(1, 0, "", false );
+          latestRound = new RoundDetails(1, 0, "", false, false);
         }
 
         await updateTable("rounds", latestRound, jobName);
@@ -111,6 +111,14 @@ export const startBridge = (PORT) => {
         newRound && latestRound.startedBy !== middlewareEnvInstance.FROM;
         let noSubmissionForRound = !newRound && !latestRound.submissionMade
         let alreadyErrored = await submissionAlreadyErrored(roundToSubmit, jobName)
+
+        // Check if round already errored
+        query = await queryTable("rounds", ["roundId", "errored"], feed);
+
+        alreadyErrored = alreadyErrored || (round == query.round_id && query.errored)
+        if (alreadyErrored){
+          logger.info(`Submission for round ${roundToSubmit} for feed ${feed} already errored`)
+        }
 
         if ( (firstRound || notConsecutiveNewRound || noSubmissionForRound) && !alreadyErrored) {
           logger.info("Updating price for round " + roundToSubmit);

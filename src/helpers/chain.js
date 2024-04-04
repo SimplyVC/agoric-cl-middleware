@@ -121,7 +121,7 @@ export const submissionAlreadyErrored = async (round, feed) => {
   // Check if invitation for feed exists
   if (!(feed in offers)) {
     logger.error(`Invitation for ${feed} not found in oracle invitations`);
-    return new RoundDetails(1, 0, "", false);
+    return new RoundDetails(1, 0, "", false, false);
   }
 
   // Get feed offer id
@@ -361,7 +361,7 @@ export const queryRound = async (feed, oracle) => {
     capData = storageHelper.unserializeTxt(capDataStr, fromBoard).at(-1);
   } catch (err) {
     logger.error("Failed to parse CapData for queryRound");
-    return new RoundDetails(1, 0, "", false);
+    return new RoundDetails(1, 0, "", false, false);
   }
 
   // Get round from result
@@ -373,14 +373,14 @@ export const queryRound = async (feed, oracle) => {
   // Check if invitation for feed exists
   if (!(feed in offers)) {
     logger.error(`Invitation for ${feed} not found in oracle invitations`);
-    return new RoundDetails(1, 0, "", false);
+    return new RoundDetails(1, 0, "", false, false);
   }
 
   // Get feed offer id
   let feedOfferId = offers[feed];
 
   // Check if there is a submission for round
-  let query = await queryTable("rounds", ["roundId", "submissionMade"], feed);
+  let query = await queryTable("rounds", ["roundId", "submissionMade", "errored"], feed);
   let submissionForRound = await checkSubmissionForRound(
     oracle,
     feedOfferId,
@@ -393,7 +393,8 @@ export const queryRound = async (feed, oracle) => {
     round,
     Number(capData.startedAt.absValue),
     capData.startedBy,
-    submissionForRound
+    submissionForRound,
+    (query.roundId == round && query.errored == 1)
   );
 
   logger.info(`${feed} Latest Round: ${latestRound.roundId}. Submitted: ${submissionForRound}`);
@@ -486,14 +487,6 @@ export const pushPrice = async (price, feed, round, from) => {
     // Get last submission block
     let query = await queryTable("jobs", ["last_submitted_block"], feed);
     let lastSubmissionBlock = query.last_submitted_block
-
-    // Check if round already errored
-    query = await queryTable("rounds", ["roundId", "errored"], feed);
-
-    if (round == query.round_id && query.errored) {
-      logger.info(`Submission for round ${round} for feed ${feed} already errored`);
-      return false;
-    }
 
     // Get latest block height
     let latestHeight = await getLatestBlockHeight();

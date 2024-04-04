@@ -5,12 +5,14 @@ export class RoundDetails {
    * @param {number} startedAt timestamp when round was started
    * @param {string} startedBy address of the oracle who started the round
    * @param {boolean} submissionMade whether a submission was made to this round
+   * @param {boolean} errored whether a submission was errored to this round
    */
-  constructor(roundId, startedAt, startedBy, submissionMade) {
+  constructor(roundId, startedAt, startedBy, submissionMade, errored) {
     this.roundId = roundId;
     this.startedAt = startedAt;
     this.startedBy = startedBy;
     this.submissionMade = submissionMade;
+    this.errored = errored;
   }
 
   /**
@@ -29,6 +31,7 @@ export class RoundDetails {
       startedAt: this.startedAt,
       startedBy: this.startedBy,
       submissionMade: this.submissionMade,
+      errored: this.errored,
     };
   }
 }
