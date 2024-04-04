@@ -113,11 +113,11 @@ export const startBridge = (PORT) => {
         let alreadyErrored = await submissionAlreadyErrored(roundToSubmit, jobName)
 
         // Check if round already errored
-        query = await queryTable("rounds", ["roundId", "errored"], feed);
+        query = await queryTable("rounds", ["roundId", "errored"], jobName);
 
         alreadyErrored = alreadyErrored || (round == query.round_id && query.errored)
         if (alreadyErrored){
-          logger.info(`Submission for round ${roundToSubmit} for feed ${feed} already errored`)
+          logger.info(`Submission for round ${roundToSubmit} for feed ${jobName} already errored`)
         }
 
         if ( (firstRound || notConsecutiveNewRound || noSubmissionForRound) && !alreadyErrored) {
