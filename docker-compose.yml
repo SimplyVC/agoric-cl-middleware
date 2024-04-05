@@ -36,5 +36,6 @@ services:
       SUBMIT_RETRIES: 1
       CREDENTIALS_FILE: config/ei_credentials.json
       DB_FILE: data/database.db
+      SUBMISSION_BLOCK_LOCK: 10
     restart: always
   

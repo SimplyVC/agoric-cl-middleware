@@ -14,6 +14,7 @@ class MiddlewareENV {
       EI_CHAINLINKURL,
       CREDENTIALS_FILE = "config/ei_credentials.json",
       DB_FILE = "data/database.db",
+      SUBMISSION_BLOCK_LOCK = 10
     } = process.env;
 
     this.MIDDLEWARE_PORT = MIDDLEWARE_PORT;
@@ -26,6 +27,7 @@ class MiddlewareENV {
     this.EI_CHAINLINKURL = EI_CHAINLINKURL;
     this.CREDENTIALS_FILE = CREDENTIALS_FILE;
     this.DB_FILE = DB_FILE;
+    this.SUBMISSION_BLOCK_LOCK = SUBMISSION_BLOCK_LOCK;
 
     this.validate();
   }
@@ -58,6 +60,10 @@ class MiddlewareENV {
       "$CREDENTIALS_FILE does not exist"
     );
     assert(this.DB_FILE && this.DB_FILE !== "", "$DB_FILE cannot be empty");
+    assert(
+      !isNaN(Number(this.SUBMISSION_BLOCK_LOCK)),
+      "$SUBMISSION_BLOCK_LOCK should be a valid number"
+    );
   }
 }
 

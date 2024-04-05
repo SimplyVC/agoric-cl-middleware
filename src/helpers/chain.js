@@ -83,10 +83,12 @@ export const readVStorage = async (feed, roundData) => {
  */
 export const getOffers = async (follower) => {
   let history = [];
-  let lastVisited = -1;
+  let query = await queryTable("last_successful", ["id"], "all");
+
+  let lastVisited = (query && query.id) || -1;
 
   for await (const followerElement of iterateReverse(follower)) {
-    if (history.length === 5) {
+    if (history.length === 10) {
       break;
     }
 
@@ -94,6 +96,11 @@ export const getOffers = async (follower) => {
     if (followerElement.value.updated === "offerStatus") {
       // Get id
       let id = followerElement.value.status.id;
+
+      // if (id<= lastVisited)
+      // {
+      //   break
+      // }
 
       // If a new and final state
       if (id !== lastVisited) {
@@ -105,6 +112,11 @@ export const getOffers = async (follower) => {
       }
     }
   }
+  await updateTable(
+    "last_successful",
+    { id: lastVisited },
+    "all"
+  );
   return history;
 };
 
@@ -158,6 +170,7 @@ export const submissionAlreadyErrored = async (round, feed) => {
 
             // If last submission is this round
             if (query.roundId == round) {
+              logger.info(`Already errored in submission to round ${round} for feed ${feed}`)
               await updateTable(
                 "rounds",
                 { errored: true },
@@ -221,6 +234,7 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
 
   // Get offers
   let offers = await getOffers(follower);
+  logger.info(`Found ${offers.length} offers`)
 
   // Loop through offers starting from last offer
   for (let i = 0; i < offers.length; i++) {
@@ -230,8 +244,13 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
     // If a price invitation and for the correct feed
     let invitationType = currentOffer["status"]["invitationSpec"][
       "invitationMakerName"];
+      
     let previousOffer = currentOffer["status"]["invitationSpec"][
       "previousOffer"];
+
+      if ( invitationType === "PushPrice") {
+        logger.info(`Offer ${i+1}: ${currentOffer["status"]["id"]} ${previousOffer} ${currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]}`)
+      }
     if (
       invitationType === "PushPrice" &&
       previousOffer === feedOfferId
@@ -390,6 +409,8 @@ export const queryRound = async (feed, oracle) => {
     feedOfferId,
     round
   );
+  logger.info(`Submission for round ${round} for feed ${feed} found in offers: ${submissionForRound}`)
+  logger.info(`Submission for round ${round} for feed ${feed} found in DB: ${(query.roundId == round && query.submissionMade == 1)}. Last round found in DB was ${round}`)
   submissionForRound = submissionForRound || (query.roundId == round && query.submissionMade == 1)
 
   // Get the latest round
@@ -470,7 +491,7 @@ export const pushPrice = async (price, feed, round, from) => {
     let submissionAlreadyMade =
       latestRound.roundId === round && latestRound.submissionMade;
     if (latestRoundGreater || submissionAlreadyMade) {
-      logger.info("Price failed to be submitted for old round: " + round);
+      logger.info(`Price failed to be submitted for old round ${round} for feed ${feed}`);
       return false;
     }
 
@@ -490,14 +511,17 @@ export const pushPrice = async (price, feed, round, from) => {
 
     // Get last submission block
     let query = await queryTable("jobs", ["last_submitted_block"], feed);
+    // let query = await queryTable("jobs", ["last_submitted_block", "last_tried_round"], feed);
     let lastSubmissionBlock = query.last_submitted_block
+    // let lastTriedRound = query.last_tried_round
 
     // Get latest block height
     let latestHeight = await getLatestBlockHeight();
     logger.info(`Latest block height ${latestHeight}`);
 
     // submit update only if height increased
-    if (latestHeight > lastSubmissionBlock){
+    logger.info(`Last submitted on block ${lastSubmissionBlock} and current height is ${latestHeight} for feed ${feed}. Block lock is set to ${middlewareEnvInstance.SUBMISSION_BLOCK_LOCK}`)
+    if (latestHeight > lastSubmissionBlock + Number(middlewareEnvInstance.SUBMISSION_BLOCK_LOCK)){
       // Execute
       try{
         let response = await execSwingsetTransaction(

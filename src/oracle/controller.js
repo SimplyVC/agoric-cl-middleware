@@ -128,7 +128,7 @@ export const makeController = () => {
             );
           } else {
             // If not found, send job request
-            logger.info("Found new round.");
+            logger.info(`Found new round ${latestRound.roundId} for feed ${jobName}.`);
             sendRequest = 3;
           }
         }
@@ -184,14 +184,11 @@ export const makeController = () => {
           // If a request has not been made yet and we are not waiting
           if (noPendingRequests || enoughTimePassed) {
             // Submit job
-            logger.info("Initialising new CL job request");
+            logger.info(`Initialising new CL job request for feed ${jobName}`);
             submitNewJob(jobName, sendRequest);
           } else {
             logger.warn(
-              "Will not be initialising new job request - Still waiting for request " +
-                query.request_id +
-                " to finish. Last finished request is " +
-                query.last_received_request_id
+              `Will not be initialising new job request for feed ${jobName} - Still waiting for request ${query.request_id} to finish. Last finished request is ${query.last_received_request_id}`
             );
           }
         }

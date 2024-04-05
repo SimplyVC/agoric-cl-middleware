@@ -143,7 +143,7 @@ export const updateTable = async (table, values, name) => {
       `UPDATE ${table} SET ${update} WHERE ${keyName} = '${name}';`, actualValues
     );
     // Check if any rows were affected by the update
-    if (changes.changes === 0) {
+    if (changes.changes === 0 && table != "last_successful") {
       // No rows were affected, perform insert
       await db.run(
         `INSERT INTO ${table} (${keyName}, ${actualFields.join(', ')}) VALUES (?, ${Array(actualFields.length).fill('?').join(', ')});`, [name, ...actualValues]
