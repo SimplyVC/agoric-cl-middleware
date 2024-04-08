@@ -150,7 +150,7 @@ export const submissionAlreadyErrored = async (round, feed) => {
   for await (const followerElement of iterateReverse(follower)) {
 
     // If it is an offer status
-    if (followerElement.value.updated === "offerStatus") {
+    if (followerElement.value.updated === "offerStatus" && followerElement.value.status.invitationSpec.invitationMakerName == "PushPrice") {
       // Get id
       let id = followerElement.value.status.invitationSpec.previousOffer;
       let roundId = followerElement.value.status.invitationSpec.invitationArgs[0]["roundId"]
@@ -234,7 +234,6 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
 
   // Get offers
   let offers = await getOffers(follower);
-  logger.info(`Found ${offers.length} offers`)
 
   // Loop through offers starting from last offer
   for (let i = 0; i < offers.length; i++) {
@@ -248,9 +247,6 @@ export const checkSubmissionForRound = async (oracle, feedOfferId, roundId) => {
     let previousOffer = currentOffer["status"]["invitationSpec"][
       "previousOffer"];
 
-      if ( invitationType === "PushPrice") {
-        logger.info(`Offer ${i+1}: ${currentOffer["status"]["id"]} ${previousOffer} ${currentOffer["status"]["invitationSpec"]["invitationArgs"][0]["roundId"]}`)
-      }
     if (
       invitationType === "PushPrice" &&
       previousOffer === feedOfferId
@@ -490,12 +486,14 @@ export const pushPrice = async (price, feed, round, from) => {
     let latestRoundGreater = latestRound.roundId > round;
     let submissionAlreadyMade =
       latestRound.roundId === round && latestRound.submissionMade;
+    logger.info(`latestRoundGreater: ${latestRoundGreater} -> Submitting to ${round}, Latest round ${latestRound.roundId}`)
+    logger.info(`submissionAlreadyMade: ${submissionAlreadyMade}`)
     if (latestRoundGreater || submissionAlreadyMade) {
       logger.info(`Price failed to be submitted for old round ${round} for feed ${feed}`);
       return false;
     }
 
-    logger.info(`Submitting price for round ${round} attempt ${i + 1}`);
+    logger.info(`Submitting price for round ${round} for feed ${feed} attempt ${i + 1}`);
 
     let offer = {...templateOffer};
     offer.id = Number(Date.now());
@@ -510,22 +508,33 @@ export const pushPrice = async (price, feed, round, from) => {
     let sequence = await getNextSequence();
 
     // Get last submission block
-    let query = await queryTable("jobs", ["last_submitted_block"], feed);
-    // let query = await queryTable("jobs", ["last_submitted_block", "last_tried_round"], feed);
-    let lastSubmissionBlock = query.last_submitted_block
-    // let lastTriedRound = query.last_tried_round
+    const query = await queryTable("jobs", ["last_submitted_block", "last_tried_round"], feed);
+    const lastSubmissionBlock = query.last_submitted_block
+    const lastTriedRound = query.last_tried_round
 
     // Get latest block height
     let latestHeight = await getLatestBlockHeight();
-    logger.info(`Latest block height ${latestHeight}`);
 
-    // submit update only if height increased
-    logger.info(`Last submitted on block ${lastSubmissionBlock} and current height is ${latestHeight} for feed ${feed}. Block lock is set to ${middlewareEnvInstance.SUBMISSION_BLOCK_LOCK}`)
-    if (latestHeight > lastSubmissionBlock + Number(middlewareEnvInstance.SUBMISSION_BLOCK_LOCK)){
+    // submit update only if height increased or a new round from last submit
+    logger.info(`Checking whether to submit for round ${round}. Last submitted on block ${lastSubmissionBlock} and current height is ${latestHeight} for round ${lastTriedRound} for feed ${feed}. Block lock is set to ${middlewareEnvInstance.SUBMISSION_BLOCK_LOCK}`)
+    const allowedSubmissionHeight = lastSubmissionBlock + Number(middlewareEnvInstance.SUBMISSION_BLOCK_LOCK)
+    const sameRound = lastTriedRound == round
+    const newRound = round > lastTriedRound
+    if ((latestHeight > allowedSubmissionHeight && sameRound) || (newRound && latestHeight > lastSubmissionBlock)){
       // Execute
       try{
+        // Update last submitted block height
+        await updateTable(
+          "jobs",
+          { 
+            last_submitted_block: latestHeight,
+            last_tried_round: round
+          },
+          feed
+        );
+
         let response = await execSwingsetTransaction(
-          "wallet-action --allow-spend '" + JSON.stringify(data) + "' --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"],
+          "wallet-action --allow-spend '" + JSON.stringify(data) + "' --gas-prices=0.01ubld --offline --account-number=" + middlewareEnvInstance.ACCOUNT_NUMBER + " --sequence=" + sequence["next_num"],
           networkConfig,
           from,
           false,
@@ -571,13 +580,6 @@ export const pushPrice = async (price, feed, round, from) => {
 
       latestHeight = await getLatestBlockHeight();
       logger.info(`Latest block height ${latestHeight}`);
-
-      // Update last submitted block height
-      await updateTable(
-        "jobs",
-        { last_submitted_block: latestHeight },
-        feed
-      );
     }
     else{
       logger.info(`Already submitted to round in block ${latestHeight} for feed ${feed}`);

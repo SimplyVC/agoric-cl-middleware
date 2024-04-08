@@ -82,12 +82,13 @@ export const startBridge = (PORT) => {
         // Get the round for submission
         let query = await queryTable("jobs", ["last_reported_round"], jobName);
 
-        let lastReportedRound = query.last_reported_round;
+        let lastReportedRound = query.last_reported_round || 0;
         let lastRoundId = isNaN(latestRound.roundId)
           ? lastReportedRound
           : latestRound.roundId;
         let roundToSubmit =
           lastReportedRound < lastRoundId ? lastRoundId : lastRoundId + 1;
+        logger.info(`Feed ${jobName}: Last reported round is ${lastReportedRound}, last round id is ${lastRoundId} and submitting to round ${roundToSubmit}`)
 
         // (f round to submit is equal to current round but current round is older than push interval, submit to a new round
         let feeds = new FeedsConfig();
@@ -110,7 +111,7 @@ export const startBridge = (PORT) => {
         let notConsecutiveNewRound = 
         newRound && latestRound.startedBy !== middlewareEnvInstance.FROM;
         let noSubmissionForRound = !newRound && !latestRound.submissionMade
-        let alreadyErrored = await submissionAlreadyErrored(roundToSubmit, jobName)
+        let alreadyErrored = roundToSubmit == 1 ? false : await submissionAlreadyErrored(roundToSubmit, jobName)
 
         // Check if round already errored
         query = await queryTable("rounds", ["roundId", "errored"], jobName);
@@ -121,7 +122,7 @@ export const startBridge = (PORT) => {
         }
 
         if ( (firstRound || notConsecutiveNewRound || noSubmissionForRound) && !alreadyErrored) {
-          logger.info("Updating price for round " + roundToSubmit);
+          logger.info(`Updating price for feed ${jobName} for round ${roundToSubmit}`);
 
           let submitted = 
           await pushPrice(result, jobName, roundToSubmit, middlewareEnvInstance.FROM);
@@ -135,7 +136,7 @@ export const startBridge = (PORT) => {
             );
           }
         } else {
-          logger.info("Already started last round or submitted to this round");
+          logger.info(`Already started last round or submitted to this round ${round} for feed ${jobName}`);
         }
       }
 
