@@ -7,6 +7,7 @@ import { OracleMonitorConfig } from "../helpers/oracle-monitor-config.js";
 import { MonitoringState } from "../helpers/monitoring-state.js";
 import monitorEnvInstance from "../helpers/monitor-env.js";
 import { FeedsConfig } from "../helpers/feeds-config.js";
+import { getCoingeckoPrices } from "../helpers/utils.js";
 
 let metrics = new MonitorMetrics();
 let oracleConfig = new OracleMonitorConfig(monitorEnvInstance.ORACLE_FILE);
@@ -17,11 +18,49 @@ let state = new MonitoringState(
 let feedsConfig = new FeedsConfig();
 
 /**
+ * Function to get web2.0 prices
+ */
+const getPrices = async () => {
+  logger.info("Getting prices from coingecko")
+  try {
+    let ids = []
+    // Loop through feeds from config
+    for (let feed in feedsConfig.feeds) {
+      // If coingecko id is there, add it
+      if (feedsConfig.feeds[feed].coingeckoId && feedsConfig.feeds[feed].coingeckoId.length > 0){
+        ids.push(feedsConfig.feeds[feed].coingeckoId)
+      }
+    }
+
+    // Get coingecko prices
+    let response = await getCoingeckoPrices(ids)
+    logger.info(`Response from coingecko: ${response}`)
+
+    for (let price of response){
+      logger.info(`Coingecko price for ${price.id}: ${price.current_price}`)
+      for (let feed in feedsConfig.feeds) {
+        // If coingecko id is there, add it
+        if (feedsConfig.feeds[feed].coingeckoId && feedsConfig.feeds[feed].coingeckoId.length > 0){
+          const id = feedsConfig.feeds[feed].coingeckoId
+          if (id == price.id){
+            await metrics.updateCoingeckoPrices(feed, price.current_price)
+          }
+        }
+      }
+    }
+
+  } catch (err) {
+    logger.error("COINGECKO PRICE QUERY ERROR: " + err);
+  }
+}
+
+/**
  * Main function to monitor
  */
 export const monitor = async () => {
   // Holds last round details
   let lastRound = {};
+  await getPrices()
 
   // Loop through feeds from config
   for (let feed in feedsConfig.feeds) {
@@ -119,6 +158,11 @@ export const monitor = async () => {
       logger.error("MONITOR ERROR: " + err);
     }
   }, monitorEnvInstance.MONITOR_POLL_INTERVAL * 1000);
+
+  // Create interval every 10 minutes to get coingecko prices
+  setInterval(async () => {
+    await getPrices()
+  },10 * 60 * 1000);
 };
 
 /**
