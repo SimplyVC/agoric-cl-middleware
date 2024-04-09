@@ -34,7 +34,6 @@ const getPrices = async () => {
 
     // Get coingecko prices
     let response = await getCoingeckoPrices(ids)
-    logger.info(`Response from coingecko: ${response}`)
 
     for (let price of response){
       logger.info(`Coingecko price for ${price.id}: ${price.current_price}`)
