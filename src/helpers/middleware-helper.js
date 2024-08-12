@@ -103,6 +103,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
   // If in submission return false
   if (inSubmission) {
+    logger.info(`Not submitting to ${jobName} as it is already in submission`)
     return false;
   }
 
@@ -113,7 +114,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
   let pushInterval = Number(feeds.feeds[jobName].pushInterval);
 
   // Check if time for update
-  query = await queryTable("rounds", ["startedAt"], jobName);
+  query = await queryTable("rounds", ["startedAt", "submissionMade"], jobName);
 
   // If there was never a round
   if (query.startedAt == 0){
@@ -122,18 +123,28 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
   // Check if it is time for an update
   let timeForUpdate = now >= query.startedAt + pushInterval;
+  logger.info(`Time for updating ${jobName}: ${timeForUpdate}`)
 
   // Check if there was a last price
   let noLastPrice = lastPrice === -1 || lastPrice === 0;
+  logger.info(`No last price for ${jobName}: ${noLastPrice}`)
 
   // Check if update time expired
   let updateTimeExpired = requestType === 1 && timeForUpdate;
+  logger.info(`Update time expired for ${jobName}: ${updateTimeExpired}`)
 
   // Check if a new round was found
   let newRoundFound = requestType === 3;
+  if(newRoundFound){
+    logger.info(`This is a new round for ${jobName}`)
+  }
+
+  if(query.submissionMade == 0){
+    logger.info(`Currently missing latest submission for ${jobName}`)
+  }
 
   // Check if an update is needed
-  let toUpdate = noLastPrice || updateTimeExpired || newRoundFound;
+  let toUpdate = noLastPrice || updateTimeExpired || newRoundFound || query.submissionMade == 0;
 
   // Get decimal places for feed
   let decimalPlaces = Number(feeds.feeds[jobName].decimalPlaces);
@@ -158,6 +169,7 @@ export const checkForPriceUpdate = async (jobName, requestType, result) => {
 
   // If last price is found and there is price deviation
   if (!noLastPrice && percChange >= priceDeviationPercentage) {
+    logger.info(`Updating price for ${jobName} due to priceDeviation of ${percChange}`)
     toUpdate = true;
   }
 

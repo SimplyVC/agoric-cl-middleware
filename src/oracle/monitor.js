@@ -7,6 +7,7 @@ import { OracleMonitorConfig } from "../helpers/oracle-monitor-config.js";
 import { MonitoringState } from "../helpers/monitoring-state.js";
 import monitorEnvInstance from "../helpers/monitor-env.js";
 import { FeedsConfig } from "../helpers/feeds-config.js";
+import { delay } from "../helpers/utils.js";
 
 let metrics = new MonitorMetrics();
 let oracleConfig = new OracleMonitorConfig(monitorEnvInstance.ORACLE_FILE);
@@ -39,7 +40,7 @@ export const monitor = async () => {
   }
 
   // Create interval
-  setInterval(async () => {
+  while (true){
     try {
       oracleConfig.getInvsForOracles();
 
@@ -52,6 +53,7 @@ export const monitor = async () => {
         if (!(oracle in state.state)) {
           state.initialiseStateForOracle(oracle);
         }
+        logger.info(`Obtaining the latest Oracle Info for ${oracleConfig.oracles[oracle]["oracleName"]}`)
 
         // Get latest prices for oracle
         let latestOracleState = await getOracleLatestInfo(
@@ -62,23 +64,28 @@ export const monitor = async () => {
           oracleConfig.amountsIn
         );
 
+        logger.info(`Obtained the latest Oracle Info for ${oracleConfig.oracles[oracle]["oracleName"]}`)
+
         // For each feed in result
         for (let feed in latestOracleState.values) {
           let feedState = latestOracleState.values[feed];
 
-          // Check if round is greater than in memory variable
-          if (feedState.round > lastRound[feed].round) {
-            // Reset variable
-            lastRound[feed] = {
-              round: feedState.round,
-              submissions: [feedState.id]
-            };
-          } else if (feedState.round == lastRound[feed].round) {
-            // Otherwise add submission time to array
-            if (!lastRound[feed].submissions.includes(feedState.id)) {
-              lastRound[feed].submissions.push(feedState.id);
+          if(feedState && lastRound[feed] && feedState.round && lastRound[feed].round){
+            // Check if round is greater than in memory variable
+            if (feedState.round > lastRound[feed].round) {
+              // Reset variable
+              lastRound[feed] = {
+                round: feedState.round,
+                submissions: [feedState.id]
+              };
+            } else if (feedState.round == lastRound[feed].round) {
+              // Otherwise add submission time to array
+              if (!lastRound[feed].submissions.includes(feedState.id)) {
+                lastRound[feed].submissions.push(feedState.id);
+              }
             }
           }
+         
         }
 
         state.updateOracleState(oracle, latestOracleState);
@@ -116,9 +123,11 @@ export const monitor = async () => {
         }
       }
     } catch (err) {
-      logger.error("MONITOR ERROR: " + err);
+      logger.error(`MONITOR ERROR: ${err}`);
     }
-  }, monitorEnvInstance.MONITOR_POLL_INTERVAL * 1000);
+
+    await delay(monitorEnvInstance.MONITOR_POLL_INTERVAL * 1000)
+  }
 };
 
 /**

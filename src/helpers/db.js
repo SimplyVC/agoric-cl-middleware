@@ -66,8 +66,24 @@ export const createJob = async (id, name) => {
   try {
     await loadDB();
 
-    await db.run("INSERT INTO jobs (id, name) VALUES (?, ?)", [id, name]);
-    await db.run("INSERT INTO rounds (feed) VALUES (?)", [name]);
+    // Check if the job name already exists
+    const existingJob = await db.get("SELECT id FROM jobs WHERE name = ?", [name]);
+
+    if (existingJob) {
+      // Update the job if it exists
+      await db.run("UPDATE jobs SET id = ? WHERE name = ?", [id, name]);
+    } else {
+      // Insert a new job if it doesn't exist
+      await db.run("INSERT INTO jobs (id, name) VALUES (?, ?)", [id, name]);
+    }
+
+    // Check if the feed already exists in rounds
+    const existingRound = await db.get("SELECT feed FROM rounds WHERE feed = ?", [name]);
+
+    if (!existingRound) {
+      // Insert into rounds if the feed does not exist
+      await db.run("INSERT INTO rounds (feed) VALUES (?)", [name]);
+    }
   } catch (err) {
     throw new Error("DB ERROR when creating job: " + err);
   }

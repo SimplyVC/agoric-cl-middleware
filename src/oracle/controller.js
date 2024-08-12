@@ -87,7 +87,7 @@ export const makeController = () => {
         let currentPrice = query.last_result;
 
         // Query latest round
-        let latestRound = await queryRound(jobName, middlewareEnvInstance.FROM);
+        let latestRound = await queryRound(jobName, middlewareEnvInstance.FROM, true);
 
         // Get offers
         let offers = await getOraclesInvitations(middlewareEnvInstance.FROM);
@@ -103,14 +103,19 @@ export const makeController = () => {
 
         // Get latest submitted round
         let latestSubmittedRound = await getLatestSubmittedRound(middlewareEnvInstance.FROM, feedOfferId);
+
+        let dataToUpdate = {
+          last_result: latestPrice
+        }
+
+        if(latestSubmittedRound != 0){
+          dataToUpdate["last_reported_round"] = latestSubmittedRound
+        }
  
         // Update jobs table
         await updateTable(
           "jobs",
-          {
-            last_result: latestPrice,
-            last_reported_round: latestSubmittedRound,
-          },
+          dataToUpdate,
           jobName
         );
 
@@ -171,6 +176,7 @@ export const makeController = () => {
 
           // Check seconds passed from last request
           let secondsPassed = secondsNow - query.last_request_sent;
+          logger.info(`Seconds passed since last price request for ${jobName}: ${secondsPassed}`)
 
           /**
            * Checks if there are any pending CL job requests for which we are

@@ -67,6 +67,7 @@ export const startBridge = (PORT) => {
       // Check if a price update should be made
       let toUpdate = await checkForPriceUpdate(jobName, requestType, result)
 
+      logger.info(`Updating price for ${jobName}: ${toUpdate}`)
       if (toUpdate) {
         // Get latest round
         let latestRound;
@@ -77,12 +78,20 @@ export const startBridge = (PORT) => {
           latestRound = new RoundDetails(1, 0, "", false, false);
         }
 
+        // Get the round for submission
+        let query = await queryTable("jobs", ["last_reported_round", "last_tried_round"], jobName);
+        let lastReportedRound = query.last_reported_round || 0;
+
+        // If it is a request for a new round and the latest round is already submitted, return
+        if(requestType == 3 && (latestRound.submissionMade || query.last_tried_round >= latestRound.roundId)){
+        //  if(requestType == 3 && latestRound.submissionMade && query.last_tried_round >= latestRound.roundId){
+          logger.info(`This was a response for a new round for ${jobName} but operator has already submitted to latest round ${latestRound.roundId}`)
+          return
+        }
+
+        logger.info(`Updating rounds table for ${jobName}`)
         await updateTable("rounds", latestRound, jobName);
 
-        // Get the round for submission
-        let query = await queryTable("jobs", ["last_reported_round"], jobName);
-
-        let lastReportedRound = query.last_reported_round || 0;
         let lastRoundId = isNaN(latestRound.roundId)
           ? lastReportedRound
           : latestRound.roundId;
@@ -95,11 +104,13 @@ export const startBridge = (PORT) => {
         let now = Date.now() / 1000
         let pushInterval = Number(feeds.feeds[jobName].pushInterval)
         
-        if (roundToSubmit != 1 && roundToSubmit == lastRoundId && latestRound.startedAt < (now - pushInterval))
+        if (roundToSubmit != 1 && roundToSubmit == lastRoundId && latestRound.startedAt < (now - pushInterval)){
+          logger.info(`Feed ${jobName}: Incrementing round submission to ${roundToSubmit + 1}`)
           roundToSubmit = roundToSubmit + 1;
+        }
 
         // Check if new round
-        let newRound = roundToSubmit !== lastRoundId;
+        let newRound = roundToSubmit > lastRoundId;
 
         /**
          * Push price on chain if:
@@ -111,15 +122,23 @@ export const startBridge = (PORT) => {
         let notConsecutiveNewRound = 
         newRound && latestRound.startedBy !== middlewareEnvInstance.FROM;
         let noSubmissionForRound = !newRound && !latestRound.submissionMade
+        logger.info(`feed ${jobName} latestRound: ${JSON.stringify(latestRound)}`)
+        logger.info(`feed ${jobName} newRound: ${newRound}, startedLastRound: ${latestRound.startedBy !== middlewareEnvInstance.FROM},  latestRoundSubmissionMade: ${latestRound.submissionMade}`)
+        logger.info(`Checking if submission for round ${roundToSubmit} already errored for job ${jobName}`)
         let alreadyErrored = roundToSubmit == 1 ? false : await submissionAlreadyErrored(roundToSubmit, jobName)
+        logger.info(`Submission ${roundToSubmit} job ${jobName} already errored: ${alreadyErrored}`)
 
         // Check if round already errored
         query = await queryTable("rounds", ["roundId", "errored"], jobName);
+        logger.info(`Queried rounds table for ${jobName}`)
 
         alreadyErrored = alreadyErrored || (roundToSubmit == query.roundId && query.errored == 1)
         if (alreadyErrored){
           logger.info(`Submission for round ${roundToSubmit} for feed ${jobName} already errored`)
         }
+
+        logger.info(`Feed ${jobName} submitting to new round and have not started last round: ${notConsecutiveNewRound}`)
+        logger.info(`Feed ${jobName} submitting to round for which there was not a past submission: ${notConsecutiveNewRound}`)
 
         if ( (firstRound || notConsecutiveNewRound || noSubmissionForRound) && !alreadyErrored) {
           logger.info(`Updating price for feed ${jobName} for round ${roundToSubmit}`);
@@ -136,7 +155,7 @@ export const startBridge = (PORT) => {
             );
           }
         } else {
-          logger.info(`Already started last round or submitted to this round ${round} for feed ${jobName}`);
+          logger.info(`Already started last round or submitted to this round ${roundToSubmit} for feed ${jobName}`);
         }
       }
 
