@@ -106,9 +106,9 @@ In this section, I will go over the <b>oracle</b> directory and explain in detai
 
 <b>getLatestBlockHeight()</b>
 
-Use: This function is used to get the last block height
+Use: This function is used to get the last block height and whether the node is still syncing
 
-Returns: The latest block height or 0 if it fails.
+Returns: The latest block height and whether it is still syncing or 0 and true if it fails.
 
 <br>
 <div id='readvstorage'></div>

@@ -33,8 +33,8 @@ let feedsConfig = new FeedsConfig();
 let MAX_OFFERS_TO_LOOP = 25;
 
 /**
- * Function to get the latest block height
- * @returns {Number} the latest block number or 0 if it fails
+ * Function to get the latest block height and whether the node is syncing
+ * @returns {object} A key height which holds the latest block number or 0 if it fails and a key syncing which holds whether the node is still syncing
  */
 export const getLatestBlockHeight = async () => {
   try {
@@ -49,15 +49,23 @@ export const getLatestBlockHeight = async () => {
 
     // Extract the latest_block_height
     const latestBlockHeight = responseData.result.sync_info.latest_block_height;
+    const catchingUp = responseData.result.sync_info.cathcing_up;
 
     // Convert it to a number
     const latestBlockHeightNumber = Number(latestBlockHeight);
 
-    return latestBlockHeightNumber;
+    return {
+      height: latestBlockHeightNumber,
+      syncing: catchingUp
+    };
+
   } catch (error) {
     // Handle errors
     console.error('Failed to get block height:', error.message);
-    return 0;
+    return {
+      height: 0,
+      syncing: true
+    };
   }
 }
 
@@ -571,7 +579,9 @@ export const pushPrice = async (price, feed, round, from) => {
     const lastTriedRound = Number(query.last_tried_round)
 
     // Get latest block height
-    let latestHeight = await getLatestBlockHeight();
+    let rpcState = await getLatestBlockHeight();
+    let latestHeight = rpcState.height
+    let rpcStillSyncing = rpcState.syncing
 
     // submit update only if height increased or a new round from last submit
     logger.info(`Checking whether to submit for round ${round}. Last submitted on block ${lastSubmissionBlock} and current height is ${latestHeight} for round ${lastTriedRound} for feed ${feed}. Block lock is set to ${middlewareEnvInstance.SUBMISSION_BLOCK_LOCK}`)
@@ -582,13 +592,13 @@ export const pushPrice = async (price, feed, round, from) => {
      * If same round as last tried but enough blocks passed OR
      * If new round and latest height is greater than the height of latest submission OR
      * If the round is smaller than the last tried round or the round is 0 or 1 (In case of retriggered invitations)
+     * AND the rpc is not still syncing
      */
-
     let sameRoundEnoughBlocksPassed = latestHeight > allowedSubmissionHeight && sameRound
     let newRoundEnoughBlocksPassed = newRound && latestHeight > lastSubmissionBlock
     let retriggeredInvitation =  (latestHeight > allowedSubmissionHeight && round < lastTriedRound && (latestRound.roundId == round || latestRound.roundId == 0 || round == 1))
-    logger.info(`Final check when submitting for round ${round} for feed ${feed}. sameRoundEnoughBlocksPassed -> ${sameRoundEnoughBlocksPassed}, newRoundEnoughBlocksPassed -> ${newRoundEnoughBlocksPassed}, retriggeredInvitation -> ${retriggeredInvitation}`)
-    if (sameRoundEnoughBlocksPassed || newRoundEnoughBlocksPassed || retriggeredInvitation){
+    logger.info(`Final check when submitting for round ${round} for feed ${feed}. sameRoundEnoughBlocksPassed -> ${sameRoundEnoughBlocksPassed}, newRoundEnoughBlocksPassed -> ${newRoundEnoughBlocksPassed}, retriggeredInvitation -> ${retriggeredInvitation}, rpcStillSyncing -> ${rpcStillSyncing}`)
+    if ((sameRoundEnoughBlocksPassed || newRoundEnoughBlocksPassed || retriggeredInvitation) && !rpcStillSyncing){
       // Execute
       try{
         // Update last submitted block height
@@ -650,11 +660,17 @@ export const pushPrice = async (price, feed, round, from) => {
         }
       }
 
-      latestHeight = await getLatestBlockHeight();
-      logger.info(`Latest block height ${latestHeight}`);
+      rpcState = await getLatestBlockHeight();
+      latestHeight = rpcState.height
+      rpcStillSyncing = rpcState.syncing
+      logger.info(`RPC Latest block height ${latestHeight}, still syncing -> ${rpcStillSyncing}`);
     }
     else{
       logger.info(`Already submitted to round in block ${latestHeight} for feed ${feed}`);
+
+      if(rpcStillSyncing){
+        logger.info(`RPC is out of sync, will not be submitting for feed ${feed}`)
+      }
     }
 
     // Sleep SEND_CHECK_INTERVAL seconds
