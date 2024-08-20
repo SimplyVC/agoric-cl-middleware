@@ -149,12 +149,10 @@ export const monitor = async () => {
 
     await delay(monitorEnvInstance.MONITOR_POLL_INTERVAL * 1000)
   }
+
 };
 
-// Create interval every 10 minutes to get coingecko prices
-setInterval(async () => {
-  await getPrices()
-},10 * 60 * 1000);
+
 
 /**
  * Creates the server for the metrics endpoint
@@ -170,6 +168,11 @@ const startServer = () => {
       res.setHeader("Content-Type", metrics.register.contentType);
       res.end(await metrics.register.metrics());
     }
+
+    // Create interval every 10 minutes to get coingecko prices
+    setInterval(async () => {
+      await getPrices()
+    },10 * 60 * 1000);
   });
 
   server.listen(monitorEnvInstance.MONITOR_PORT);
