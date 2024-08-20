@@ -76,10 +76,10 @@ export const monitor = async () => {
     };
   }
 
-  // Create interval every 10 minutes to get coingecko prices
+  // Create interval every 5 minutes to get coingecko prices
   setInterval(async () => {
     await getPrices()
-  },10 * 60 * 1000);
+  },5 * 60 * 1000);
 
   // Create interval
   while (true){
