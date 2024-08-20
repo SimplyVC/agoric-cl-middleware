@@ -80,6 +80,13 @@ export class MonitorMetrics {
       labelNames: ["oracleName", "oracle", "feed"],
     });
 
+    // Create gauge for coingecko prices
+    this.coingeckoPrices = new Gauge({
+      name: "coingecko_price",
+      help: "Prices from coingecko",
+      labelNames: ["feed"],
+    });
+
     // Register the gauges
     this.register.registerMetric(this.oracleSubmission);
     this.register.registerMetric(this.oracleLastEpoch);
@@ -91,6 +98,7 @@ export class MonitorMetrics {
     this.register.registerMetric(this.heartbeatGauge);
     this.register.registerMetric(this.consensusTimeTaken);
     this.register.registerMetric(this.roundsCreated);
+    this.register.registerMetric(this.coingeckoPrices);
   }
 
   /**
@@ -154,5 +162,14 @@ export class MonitorMetrics {
    */
   updateConsensusTimeTaken(feed, consensusTime) {
     this.consensusTimeTaken.labels(feed).set(consensusTime);
+  }
+
+  /**
+   * Function to update coingecko prices
+   * @param {*} feed feed name to set metric for
+   * @param {*} price new price
+   */
+  updateCoingeckoPrices(feed, price) {
+    this.coingeckoPrices.labels(feed).set(price);
   }
 }

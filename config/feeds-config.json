@@ -3,30 +3,35 @@
         "decimalPlaces": 6,
         "pollInterval": 60,
         "pushInterval": 600,
-        "priceDeviationPerc": 1 
+        "priceDeviationPerc": 1,
+        "coingeckoId": "cosmos"
     },
     "stATOM-USD" : {
         "decimalPlaces": 6,
         "pollInterval": 60,
         "pushInterval": 600,
-        "priceDeviationPerc": 1 
+        "priceDeviationPerc": 1,
+        "coingeckoId": "stride-staked-atom"
     },
     "stOSMO-USD" : {
         "decimalPlaces": 6,
         "pollInterval": 60,
         "pushInterval": 600,
-        "priceDeviationPerc": 1 
+        "priceDeviationPerc": 1,
+        "coingeckoId": "stride-staked-osmo"
     },
     "stTIA-USD" : {
         "decimalPlaces": 6,
         "pollInterval": 60,
         "pushInterval": 600,
-        "priceDeviationPerc": 1 
+        "priceDeviationPerc": 1,
+        "coingeckoId": "stride-staked-tia"
     },
     "stkATOM-USD" : {
         "decimalPlaces": 6,
         "pollInterval": 60,
         "pushInterval": 600,
-        "priceDeviationPerc": 1 
+        "priceDeviationPerc": 1,
+        "coingeckoId": "stkatom"
     }
 }
