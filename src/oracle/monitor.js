@@ -7,7 +7,7 @@ import { OracleMonitorConfig } from "../helpers/oracle-monitor-config.js";
 import { MonitoringState } from "../helpers/monitoring-state.js";
 import monitorEnvInstance from "../helpers/monitor-env.js";
 import { FeedsConfig } from "../helpers/feeds-config.js";
-import { delay } from "../helpers/utils.js";
+import { delay, getCoingeckoPrices } from "../helpers/utils.js";
 
 let metrics = new MonitorMetrics();
 let oracleConfig = new OracleMonitorConfig(monitorEnvInstance.ORACLE_FILE);
@@ -18,11 +18,48 @@ let state = new MonitoringState(
 let feedsConfig = new FeedsConfig();
 
 /**
+ * Function to get web2.0 prices
+ */
+const getPrices = async () => {
+  logger.info("Getting prices from coingecko")
+  try {
+    let ids = []
+    // Loop through feeds from config
+    for (let feed in feedsConfig.feeds) {
+      // If coingecko id is there, add it
+      if (feedsConfig.feeds[feed].coingeckoId && feedsConfig.feeds[feed].coingeckoId.length > 0){
+        ids.push(feedsConfig.feeds[feed].coingeckoId)
+      }
+    }
+
+    // Get coingecko prices
+    let response = await getCoingeckoPrices(ids)
+
+    for (let price of response){
+      logger.info(`Coingecko price for ${price.id}: ${price.current_price}`)
+      for (let feed in feedsConfig.feeds) {
+        // If coingecko id is there, add it
+        if (feedsConfig.feeds[feed].coingeckoId && feedsConfig.feeds[feed].coingeckoId.length > 0){
+          const id = feedsConfig.feeds[feed].coingeckoId
+          if (id == price.id){
+            await metrics.updateCoingeckoPrices(feed, price.current_price)
+          }
+        }
+      }
+    }
+
+  } catch (err) {
+    logger.error("COINGECKO PRICE QUERY ERROR: " + err);
+  }
+}
+
+/**
  * Main function to monitor
  */
 export const monitor = async () => {
   // Holds last round details
   let lastRound = {};
+  await getPrices()
 
   // Loop through feeds from config
   for (let feed in feedsConfig.feeds) {
@@ -38,6 +75,11 @@ export const monitor = async () => {
       submissions: [],
     };
   }
+
+  // Create interval every 10 minutes to get coingecko prices
+  setInterval(async () => {
+    await getPrices()
+  },10 * 60 * 1000);
 
   // Create interval
   while (true){
@@ -106,29 +148,16 @@ export const monitor = async () => {
           metrics.updateConsensusTimeTaken(feed, consensusTime);
         }
       }
-
-      // Once all oracles were queried, get consensus time for each feed
-      for (let feed in lastRound) {
-        let feedLastRound = lastRound[feed];
-
-        // If there were at least  3 submissions
-        if (feedLastRound.submissions.length >= 3) {
-          // First sort the array
-          feedLastRound.submissions.sort((a, b) => a - b);
-          // Calculate consensus time, subtract third time from first
-          let consensusTime =
-            feedLastRound.submissions[2] - feedLastRound.submissions[0];
-          // Update metric
-          metrics.updateConsensusTimeTaken(feed, consensusTime);
-        }
-      }
     } catch (err) {
       logger.error(`MONITOR ERROR: ${err}`);
     }
 
     await delay(monitorEnvInstance.MONITOR_POLL_INTERVAL * 1000)
   }
+
 };
+
+
 
 /**
  * Creates the server for the metrics endpoint
@@ -144,6 +173,8 @@ const startServer = () => {
       res.setHeader("Content-Type", metrics.register.contentType);
       res.end(await metrics.register.metrics());
     }
+
+    await getPrices();
   });
 
   server.listen(monitorEnvInstance.MONITOR_PORT);
