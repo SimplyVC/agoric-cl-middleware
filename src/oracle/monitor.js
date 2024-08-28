@@ -81,10 +81,11 @@ export const monitor = async () => {
     await getPrices()
   },5 * 60 * 1000);
 
+  await oracleConfig.getInvsForOracles();
+
   // Create interval
   while (true){
     try {
-      oracleConfig.getInvsForOracles();
 
       // Read monitoring state
       state.readMonitoringState(oracleConfig);

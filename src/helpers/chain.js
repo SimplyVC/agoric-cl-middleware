@@ -805,7 +805,7 @@ export const getOracleLatestInfo = async (
   
           // If round is bigger than last observed and the offer didn't fail
           if (
-            lastRound > lastObservedRound &&
+            lastRound >= lastObservedRound &&
             !currentOffer["status"].hasOwnProperty("error")
           ) {
             // If id is bigger than last offer id in state, set it
@@ -813,7 +813,7 @@ export const getOracleLatestInfo = async (
             lastOfferId = id;
   
             // Get latest round
-            let latestRound = await queryRound(feed, oracle, true);
+            let latestRound = await queryRound(feed, oracle, false);
   
             // Get current rounds created
             let roundsCreated =
