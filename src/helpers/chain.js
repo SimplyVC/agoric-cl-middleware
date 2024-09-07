@@ -760,7 +760,7 @@ export const getOracleLatestInfo = async (
 
   let fromBoard = makeFromBoard();
   const unserializer = boardSlottingMarshaller(fromBoard.convertSlotToVal);
-  const leader = makeLeader(networkConfig.rpcAddrs[0], {retryCallback: null, jitter: null});
+  const leader = makeLeader(networkConfig.rpcAddrs[0]);
 
   const follower = await makeFollower(`:published.wallet.${oracle}`, leader, {
     unserializer,
