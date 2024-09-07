@@ -49,14 +49,19 @@ export const getLatestBlockHeight = async () => {
 
     // Extract the latest_block_height
     const latestBlockHeight = responseData.result.sync_info.latest_block_height;
-    const catchingUp = responseData.result.sync_info.cathcing_up;
+    const catchingUp = responseData.result.sync_info.catching_up;
+    // Calculate time behind 
+    const latestBlockTime = new Date(responseData.result.sync_info.latest_block_time);
+    const now = new Date();
+    // Check if more than 1 minute behind
+    const behind = now - latestBlockTime > (60 * 1000)
 
     // Convert it to a number
     const latestBlockHeightNumber = Number(latestBlockHeight);
 
     return {
       height: latestBlockHeightNumber,
-      syncing: catchingUp
+      syncing: catchingUp || behind
     };
 
   } catch (error) {
@@ -805,7 +810,7 @@ export const getOracleLatestInfo = async (
   
           // If round is bigger than last observed and the offer didn't fail
           if (
-            lastRound >= lastObservedRound &&
+            lastRound > lastObservedRound &&
             !currentOffer["status"].hasOwnProperty("error")
           ) {
             // If id is bigger than last offer id in state, set it

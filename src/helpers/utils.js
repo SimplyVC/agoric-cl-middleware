@@ -74,3 +74,15 @@ export const getCoingeckoPrices = async (coingeckoIds) => {
 
   return response.data;
 };
+
+/**
+ * Function to check if enough minutes passed
+ * @param {number} timestamp timestamp to check
+ * @param {number} minutes number of minutes to check if passed
+ * @returns true if minutes passed from timestamp
+ */
+export const hasMinutesPassed = (timestamp, minutes) => {
+  minutes = minutes * 60 * 1000; // minutes in milliseconds
+  const currentTime = Date.now(); // Get the current time in milliseconds
+  return currentTime - timestamp >= minutes;
+}

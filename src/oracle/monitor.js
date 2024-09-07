@@ -7,7 +7,7 @@ import { OracleMonitorConfig } from "../helpers/oracle-monitor-config.js";
 import { MonitoringState } from "../helpers/monitoring-state.js";
 import monitorEnvInstance from "../helpers/monitor-env.js";
 import { FeedsConfig } from "../helpers/feeds-config.js";
-import { delay, getCoingeckoPrices } from "../helpers/utils.js";
+import { delay, getCoingeckoPrices, hasMinutesPassed } from "../helpers/utils.js";
 
 let metrics = new MonitorMetrics();
 let oracleConfig = new OracleMonitorConfig(monitorEnvInstance.ORACLE_FILE);
@@ -60,6 +60,8 @@ export const monitor = async () => {
   // Holds last round details
   let lastRound = {};
   await getPrices()
+  // Holds the time of last coingecko check
+  let lastCoinegeckoCheck = Date.now()
 
   // Loop through feeds from config
   for (let feed in feedsConfig.feeds) {
@@ -75,11 +77,6 @@ export const monitor = async () => {
       submissions: [],
     };
   }
-
-  // Create interval every 5 minutes to get coingecko prices
-  setInterval(async () => {
-    await getPrices()
-  },5 * 60 * 1000);
 
   await oracleConfig.getInvsForOracles();
 
@@ -153,6 +150,12 @@ export const monitor = async () => {
       logger.error(`MONITOR ERROR: ${err}`);
     }
 
+    // If enough minutes passed, query coingecko prices
+    if(hasMinutesPassed(lastCoinegeckoCheck, 5)){
+      await getPrices()
+      lastCoinegeckoCheck = Date.now()
+    }
+
     await delay(monitorEnvInstance.MONITOR_POLL_INTERVAL * 1000)
   }
 
@@ -174,8 +177,6 @@ const startServer = () => {
       res.setHeader("Content-Type", metrics.register.contentType);
       res.end(await metrics.register.metrics());
     }
-
-    await getPrices();
   });
 
   server.listen(monitorEnvInstance.MONITOR_PORT);
