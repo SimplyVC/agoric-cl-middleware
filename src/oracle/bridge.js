@@ -138,7 +138,7 @@ export const startBridge = (PORT) => {
         }
 
         logger.info(`Feed ${jobName} submitting to new round and have not started last round: ${notConsecutiveNewRound}`)
-        logger.info(`Feed ${jobName} submitting to round for which there was not a past submission: ${notConsecutiveNewRound}`)
+        logger.info(`Feed ${jobName} submitting to round for which there was not a past submission: ${noSubmissionForRound}`)
 
         if ( (firstRound || notConsecutiveNewRound || noSubmissionForRound) && !alreadyErrored) {
           logger.info(`Updating price for feed ${jobName} for round ${roundToSubmit}`);
