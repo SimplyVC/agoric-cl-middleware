@@ -435,8 +435,8 @@ export const queryRound = async (feed, oracle, checkSubmission) => {
     let fromBoard = makeFromBoard();
     capData = storageHelper.unserializeTxt(capDataStr, fromBoard).at(-1);
   } catch (err) {
-    logger.error(`Failed to parse CapData for queryRound for ${feed}`);
-    return new RoundDetails(1, 0, "", false, false);
+    logger.error(`Failed to parse CapData for queryRound for ${feed}: ${err}`);
+    return new RoundDetails(1, 0, "", false, true);
   }
 
   // Get round from result
@@ -452,7 +452,7 @@ export const queryRound = async (feed, oracle, checkSubmission) => {
     // Check if invitation for feed exists
     if (!(feed in offers)) {
       logger.error(`Invitation for ${feed} not found in oracle invitations`);
-      return new RoundDetails(1, 0, "", false, false);
+      return new RoundDetails(1, 0, "", false, true);
     }
 
     // Get feed offer id
@@ -548,7 +548,13 @@ export const pushPrice = async (price, feed, round, from) => {
     i++
   ) {
     // Query round
-    let latestRound = await queryRound(feed, from, false);
+    let latestRound = await queryRound(feed, from, true);
+
+    // Check if failed
+    if(latestRound.startedAt == 0 && !latestRound.submitted){
+      logger.info(`Aborting submission to round ${round} for feed ${feed} due to failed round query`)
+      continue;
+    }
 
     /**
      * If latestRound is greater than round being pushed or submission to the
@@ -801,16 +807,16 @@ export const getOracleLatestInfo = async (
         );
 
         if(feed){
-          logger.info(`Found Push Price for ${oracleDetails["oracleName"]} for ${feed} on round ${lastRound}`)
 
           // Get feeds' last observed round from state
           let lastObservedRound = state["values"].hasOwnProperty(feed) && state["values"][feed].hasOwnProperty("round")
             ? state["values"][feed]["round"]
             : 0;
-  
+
+          logger.info(`Found Push Price for ${oracleDetails["oracleName"]} for ${feed} on round ${lastRound}. Last observed round: ${lastObservedRound}`)
           // If round is bigger than last observed and the offer didn't fail
           if (
-            lastRound > lastObservedRound &&
+            lastRound >= lastObservedRound &&
             !currentOffer["status"].hasOwnProperty("error")
           ) {
             // If id is bigger than last offer id in state, set it
