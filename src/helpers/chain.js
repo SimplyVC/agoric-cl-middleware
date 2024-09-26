@@ -551,7 +551,7 @@ export const pushPrice = async (price, feed, round, from) => {
     let latestRound = await queryRound(feed, from, true);
 
     // Check if failed
-    if(latestRound.startedAt == 0 && !latestRound.submitted){
+    if(latestRound.startedAt == 0 && latestRound.submitted){
       logger.info(`Aborting submission to round ${round} for feed ${feed} due to failed round query`)
       continue;
     }
