@@ -436,7 +436,7 @@ export const queryRound = async (feed, oracle, checkSubmission) => {
     capData = storageHelper.unserializeTxt(capDataStr, fromBoard).at(-1);
   } catch (err) {
     logger.error(`Failed to parse CapData for queryRound for ${feed}: ${err}`);
-    return new RoundDetails(1, 0, "", false, true);
+    return new RoundDetails(1, 0, "", true, false);
   }
 
   // Get round from result
@@ -452,7 +452,7 @@ export const queryRound = async (feed, oracle, checkSubmission) => {
     // Check if invitation for feed exists
     if (!(feed in offers)) {
       logger.error(`Invitation for ${feed} not found in oracle invitations`);
-      return new RoundDetails(1, 0, "", false, true);
+      return new RoundDetails(1, 0, "", true, false);
     }
 
     // Get feed offer id
