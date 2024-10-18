@@ -89,46 +89,52 @@ export const monitor = async () => {
 
       // For each oracle
       for (let oracle in oracleConfig.oracles) {
-        // Check if there is no state for oracle
-        if (!(oracle in state.state)) {
-          state.initialiseStateForOracle(oracle);
-        }
-        logger.info(`Obtaining the latest Oracle Info for ${oracleConfig.oracles[oracle]["oracleName"]}`)
+        try {
+          // Check if there is no state for oracle
+          if (!(oracle in state.state)) {
+            state.initialiseStateForOracle(oracle);
+          }
+          logger.info(`Obtaining the latest Oracle Info for ${oracleConfig.oracles[oracle]["oracleName"]}`)
 
-        // Get latest prices for oracle
-        let latestOracleState = await getOracleLatestInfo(
-          oracle,
-          oracleConfig.oracles[oracle],
-          state.state[oracle],
-          metrics,
-          oracleConfig.amountsIn
-        );
+          // Get latest prices for oracle
+          let latestOracleState = await getOracleLatestInfo(
+            oracle,
+            oracleConfig.oracles[oracle],
+            state.state[oracle],
+            metrics,
+            oracleConfig.amountsIn
+          );
 
-        logger.info(`Obtained the latest Oracle Info for ${oracleConfig.oracles[oracle]["oracleName"]}`)
+          logger.info(`Obtained the latest Oracle Info for ${oracleConfig.oracles[oracle]["oracleName"]}`)
 
-        // For each feed in result
-        for (let feed in latestOracleState.values) {
-          let feedState = latestOracleState.values[feed];
+          // For each feed in result
+          for (let feed in latestOracleState.values) {
+            let feedState = latestOracleState.values[feed];
 
-          if(feedState && lastRound[feed] && feedState.round && lastRound[feed].round){
-            // Check if round is greater than in memory variable
-            if (feedState.round > lastRound[feed].round) {
-              // Reset variable
-              lastRound[feed] = {
-                round: feedState.round,
-                submissions: [feedState.id]
-              };
-            } else if (feedState.round == lastRound[feed].round) {
-              // Otherwise add submission time to array
-              if (!lastRound[feed].submissions.includes(feedState.id)) {
-                lastRound[feed].submissions.push(feedState.id);
+            if(feedState && lastRound[feed] && feedState.round && lastRound[feed].round){
+              // Check if round is greater than in memory variable
+              if (feedState.round > lastRound[feed].round) {
+                // Reset variable
+                lastRound[feed] = {
+                  round: feedState.round,
+                  submissions: [feedState.id]
+                };
+              } else if (feedState.round == lastRound[feed].round) {
+                // Otherwise add submission time to array
+                if (!lastRound[feed].submissions.includes(feedState.id)) {
+                  lastRound[feed].submissions.push(feedState.id);
+                }
               }
             }
+          
           }
-         
-        }
 
-        state.updateOracleState(oracle, latestOracleState);
+          state.updateOracleState(oracle, latestOracleState);
+        }
+        catch (err) {
+          logger.error(`Failed getting details for oracle ${oracleConfig.oracles[oracle]} ["oracleName"]: ${err}`);
+          continue
+        }
       }
 
       // Once all oracles were queried, get consensus time for each feed
