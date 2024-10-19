@@ -82,8 +82,10 @@ export const startBridge = (PORT) => {
         let query = await queryTable("jobs", ["last_reported_round", "last_tried_round"], jobName);
         let lastReportedRound = query.last_reported_round || 0;
 
+        // This is for the edge case of retriggered invitations and reset of round numbers
+        let possibleNewRound = latestRound.roundId > query.last_tried_round || latestRound.roundId < query.last_tried_round - 100
         // If it is a request for a new round and the latest round is already submitted, return
-        if(requestType == 3 && latestRound.roundId != 1 && (latestRound.submissionMade || query.last_tried_round >= latestRound.roundId)){
+        if(requestType == 3 && latestRound.roundId != 1 && !possibleNewRound && (latestRound.submissionMade || query.last_tried_round >= latestRound.roundId)){
         //  if(requestType == 3 && latestRound.submissionMade && query.last_tried_round >= latestRound.roundId){
           logger.info(`This was a response for a new round for ${jobName} but operator has already submitted to latest round ${latestRound.roundId}`)
           return
