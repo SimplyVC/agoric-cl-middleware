@@ -598,7 +598,8 @@ export const pushPrice = async (price, feed, round, from) => {
     logger.info(`Checking whether to submit for round ${round}. Last submitted on block ${lastSubmissionBlock} and current height is ${latestHeight} for round ${lastTriedRound} for feed ${feed}. Block lock is set to ${middlewareEnvInstance.SUBMISSION_BLOCK_LOCK}`)
     const allowedSubmissionHeight = lastSubmissionBlock + Number(middlewareEnvInstance.SUBMISSION_BLOCK_LOCK)
     const sameRound = lastTriedRound == round
-    const newRound = round > lastTriedRound
+    // a new round can either be if its more than the last tried or a round less than 100 rounda before in case of retriggered invitations
+    const newRound = round > lastTriedRound || round < lastTriedRound - 100
     /**
      * If same round as last tried but enough blocks passed OR
      * If new round and latest height is greater than the height of latest submission OR
