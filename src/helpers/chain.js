@@ -476,7 +476,7 @@ export const queryRound = async (feed, oracle, checkSubmission) => {
     Number(capData.startedAt.absValue),
     capData.startedBy,
     submissionForRound,
-    (query.roundId == round && query.errored == 1)
+    (query && query.roundId == round && query.errored == 1)
   );
 
   if(checkSubmission){
