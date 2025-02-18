@@ -172,4 +172,24 @@ export class MonitorMetrics {
   updateCoingeckoPrices(feed, price) {
     this.coingeckoPrices.labels(feed).set(price);
   }
+
+  /**
+   * Function to get the current value of oracleSubmission for a network and oracle
+   * @param {string} oracle - The oracle address
+   * @param {string} feed - The feed name (e.g., ATOM-USD)
+   * @returns {number | null} - The current metric value or null if not found
+   */
+  async getOracleSubmissionMetricValue(oracle, feed) {
+    const metric = await this.oracleLastRound.get();
+    if (metric && metric.values) {
+      const matchingMetric = metric.values.find(
+        (entry) =>
+          entry.labels.oracle === oracle &&
+          entry.labels.feed === feed
+      );
+      return matchingMetric ? matchingMetric.value : null;
+    }
+    return null;
+  }
 }
+

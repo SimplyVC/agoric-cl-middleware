@@ -814,10 +814,12 @@ export const getOracleLatestInfo = async (
             ? state["values"][feed]["round"]
             : 0;
 
+          let lastOracleMetricValue = await metrics.getOracleSubmissionMetricValue(oracle, feed) || 0
           logger.info(`Found Push Price for ${oracleDetails["oracleName"]} for ${feed} on round ${lastRound}. Last observed round: ${lastObservedRound}`)
           // If round is bigger than last observed and the offer didn't fail
           if (
-            lastRound >= lastObservedRound &&
+            (lastRound > lastObservedRound ||
+            lastRound > lastOracleMetricValue) &&
             !currentOffer["status"].hasOwnProperty("error")
           ) {
             // If id is bigger than last offer id in state, set it
